@@ -4,10 +4,10 @@
     "ancho": 1280,
     "alto": 720,
     "fps": 30,
-    "roi_desde_x": 0.09,
-    "roi_hasta_x": 0.91,
+    "roi_desde_x": 0.05,
+    "roi_hasta_x": 0.95,
     "roi_desde_y": 0.19,
-    "roi_hasta_y": 0.91
+    "roi_hasta_y": 0.99
   },
   "segmentacion": {
     "rojo_bajo1": [
@@ -48,20 +48,20 @@
   "homografia": {
     "puntos_px": [
       [
-        262.0,
-        130.0
+        159.0,
+        35.0
       ],
       [
-        787.0,
-        130.0
+        977.0,
+        19.0
       ],
       [
-        787.0,
-        389.0
+        91.0,
+        546.0
       ],
       [
-        262.0,
-        389.0
+        1043.0,
+        535.0
       ]
     ],
     "puntos_ur5": [
@@ -87,7 +87,7 @@
   "zona_trabajo_max_x": 0.55,
   "zona_trabajo_min_y": -0.05,
   "zona_trabajo_max_y": 0.45,
-  "gripper_port": "/dev/ttyUSB0",
+  "gripper_port": "COM3",
   "z_seguro": 0.25,
   "z_pick": 0.12,
   "z_deposit": 0.12,
