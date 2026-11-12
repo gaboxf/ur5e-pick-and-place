@@ -1,0 +1,71 @@
+# ==============================================================
+# ur5e-pick-and-place — .gitignore
+# ==============================================================
+
+# ---------- Entorno virtual ----------
+.venv/
+venv/
+env/
+ENV/
+.venv*/
+
+# ---------- Secretos / configuración local ----------
+.env
+.env.*
+!.env.example
+
+# ---------- Python: cachés y compilados ----------
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+
+# ---------- Empaquetado / distribución ----------
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# ---------- Logs de ejecución ----------
+logs/
+*.log
+logs/*.log
+
+# ---------- IDEs y editores ----------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.history/
+
+# ---------- Jupyter ----------
+.ipynb_checkpoints/
+
+# ---------- Sistema operativo ----------
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+# Linux
+*~
+.fuse_hidden*
+.nfs*
+
+# ---------- Imágenes / capturas generadas en runtime ----------
+# (descomentar si las fotos de la cámara son solo salidas de prueba)
+# fotos/salidas/
+# capturas/

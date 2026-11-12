@@ -1,0 +1,657 @@
+"""Interfaz Web de Monitoreo Remoto — Desafío 2: Pick and Place UR5.
+
+Servidor Flask independiente que comparte el mismo RobotController que el
+dashboard de escritorio. Expone:
+
+  GET  /               -> página HTML de monitoreo
+  GET  /video          -> stream MJPEG en vivo (cámara + detección dibujada)
+  GET  /api/state      -> estado actual en JSON
+  GET  /stream         -> Server-Sent Events con el estado cada 0.5 s
+  POST /api/command    -> comandos remotos (abrir, cerrar, home, ciclo, ...)
+
+No usa CDN ni JavaScript externo: el navegador solo necesita HTML5.
+Se puede abrir desde otra máquina de la red con http://<ip-del-pc>:5000
+"""
+
+from __future__ import annotations
+
+import json
+import queue
+import socket
+import threading
+import time
+from pathlib import Path
+
+import cv2
+import numpy as np
+from flask import Flask, Response, jsonify, render_template, request
+
+# Ejecución directa (python core/dashboard_web.py): agregar la raíz del
+# proyecto al path para poder importar el paquete "core".
+import sys
+BASE_DIR = Path(__file__).resolve().parent
+RAIZ_PROYECTO = BASE_DIR.parent
+if str(RAIZ_PROYECTO) not in sys.path:
+    sys.path.insert(0, str(RAIZ_PROYECTO))
+
+from core.logging_config import configurar_logging, get_logger
+
+from core.robot_controller import RobotController
+from vision.homografia_editor import EditorHomografia
+from vision.hsv_editor import EditorHSV
+from vision.roi_editor import EditorROI
+from vision.visor import VisorCamara
+
+logger = get_logger("WebDashboard")
+
+NOMBRES_COLOR = {"A": "roja", "B": "azul", "C": "verde", "D": "violeta"}
+NOMBRES_CATEGORIA = {"A": "A (roja)", "B": "B (azul)", "C": "C (verde)", "D": "D (violeta)"}
+
+
+class WebDashboard:
+    """Estado compartido entre el bucle de captura y los endpoints Flask."""
+
+    def __init__(self, config_path: str = "vision/config.json"):
+        _cfg = Path(config_path)
+        self.config_path = str(_cfg if _cfg.is_absolute() else RAIZ_PROYECTO / _cfg)
+        self.controller = RobotController(self.config_path)
+        with open(self.config_path, "r", encoding="utf-8") as f:
+            self.cfg = json.load(f)
+
+        # Editor visual de la ROI (comparte el mismo ConfigCamara del pipeline,
+        # así los cambios de botones surten efecto en la detección al instante)
+        self.editor_roi = EditorROI(self.controller.pipeline.cfg.camara)
+        # Editor visual de los rangos HSV (comparte el ConfigSegmentacion)
+        self.editor_hsv = EditorHSV(
+            self.controller.pipeline.cfg.segmentacion,
+            self.controller.pipeline.cfg.camara,
+        )
+        # Asistente de calibración de la homografía (comparte ConfigHomografia
+        # y el transformador, para recalcular la matriz al aplicar)
+        self.editor_homografia = EditorHomografia(
+            self.controller.pipeline.cfg.homografia,
+            self.controller.pipeline.cfg.camara,
+            self.controller.pipeline.transformador,
+        )
+
+        self._lock = threading.Lock()
+        self._cam_lock = threading.Lock()  # serializa escaneo / cambio de cámara
+        self._running = False
+        self._hilo_captura: threading.Thread | None = None
+        self.cambiando_camara = False
+
+        self.latest_jpeg: bytes | None = None
+        self.clientes_sse = 0
+
+        self.estado = "INICIANDO"
+        self.deteccion: dict = {"ok": False, "motivo_fallo": "sin iniciar"}
+        self.ultimo_evento: str | None = None
+        self.ultimo_comando: str | None = None
+        self.estop_activo = False
+        self.abortar_ciclo = False
+        self.camara_ok = False
+        self.gripper_ok = False
+        self.robot_ok = False
+        self.ciclos_ok = 0
+        self.ciclos_error = 0
+        self.por_categoria = {"A": 0, "B": 0, "C": 0, "D": 0}
+        self._t_inicio = time.time()
+
+    # ------------------------------------------------------------- hardware
+    def conectar(self):
+        """Conecta los tres subsistemas sin abortar si alguno falla."""
+        try:
+            self.camara_ok = bool(self.controller.pipeline.conectar_camara())
+        except Exception as e:
+            logger.error("Cámara: %s", e)
+            self.camara_ok = False
+
+        try:
+            self.gripper_ok = bool(self.controller.gripper.connect())
+            self.gripper_ok = not self.controller.gripper.simulado
+        except Exception as e:
+            logger.error("Gripper: %s", e)
+            self.gripper_ok = False
+
+        try:
+            self.robot_ok = bool(self.controller.robot.connect())
+        except Exception as e:
+            logger.error("Robot: %s", e)
+            self.robot_ok = False
+
+        logger.info(
+            "Hardware -> cámara:%s gripper:%s robot:%s",
+            self.camara_ok, self.gripper_ok, self.robot_ok,
+        )
+
+    # ------------------------------------------------------- selección cámara
+    def indices_camaras(self) -> list[int]:
+        """Sondea los índices 0..9 y devuelve los índices disponibles.
+
+        Libera temporalmente la cámara activa para poder sondear los demás
+        índices (en Windows/DirectShow no se puede abrir la misma cámara dos
+        veces). Al terminar reconecta la cámara activa.
+        """
+        with self._cam_lock:
+            self.cambiando_camara = True
+            try:
+                self.controller.pipeline.visor.desconectar()
+                caps = VisorCamara.abrir_disponibles(max_indice=9)
+                indices = sorted(caps)
+                for cap in caps.values():
+                    cap.release()
+            finally:
+                ok = self.controller.pipeline.conectar_camara()
+                self.camara_ok = ok
+                self.cambiando_camara = False
+        logger.info("Cámaras disponibles: %s", indices or "ninguna")
+        return indices
+
+    def cambiar_camara(self, indice: int) -> tuple[bool, str]:
+        """Conecta en caliente la cámara del índice dado y persiste la elección."""
+        indice = int(indice)
+        with self._cam_lock:
+            self.cambiando_camara = True
+            try:
+                actual = self.controller.pipeline.visor.cfg.indice_camara
+                if indice == actual and self.camara_ok:
+                    return True, f"La cámara {indice} ya está activa."
+
+                self.controller.pipeline.visor.desconectar()
+                self.controller.pipeline.visor.cfg.indice_camara = indice
+                ok = self.controller.pipeline.conectar_camara()
+                self.camara_ok = ok
+
+                if not ok:
+                    # Revertir al índice anterior para no dejar la celda sin cámara
+                    self.controller.pipeline.visor.cfg.indice_camara = actual
+                    ok_prev = self.controller.pipeline.conectar_camara()
+                    self.camara_ok = ok_prev
+                    return False, f"No se pudo abrir la cámara {indice}."
+
+                self._persistir_indice_camara(indice)
+                with self._lock:
+                    self.latest_jpeg = None  # fuerza frame fresco en el stream
+                logger.info("Cámara cambiada al índice %d.", indice)
+                return True, f"Cámara cambiada al índice {indice}."
+            finally:
+                self.cambiando_camara = False
+
+    def _persistir_indice_camara(self, indice: int) -> None:
+        """Guarda el índice elegido en config.json sin tocar el resto de claves."""
+        try:
+            ruta = Path(self.config_path)
+            data = json.loads(ruta.read_text(encoding="utf-8"))
+            data.setdefault("camara", {})["indice_camara"] = int(indice)
+            ruta.write_text(
+                json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
+            )
+            logger.info("Cámara %d guardada como predeterminada en %s", indice, ruta)
+        except Exception:
+            logger.exception("No se pudo persistir la cámara en %s", self.config_path)
+
+    def indice_camara_actual(self) -> int:
+        try:
+            return int(self.controller.pipeline.visor.cfg.indice_camara)
+        except Exception:
+            return -1
+
+    # ------------------------------------------------------------- editor ROI
+    def ajustar_roi(self, accion: str) -> tuple[bool, str]:
+        """Edita la ROI con el editor visual (mover, tamaño, mostrar, aplicar)."""
+        accion = (accion or "").strip().lower()
+        if accion == "aplicar":
+            return True, self.editor_roi.aplicar(self.config_path)
+        return self.editor_roi.mover(accion)
+
+    # ------------------------------------------------------------- editor HSV
+    def ajustar_hsv(self, accion: str, valor: str = "") -> tuple[bool, str]:
+        """Edita los rangos HSV con el editor visual."""
+        accion = (accion or "").strip().lower()
+        if accion == "aplicar":
+            return True, self.editor_hsv.aplicar(self.config_path)
+        return self.editor_hsv.mover(accion, valor)
+
+    def iniciar(self):
+        self.conectar()
+        self.estado = "LISTO" if not self.estop_activo else "EMERGENCIA_E_STOP"
+        self._running = True
+        self._hilo_captura = threading.Thread(
+            target=self._loop_captura, name="WebCapture", daemon=True
+        )
+        self._hilo_captura.start()
+
+    def detener(self):
+        self._running = False
+        if self._hilo_captura and self._hilo_captura.is_alive():
+            self._hilo_captura.join(timeout=2.0)
+        try:
+            self.controller.desconectar()
+        except Exception:
+            pass
+
+    # ------------------------------------------------------- bucle captura
+    def _loop_captura(self):
+        ultimo_error: str | None = None
+        while self._running:
+            try:
+                self._tick()
+                ultimo_error = None
+            except Exception as e:
+                # Deduplica fallos consecutivos idénticos para no inundar el log
+                msg = f"{type(e).__name__}: {e}"
+                if msg != ultimo_error:
+                    logger.error("Error en bucle de captura: %s", msg)
+                    ultimo_error = msg
+                else:
+                    logger.debug("Error en bucle de captura (repetido): %s", msg)
+                time.sleep(0.2)
+
+    def _tick(self):
+        # 1. Eventos asíncronos de seguridad del gripper (E-stop / proximidad)
+        try:
+            evento = self.controller.gripper.get_evento()
+        except Exception:
+            evento = None
+        if evento:
+            self._procesar_evento(evento)
+
+        # 2. Captura + visión
+        frame = None
+        try:
+            frame = self.controller.pipeline.visor.leer()
+        except Exception:
+            frame = None
+
+        if frame is None:
+            frame = self._frame_placeholder("SIN CAMARA")
+
+        try:
+            det = self.controller.pipeline.procesar_frame(frame)
+        except Exception as e:
+            det = {"ok": False, "motivo_fallo": f"error vision: {e}"}
+
+        try:
+            frame_dib = self.controller.pipeline.dibujar(frame, det)
+        except Exception:
+            frame_dib = frame
+
+        # Rectángulo amarillo de la ROI (si está activada la visualización)
+        frame_dib = self.editor_roi.dibujar(frame_dib)
+        # Máscara HSV en vivo (pinta los píxeles capturados por cada color)
+        frame_dib = self.editor_hsv.dibujar(frame_dib)
+        # Puntos del asistente de homografía (solo en modo calibración)
+        frame_dib = self.editor_homografia.dibujar(frame_dib)
+
+        frame_dib = self._dibujar_hud(frame_dib, det)
+
+        # Tamaño real del frame para los editores que convierten clics
+        # (la cámara puede no honrar el ancho/alto pedidos)
+        self.editor_homografia.tamano_frame = (frame_dib.shape[1],
+                                               frame_dib.shape[0])
+
+        ok, buf = cv2.imencode(".jpg", frame_dib, [cv2.IMWRITE_JPEG_QUALITY, 80])
+        if ok:
+            with self._lock:
+                self.latest_jpeg = buf.tobytes()
+                self.deteccion = det
+
+        # 3. Mantener estado coherente
+        with self._lock:
+            if self.estop_activo:
+                # conserva el estado de emergencia fijado por el evento
+                pass
+            elif self.estado not in ("ROBOT_ACTUANDO", "VERIFICANDO"):
+                self.estado = "LISTO" if det.get("ok") else "ESPERANDO_PIEZA"
+
+        time.sleep(0.03)
+
+    def _frame_placeholder(self, texto: str) -> np.ndarray:
+        frame = np.full((480, 640, 3), 35, dtype=np.uint8)
+        cv2.putText(frame, texto, (150, 250),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1.0, (200, 200, 200), 2)
+        return frame
+
+    def _dibujar_hud(self, frame: np.ndarray, det: dict) -> np.ndarray:
+        h, w = frame.shape[:2]
+        cv2.rectangle(frame, (0, 0), (w, 34), (40, 40, 40), -1)
+        color = (0, 0, 255) if self.estop_activo else (0, 255, 0)
+
+        # Texto izquierdo (estado)
+        txt_izq = f"{self.estado}"
+        cv2.putText(frame, txt_izq, (12, 24),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
+        (w_izq, _), _ = cv2.getTextSize(txt_izq, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
+
+        # Texto derecho: alineado al borde derecho y acotado al espacio libre
+        if det.get("ok"):
+            txt = f"{det['categoria']}  ({det['x_ur5'] * 1000:.1f}, {det['y_ur5'] * 1000:.1f}) mm"
+        else:
+            txt = f"buscando: {det.get('motivo_fallo', '')}"
+
+        fuente, escala, grosor = cv2.FONT_HERSHEY_SIMPLEX, 0.55, 1
+        margen = 12
+        max_w = w - margen * 2 - w_izq - 24  # deja hueco tras el estado
+        (tw, th), _ = cv2.getTextSize(txt, fuente, escala, grosor)
+        if tw > max_w:
+            while len(txt) > 3:
+                (tw, _), _ = cv2.getTextSize(txt + "...", fuente, escala, grosor)
+                if tw <= max_w:
+                    break
+                txt = txt[:-1]
+            txt = txt + "..."
+            (tw, th), _ = cv2.getTextSize(txt, fuente, escala, grosor)
+        cv2.putText(frame, txt, (w - margen - tw, 24),
+                    fuente, escala, (0, 255, 255), grosor)
+        return frame
+
+    def _procesar_evento(self, evento: str):
+        logger.warning("Evento de seguridad recibido: %s", evento)
+        self.ultimo_evento = evento
+        if evento == "emergencia_fisica":
+            self.estop_activo = True
+            self.abortar_ciclo = True
+            self.estado = "EMERGENCIA_E_STOP"
+            self.controller.detener()
+        elif evento == "stop_proximidad":
+            self.estop_activo = True
+            self.abortar_ciclo = True
+            self.estado = "PARADA_PROXIMIDAD"
+            self.controller.detener()
+
+    # ------------------------------------------------------------ comandos
+    def comando(self, accion: str, categoria: str | None = None) -> tuple[bool, str]:
+        self.ultimo_comando = accion
+        logger.info("Comando remoto: %s (cat=%s)", accion, categoria)
+
+        if accion in ("abrir", "cerrar", "home", "ciclo", "detener", "reset"):
+            # El reset es la única acción permitida con E-stop activo.
+            if self.estop_activo and accion != "reset":
+                return False, "E-stop activo: reinicie la parada antes de operar."
+
+        if accion == "abrir":
+            self.controller.gripper.open()
+            return True, "Gripper abierto."
+        if accion == "cerrar":
+            self.controller.gripper.close()
+            return True, "Gripper cerrado."
+        if accion == "home":
+            self.controller.mover_a(0.30, 0.0, 0.25)
+            return True, "Movido a posición Home."
+        if accion == "detener":
+            self.abortar_ciclo = True
+            self.controller.detener()
+            self.estado = "PARADA_SEGURIDAD"
+            return True, "Parada solicitada."
+        if accion == "reset":
+            self.estop_activo = False
+            self.abortar_ciclo = False
+            self.ultimo_evento = None
+            self.estado = "LISTO"
+            return True, "Parada reiniciada."
+        if accion == "ciclo":
+            if self.estado == "ROBOT_ACTUANDO":
+                return False, "Ya hay un ciclo en curso."
+            threading.Thread(
+                target=self.ejecutar_ciclo, args=(categoria,), daemon=True
+            ).start()
+            return True, "Ciclo iniciado."
+
+        return False, f"Acción desconocida: {accion}"
+
+    def ejecutar_ciclo(self, categoria_filtro: str | None = None) -> bool:
+        if self.estop_activo:
+            return False
+
+        self.abortar_ciclo = False
+        self.estado = "DETECTANDO"
+        det = self.controller.pipeline.procesar_frame()
+
+        if not det.get("ok"):
+            self.estado = "ESPERANDO_PIEZA"
+            return False
+
+        categoria = det["categoria"]
+        if categoria_filtro and categoria != categoria_filtro:
+            self.estado = "ESPERANDO_PIEZA"
+            return False
+
+        self.estado = "ROBOT_ACTUANDO"
+        x, y = det["x_ur5"], det["y_ur5"]
+        z_seguro = self.cfg.get("z_seguro", 0.200)
+        z_pick = self.cfg.get("z_pick", 0.050)
+        z_deposit = self.cfg.get("z_deposit", 0.050)
+        destinos = self.cfg.get("destinos", {
+            "A": {"x": 0.40, "y": 0.20},
+            "B": {"x": 0.40, "y": -0.20},
+        })
+        dest = destinos.get(categoria, {"x": 0.40, "y": 0.0})
+
+        try:
+            if not self.controller.mover_a(x, y, z_seguro):
+                raise RuntimeError("aproximación fallida")
+            if self._abortado():
+                raise RuntimeError("abortado por seguridad")
+            if not self.controller.mover_a(x, y, z_pick):
+                raise RuntimeError("descenso fallido")
+
+            self.controller.gripper.close()
+            time.sleep(0.3)
+
+            if not self.controller.mover_a(x, y, z_seguro):
+                raise RuntimeError("elevación fallida")
+            if self._abortado():
+                raise RuntimeError("abortado por seguridad")
+
+            if not self.controller.mover_a(dest["x"], dest["y"], z_seguro):
+                raise RuntimeError("transporte fallido")
+            if not self.controller.mover_a(dest["x"], dest["y"], z_deposit):
+                raise RuntimeError("descenso a destino fallido")
+
+            self.controller.gripper.open()
+            time.sleep(0.3)
+
+            if not self.controller.mover_a(dest["x"], dest["y"], z_seguro):
+                raise RuntimeError("retirada fallida")
+
+            with self._lock:
+                self.ciclos_ok += 1
+                self.por_categoria[categoria] = self.por_categoria.get(categoria, 0) + 1
+                self.estado = "LISTO"
+            logger.info("Ciclo OK: categoría %s", categoria)
+            return True
+
+        except Exception as e:
+            logger.warning("Ciclo interrumpido: %s", e)
+            with self._lock:
+                self.ciclos_error += 1
+                self.estado = "PARADA_SEGURIDAD" if self.estop_activo else "ERROR_CICLO"
+            return False
+
+    def _abortado(self) -> bool:
+        return self.abortar_ciclo or self.estop_activo
+
+    # ------------------------------------------------------------- estado
+    def estado_json(self) -> dict:
+        with self._lock:
+            det = dict(self.deteccion) if self.deteccion else {}
+            return {
+                "estado": self.estado,
+                "estop_activo": self.estop_activo,
+                "ultimo_evento": self.ultimo_evento,
+                "ultimo_comando": self.ultimo_comando,
+                "camara_ok": self.camara_ok,
+                "indice_camara": self.indice_camara_actual(),
+                "gripper_ok": self.gripper_ok,
+                "robot_ok": self.robot_ok,
+                "deteccion": det,
+                "gripper": self.controller.gripper.get_estado_completo(),
+                "ciclos_ok": self.ciclos_ok,
+                "ciclos_error": self.ciclos_error,
+                "por_categoria": dict(self.por_categoria),
+                "uptime_s": int(time.time() - self._t_inicio),
+                "roi": self.editor_roi.valores(),
+                "hsv": self.editor_hsv.estado(),
+                "homografia": self.editor_homografia.estado(),
+                "frame": {
+                    "ancho": self.editor_homografia.tamano_frame[0],
+                    "alto": self.editor_homografia.tamano_frame[1],
+                },
+            }
+
+
+# --------------------------------------------------------------- Flask app
+dashboard = WebDashboard()
+app = Flask(__name__, template_folder=str(BASE_DIR.parent / "templates"))
+
+
+@app.route("/")
+def index():
+    return render_template("dashboard.html")
+
+
+def _generar_mjpeg():
+    while True:
+        with dashboard._lock:
+            jpg = dashboard.latest_jpeg
+        if jpg is None:
+            time.sleep(0.1)
+            continue
+        yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + jpg + b"\r\n")
+        time.sleep(0.03)
+
+
+@app.route("/video")
+def video():
+    return Response(_generar_mjpeg(),
+                    mimetype="multipart/x-mixed-replace; boundary=frame")
+
+
+@app.route("/api/state")
+def api_state():
+    return jsonify(dashboard.estado_json())
+
+
+@app.route("/stream")
+def stream():
+    def eventos():
+        dashboard.clientes_sse += 1
+        try:
+            while True:
+                payload = json.dumps(dashboard.estado_json(), default=str)
+                yield f"data: {payload}\n\n"
+                time.sleep(0.5)
+        finally:
+            dashboard.clientes_sse -= 1
+    return Response(eventos(), mimetype="text/event-stream",
+                    headers={"Cache-Control": "no-cache",
+                             "X-Accel-Buffering": "no"})
+
+
+@app.route("/api/command", methods=["POST"])
+def api_command():
+    data = request.get_json(silent=True) or {}
+    accion = (data.get("accion") or "").strip().lower()
+    categoria = data.get("categoria") or None
+    ok, msg = dashboard.comando(accion, categoria)
+    return jsonify({"ok": ok, "mensaje": msg}), (200 if ok else 400)
+
+
+@app.route("/api/camaras")
+def api_camaras():
+    """Escanea los índices 0..9 y devuelve las cámaras disponibles.
+
+    Ojo: el escaneo desconecta/reconecta la cámara activa, puede tardar
+    varios segundos. El stream MJPEG se congela un instante y se recupera solo.
+    """
+    try:
+        indices = dashboard.indices_camaras()
+    except Exception as e:
+        logger.exception("Error escaneando cámaras")
+        return jsonify({"disponibles": [], "actual": dashboard.indice_camara_actual(),
+                        "error": str(e)}), 500
+    return jsonify({"disponibles": indices,
+                    "actual": dashboard.indice_camara_actual()})
+
+
+@app.route("/api/camara", methods=["POST"])
+def api_camara():
+    data = request.get_json(silent=True) or {}
+    try:
+        indice = int(data.get("indice"))
+    except (TypeError, ValueError):
+        return jsonify({"ok": False, "mensaje": "Índice de cámara inválido."}), 400
+    ok, msg = dashboard.cambiar_camara(indice)
+    return jsonify({"ok": ok, "mensaje": msg,
+                    "indice": dashboard.indice_camara_actual(),
+                    "camara_ok": dashboard.camara_ok}), (200 if ok else 400)
+
+
+@app.route("/api/roi", methods=["POST"])
+def api_roi():
+    """Ajuste visual de la ROI: mover, tamaño, mostrar/ocultar, aplicar y reset.
+
+    Acciones válidas: izquierda, derecha, arriba, abajo, mas_grande,
+    mas_pequena, mostrar, aplicar, reset.
+    """
+    data = request.get_json(silent=True) or {}
+    accion = (data.get("accion") or "").strip().lower()
+    ok, msg = dashboard.ajustar_roi(accion)
+    return jsonify({"ok": ok, "mensaje": msg,
+                    "roi": dashboard.editor_roi.valores()}), (200 if ok else 400)
+
+
+@app.route("/api/hsv", methods=["POST"])
+def api_hsv():
+    """Calibración visual de colores HSV.
+
+    Acciones: color (con valor rojo/azul/verde/violeta), matiz_izquierda,
+    matiz_derecha, mas_amplio, mas_estrecho, mas_sensible, menos_sensible,
+    area_mas, area_menos, confianza_mas, confianza_menos, mostrar, aplicar,
+    reset.
+    """
+    data = request.get_json(silent=True) or {}
+    accion = (data.get("accion") or "").strip().lower()
+    valor = (data.get("valor") or "").strip().lower()
+    ok, msg = dashboard.ajustar_hsv(accion, valor)
+    return jsonify({"ok": ok, "mensaje": msg,
+                    "hsv": dashboard.editor_hsv.estado()}), (200 if ok else 400)
+
+
+@app.route("/api/homografia", methods=["POST"])
+def api_homografia():
+    """Asistente de calibración de la homografía.
+
+    Acciones: iniciar, punto (con valor "x,y" en píxeles del frame completo,
+    típicamente un clic sobre el video), deshacer, cancelar, aplicar, reset.
+    """
+    data = request.get_json(silent=True) or {}
+    accion = (data.get("accion") or "").strip().lower()
+    valor = (data.get("valor") or "").strip()
+    if accion == "aplicar":
+        msg = dashboard.editor_homografia.aplicar(dashboard.config_path)
+        ok = not msg.startswith("Error")
+        return jsonify({"ok": ok, "mensaje": msg,
+                        "homografia": dashboard.editor_homografia.estado()}), \
+            (200 if ok else 400)
+    ok, msg = dashboard.editor_homografia.mover(accion, valor)
+    return jsonify({"ok": ok, "mensaje": msg,
+                    "homografia": dashboard.editor_homografia.estado()}), \
+        (200 if ok else 400)
+
+
+if __name__ == "__main__":
+    configurar_logging()
+    dashboard.iniciar()
+    logger.info("Escuchando en todas las interfaces (0.0.0.0:5000).")
+    logger.info("Abrir en este equipo:  http://localhost:5000")
+    try:
+        ip_local = socket.gethostbyname(socket.gethostname())
+        if not ip_local.startswith("127."):
+            logger.info("Abrir desde otros equipos de la red:  http://%s:5000", ip_local)
+    except OSError:
+        pass
+    try:
+        app.run(host="0.0.0.0", port=5000, threaded=True, use_reloader=False)
+    finally:
+        dashboard.detener()

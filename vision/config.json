@@ -1,0 +1,104 @@
+{
+  "camara": {
+    "indice_camara": 0,
+    "ancho": 1280,
+    "alto": 720,
+    "fps": 30,
+    "roi_desde_x": 0.09,
+    "roi_hasta_x": 0.91,
+    "roi_desde_y": 0.19,
+    "roi_hasta_y": 0.91
+  },
+  "segmentacion": {
+    "rojo_bajo1": [
+      0,
+      120,
+      70
+    ],
+    "rojo_alto1": [
+      15,
+      255,
+      255
+    ],
+    "rojo_bajo2": [
+      165,
+      120,
+      70
+    ],
+    "rojo_alto2": [
+      180,
+      255,
+      255
+    ],
+    "azul_bajo": [
+      100,
+      120,
+      70
+    ],
+    "azul_alto": [
+      135,
+      255,
+      255
+    ],
+    "area_minima": 500,
+    "area_maxima": 50000,
+    "kernel_tamano": 5,
+    "confianza_minima": 0.7
+  },
+  "homografia": {
+    "puntos_px": [
+      [
+        262.0,
+        130.0
+      ],
+      [
+        787.0,
+        130.0
+      ],
+      [
+        787.0,
+        389.0
+      ],
+      [
+        262.0,
+        389.0
+      ]
+    ],
+    "puntos_ur5": [
+      [
+        0.1,
+        0.4
+      ],
+      [
+        0.5,
+        0.4
+      ],
+      [
+        0.5,
+        0.0
+      ],
+      [
+        0.1,
+        0.0
+      ]
+    ]
+  },
+  "zona_trabajo_min_x": 0.05,
+  "zona_trabajo_max_x": 0.55,
+  "zona_trabajo_min_y": -0.05,
+  "zona_trabajo_max_y": 0.45,
+  "gripper_port": "/dev/ttyUSB0",
+  "z_seguro": 0.25,
+  "z_pick": 0.12,
+  "z_deposit": 0.12,
+  "destinos": {
+    "A": {
+      "x": 0.4,
+      "y": 0.2
+    },
+    "B": {
+      "x": 0.4,
+      "y": -0.2
+    }
+  }
+}

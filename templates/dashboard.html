@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UR5 · Monitoreo Remoto</title>
+  <style>
+    :root {
+      --bg: #10141c;
+      --panel: #1b2230;
+      --panel2: #232c3d;
+      --txt: #e6edf3;
+      --muted: #8b98a9;
+      --ok: #2ecc71;
+      --warn: #f1c40f;
+      --bad: #e74c3c;
+      --accent: #3498db;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--txt);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px; background: var(--panel); border-bottom: 1px solid #2c3648;
+    }
+    header h1 { font-size: 18px; margin: 0; letter-spacing: .5px; }
+    header .sub { color: var(--muted); font-size: 12px; }
+    main {
+      display: grid; grid-template-columns: 1fr 340px; gap: 16px; padding: 16px;
+      max-width: 1800px; margin: 0 auto; align-items: start;
+    }
+    /* En pantallas grandes, columna interactiva un poco más ancha */
+    @media (min-width: 1600px) {
+      main { grid-template-columns: 1fr 380px; }
+    }
+    /* Columna principal: video + paneles informativos debajo.
+       --ancho-video define el ancho del video y de la fila de datos,
+       para que ambos queden homogéneos. */
+    .col-principal { display: grid; gap: 16px; --ancho-video: 100%; }
+    /* Columna lateral: solo paneles interactivos */
+    .col-lateral { display: grid; gap: 16px; }
+    /* Paneles informativos: en fila debajo del video en pantallas anchas,
+       estirados a la misma altura entre sí */
+    .info-paneles {
+      display: grid; gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    }
+    @media (max-width: 900px) {
+      main { grid-template-columns: 1fr; }
+      /* En mobile se conserva el orden en una sola columna:
+         video, estado, control, homografía, ROI, HSV, detección, producción */
+      .col-principal, .col-lateral, .info-paneles { display: contents; }
+      .panel-estado     { order: 1; }
+      .panel-control    { order: 2; }
+      .panel-homografia { order: 3; }
+      .panel-roi        { order: 4; }
+      .panel-hsv        { order: 5; }
+      .panel-deteccion  { order: 6; }
+      .panel-produccion { order: 7; }
+    }
+
+    /* El video se muestra a tamaño natural (sin barras ni recortes). Para que
+       todo el tablero entre sin scroll, su ancho se limita en desktop para que
+       el alto del video + fila de datos + header entre en el viewport. El
+       aspect real del frame lo informa el backend vía --ar-video. */
+    .video-wrap {
+      background: #000; border-radius: 12px; overflow: hidden; position: relative;
+    }
+    @media (min-width: 901px) {
+      .col-principal {
+        --ancho-video: min(100%, max(360px, calc((100vh - 340px) * var(--ar-video, 1.78))));
+        --ancho-video: min(100%, max(360px, calc((100dvh - 340px) * var(--ar-video, 1.78))));
+      }
+      .video-wrap { width: var(--ancho-video); margin: 0 auto; }
+      .info-paneles { width: var(--ancho-video); margin: 0 auto; }
+    }
+    .video-wrap img { width: 100%; display: block; }
+
+    .panel { background: var(--panel); border-radius: 12px; padding: 16px; }
+    .panel h2 { margin: 0 0 12px; font-size: 14px; text-transform: uppercase;
+                letter-spacing: 1px; color: var(--muted); }
+    /* Paneles colapsables de calibración (details/summary) */
+    details.panel { padding: 0; }
+    details.panel > summary {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px; padding: 14px 16px; cursor: pointer; user-select: none;
+      list-style: none;
+    }
+    details.panel > summary::-webkit-details-marker { display: none; }
+    details.panel > summary h2 { margin: 0; }
+    details.panel > summary:hover h2 { color: var(--txt); }
+    details.panel > summary .chev {
+      color: var(--muted); font-size: 11px; transition: transform .15s;
+    }
+    details[open] > summary .chev { transform: rotate(90deg); }
+    .panel-body { padding: 2px 16px 16px; }
+    .row { display: flex; justify-content: space-between; padding: 6px 0;
+           border-bottom: 1px solid #2a3446; font-size: 14px; }
+    .row:last-child { border-bottom: none; }
+    .row .k { color: var(--muted); }
+    .row .v { font-weight: 600; }
+    .ok { color: var(--ok); } .bad { color: var(--bad); } .warn { color: var(--warn); }
+
+    .alert {
+      margin-top: 12px; padding: 12px; border-radius: 10px;
+      background: rgba(231,76,60,.15); border: 1px solid var(--bad);
+      color: #ffb3ab; font-size: 13px; display: none;
+    }
+    .alert.show { display: block; }
+
+    .grid-botones { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    button {
+      padding: 12px; border: none; border-radius: 10px; cursor: pointer;
+      font-size: 14px; font-weight: 600; color: #fff; background: var(--panel2);
+      transition: transform .06s, filter .15s;
+    }
+    button:hover { filter: brightness(1.18); }
+    button:active { transform: scale(.97); }
+    button.abrir { background: #1f6f43; }
+    button.cerrar { background: #8a4b12; }
+    button.ciclo { background: var(--accent); }
+    button.home { background: #5b4b8a; }
+    button.stop { background: var(--bad); }
+    button.reset { background: #34495e; }
+    button:disabled { opacity: .4; cursor: not-allowed; }
+    .full { grid-column: 1 / -1; }
+
+    .cat-btns { display: flex; gap: 8px; margin-top: 10px; }
+    .cat-btns button { flex: 1; font-size: 12px; padding: 8px; }
+    .cat-A { background: #a83232; }
+    .cat-B { background: #2456a8; }
+
+    .cam-ctl { display: flex; gap: 8px; margin-top: 12px; }
+    .cam-ctl select {
+      flex: 1; padding: 8px; border-radius: 8px; border: 1px solid #3a4661;
+      background: var(--panel2); color: var(--txt); font-size: 13px;
+    }
+    .cam-ctl button { padding: 8px 12px; font-size: 12px; }
+    .cam-escanear { background: #2c3e50; }
+    .cam-usar { background: var(--accent); }
+
+    .roi-btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .roi-btns button { padding: 8px; font-size: 13px; }
+    .roi-mover { background: #34495e; }
+    .roi-tamano { background: #5b4b8a; }
+    .roi-mostrar { background: #a08419; }
+    .roi-aplicar { background: #1f6f43; }
+    .roi-reset { background: #444; }
+    .roi-info { margin-top: 10px; font-size: 12px; color: var(--muted); }
+    .roi-info b { color: var(--warn); }
+    .hsv-verde { background: #1f6f43; }
+    .hsv-violeta { background: #7d3c98; }
+    .hsv-sel { outline: 3px solid var(--warn); }
+
+    .stats { display: flex; gap: 12px; margin-top: 12px; }
+    .stat { flex: 1; background: var(--panel2); border-radius: 10px;
+            padding: 12px; text-align: center;
+            display: flex; flex-direction: column; justify-content: center; }
+    .stat .n { font-size: 22px; font-weight: 700; }
+    .stat .l { font-size: 11px; color: var(--muted); text-transform: uppercase; }
+    /* Producción: sus cajas se reparten el alto del panel para que quede
+       a la misma altura que Estado y Detección */
+    .panel-produccion { display: flex; flex-direction: column; }
+    .panel-produccion .stats { flex: 1; }
+
+    #toast {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: var(--panel2); padding: 12px 20px; border-radius: 10px;
+      font-size: 14px; opacity: 0; transition: opacity .3s; pointer-events: none;
+      border: 1px solid #3a4661;
+    }
+    #toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>🤖 UR5 · Pick &amp; Place</h1>
+      <div class="sub">Monitoreo remoto · Desafío 2</div>
+    </div>
+    <div class="sub" id="uptime">uptime —</div>
+  </header>
+
+  <main>
+    <!-- Columna principal: video + datos informativos debajo -->
+    <section class="col-principal">
+      <div class="video-wrap">
+        <img src="/video" alt="Cámara en vivo">
+      </div>
+
+      <div class="info-paneles">
+        <div class="panel panel-estado">
+          <h2>Estado de la celda</h2>
+          <div class="row"><span class="k">Visión</span><span class="v" id="v-vision">—</span></div>
+          <div class="row"><span class="k">Cámara</span><span class="v" id="v-camara">—</span></div>
+          <div class="row"><span class="k">Gripper</span><span class="v" id="v-gripper">—</span></div>
+          <div class="row"><span class="k">Robot UR5</span><span class="v" id="v-robot">—</span></div>
+          <div class="row"><span class="k">Último comando</span><span class="v" id="v-comando">—</span></div>
+          <div class="alert" id="alerta"></div>
+        </div>
+
+        <div class="panel panel-deteccion">
+          <h2>Detección</h2>
+          <div class="row"><span class="k">Pieza</span><span class="v" id="d-cat">—</span></div>
+          <div class="row"><span class="k">X (m)</span><span class="v" id="d-x">—</span></div>
+          <div class="row"><span class="k">Y (m)</span><span class="v" id="d-y">—</span></div>
+          <div class="row"><span class="k">Confianza</span><span class="v" id="d-conf">—</span></div>
+          <div class="row"><span class="k">Motivo</span><span class="v" id="d-motivo">—</span></div>
+        </div>
+
+        <div class="panel panel-produccion">
+          <h2>Producción</h2>
+          <div class="stats">
+            <div class="stat"><div class="n" id="s-ok">0</div><div class="l">OK</div></div>
+            <div class="stat"><div class="n" id="s-err">0</div><div class="l">Errores</div></div>
+          </div>
+          <div class="stats">
+            <div class="stat"><div class="n" id="s-a">0</div><div class="l">Cat A</div></div>
+            <div class="stat"><div class="n" id="s-b">0</div><div class="l">Cat B</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Columna lateral: solo controles interactivos -->
+    <aside class="col-lateral">
+      <div class="panel panel-control">
+        <h2>Control</h2>
+        <div class="grid-botones">
+          <button class="ciclo full" onclick="cmd('ciclo')">▶ Ejecutar ciclo</button>
+          <button class="abrir" onclick="cmd('abrir')">Abrir gripper</button>
+          <button class="cerrar" onclick="cmd('cerrar')">Cerrar gripper</button>
+          <button class="home" onclick="cmd('home')">Home</button>
+          <button class="stop" onclick="cmd('detener')">■ Parar</button>
+          <button class="reset full" onclick="cmd('reset')">Reiniciar parada</button>
+        </div>
+        <div class="cat-btns">
+          <button class="cat-A" onclick="cmd('ciclo','A')">Ciclo roja (A)</button>
+          <button class="cat-B" onclick="cmd('ciclo','B')">Ciclo azul (B)</button>
+        </div>
+        <div class="cam-ctl">
+          <select id="sel-camara" title="Cámara activa">
+            <option value="">— cámara —</option>
+          </select>
+          <button class="cam-escanear" onclick="escanearCamaras()">Escanear</button>
+          <button class="cam-usar" onclick="cambiarCamara()">Usar</button>
+        </div>
+      </div>
+
+      <details class="panel panel-homografia" id="panel-homografia">
+        <summary><h2>Homografía (píxel → UR5)</h2><span class="chev">▶</span></summary>
+        <div class="panel-body">
+          <div class="roi-btns">
+            <button class="roi-mostrar" onclick="homografia('iniciar')">🎯 Iniciar calibración</button>
+            <button class="roi-reset" onclick="homografia('deshacer')">↶ Deshacer punto</button>
+            <button class="roi-reset" onclick="homografia('cancelar')">✖ Cancelar</button>
+            <button class="roi-aplicar" onclick="homografia('aplicar')">✔ Aplicar (guardar)</button>
+            <button class="roi-reset" onclick="homografia('reset')">↺ Reset fábrica</button>
+          </div>
+          <div class="roi-info">Estado: <b id="hom-estado">—</b></div>
+          <div class="roi-info">Puntos_px (ROI-relativos): <span id="hom-puntos">—</span></div>
+          <div class="roi-info">Puntos_ur5 (m): <span id="hom-ur5">—</span></div>
+          <div class="roi-info">Con el modo de calibración activo, <b>hacé clic sobre el video</b> sobre cada marca física: 1 sup-izq → 2 sup-der → 3 inf-der → 4 inf-izq. Los clics se convierten automáticamente a coordenadas de la ROI. Si cambiás la ROI después, recalibrá.</div>
+        </div>
+      </details>
+
+      <details class="panel panel-roi" id="panel-roi">
+        <summary><h2>Ajustar ROI (zona de trabajo)</h2><span class="chev">▶</span></summary>
+        <div class="panel-body">
+          <div class="roi-btns">
+            <button class="roi-mover" onclick="roi('izquierda')">◀ Izquierda</button>
+            <button class="roi-mover" onclick="roi('arriba')">▲ Arriba</button>
+            <button class="roi-mover" onclick="roi('abajo')">▼ Abajo</button>
+            <button class="roi-mover" onclick="roi('derecha')">▶ Derecha</button>
+            <button class="roi-tamano" onclick="roi('mas_grande')">+ Grande</button>
+            <button class="roi-tamano" onclick="roi('mas_pequena')">− Pequeña</button>
+            <button class="roi-mostrar full" style="grid-column:1/-1" onclick="roi('mostrar')">👁 Mostrar / ocultar ROI</button>
+          </div>
+          <div class="roi-info">ROI actual: <b id="roi-texto">—</b></div>
+          <div class="roi-btns" style="margin-top:10px">
+            <button class="roi-aplicar" onclick="roi('aplicar')">✔ Aplicar (guardar)</button>
+            <button class="roi-reset" onclick="roi('reset')">↺ Reset</button>
+          </div>
+          <div class="roi-info">«Aplicar» guarda la ROI en <b>vision/config.json</b> para que quede fija al reiniciar.</div>
+        </div>
+      </details>
+
+      <details class="panel panel-hsv" id="panel-hsv">
+        <summary><h2>Colores (calibración HSV)</h2><span class="chev">▶</span></summary>
+        <div class="panel-body">
+          <div class="roi-btns">
+            <button id="hsv-rojo" class="cat-A" onclick="hsv('color','rojo')">Rojo (A)</button>
+            <button id="hsv-azul" class="cat-B" onclick="hsv('color','azul')">Azul (B)</button>
+            <button id="hsv-verde" class="hsv-verde" onclick="hsv('color','verde')">Verde (C)</button>
+            <button id="hsv-violeta" class="hsv-violeta" onclick="hsv('color','violeta')">Violeta (D)</button>
+          </div>
+          <div class="roi-btns" style="margin-top:8px">
+            <button class="roi-mover" onclick="hsv('matiz_izquierda')">◀ Matiz</button>
+            <button class="roi-mover" onclick="hsv('matiz_derecha')">Matiz ▶</button>
+            <button class="roi-tamano" onclick="hsv('mas_amplio')">+ Ancho</button>
+            <button class="roi-tamano" onclick="hsv('mas_estrecho')">− Ancho</button>
+            <button class="roi-tamano" onclick="hsv('mas_sensible')">+ Sensible</button>
+            <button class="roi-tamano" onclick="hsv('menos_sensible')">− Sensible</button>
+            <button class="roi-tamano" onclick="hsv('area_menos')">− Área mín.</button>
+            <button class="roi-tamano" onclick="hsv('area_mas')">+ Área mín.</button>
+            <button class="roi-tamano" onclick="hsv('confianza_menos')">− Confianza</button>
+            <button class="roi-tamano" onclick="hsv('confianza_mas')">+ Confianza</button>
+          </div>
+          <button class="roi-mostrar" style="grid-column:1/-1;width:100%;margin-top:8px" onclick="hsv('mostrar')">👁 Máscara en vivo sí/no</button>
+          <div class="roi-info">Selección: <b id="hsv-texto">—</b></div>
+          <div class="roi-info">Píxeles captados: <span id="hsv-px">—</span></div>
+          <div class="roi-info">Umbral de confianza: <b id="hsv-conf">—</b> <span style="opacity:.7">(solo se marcan piezas con confianza ≥ umbral)</span></div>
+          <div class="roi-btns" style="margin-top:10px">
+            <button class="roi-aplicar" onclick="hsv('aplicar')">✔ Aplicar (guardar)</button>
+            <button class="roi-reset" onclick="hsv('reset')">↺ Reset color</button>
+          </div>
+          <div class="roi-info">Con la máscara activada, poné una pieza en la mesa y ajustá hasta que SOLO se pinte la pieza. «Aplicar» guarda los rangos en <b>vision/config.json</b>.</div>
+        </div>
+      </details>
+    </aside>
+  </main>
+
+  <div id="toast"></div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    function setText(id, txt, cls) {
+      const el = $(id);
+      el.textContent = txt;
+      el.className = "v" + (cls ? " " + cls : "");
+    }
+
+    function toast(msg) {
+      const t = $("toast");
+      t.textContent = msg;
+      t.classList.add("show");
+      clearTimeout(window._toastT);
+      window._toastT = setTimeout(() => t.classList.remove("show"), 2600);
+    }
+
+    // Paneles colapsables de calibración: colapsados por defecto y con el
+    // estado persistido en localStorage para no replegarlos en cada visita.
+    for (const id of ["panel-roi", "panel-hsv", "panel-homografia"]) {
+      const d = $(id);
+      if (!d) continue;
+      const guardado = localStorage.getItem("panel:" + id);
+      if (guardado != null) d.open = guardado === "1";
+      d.addEventListener("toggle", () =>
+        localStorage.setItem("panel:" + id, d.open ? "1" : "0"));
+    }
+
+    async function cmd(accion, categoria) {
+      try {
+        const r = await fetch("/api/command", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ accion, categoria: categoria || null }),
+        });
+        const data = await r.json();
+        toast(data.mensaje || accion);
+      } catch (e) {
+        toast("Error de red: " + e);
+      }
+    }
+
+    function aplicarEstado(s) {
+      // Hardware
+      setText("v-camara",
+              (s.camara_ok ? "OK" : "SIN CÁMARA") +
+              (s.indice_camara != null ? " (índice " + s.indice_camara + ")" : ""),
+              s.camara_ok ? "ok" : "bad");
+      setText("v-gripper", s.gripper_ok ? "OK" : "SIMULADO", s.gripper_ok ? "ok" : "warn");
+      setText("v-robot", s.robot_ok ? "OK" : "MOCK", s.robot_ok ? "ok" : "warn");
+      setText("v-comando", s.ultimo_comando || "—");
+
+      const det = s.deteccion || {};
+      setText("v-vision", det.ok ? "PIEZA DETECTADA" : "SIN PIEZA", det.ok ? "ok" : "warn");
+
+      // Detección
+      setText("d-cat", det.ok ? (det.categoria || "—") : "—");
+      setText("d-x", det.ok && det.x_ur5 != null ? Number(det.x_ur5).toFixed(3) : "—");
+      setText("d-y", det.ok && det.y_ur5 != null ? Number(det.y_ur5).toFixed(3) : "—");
+      setText("d-conf", det.ok && det.conf != null ? Number(det.conf).toFixed(2) : "—");
+      setText("d-motivo", det.motivo_fallo || "—");
+
+      // Producción
+      $("s-ok").textContent = s.ciclos_ok ?? 0;
+      $("s-err").textContent = s.ciclos_error ?? 0;
+      $("s-a").textContent = (s.por_categoria && s.por_categoria.A) || 0;
+      $("s-b").textContent = (s.por_categoria && s.por_categoria.B) || 0;
+
+      // Uptime
+      const u = s.uptime_s || 0;
+      $("uptime").textContent = `uptime ${Math.floor(u/60)}m ${u%60}s`;
+
+      // ROI actual
+      if (s.roi) mostrarRoi(s.roi);
+      // Estado del editor HSV (rangos y píxeles captados en vivo)
+      if (s.hsv) mostrarHsv(s.hsv);
+      // Estado del asistente de homografía
+      if (s.homografia) mostrarHomografia(s.homografia);
+      if (s.frame && s.frame.ancho && s.frame.alto) {
+        frameTamano = s.frame;
+        // Aspect real del frame: dimensiona el video para que no queden
+        // barras ni quede contenido fuera de la pantalla
+        document.documentElement.style.setProperty(
+          "--ar-video", (s.frame.ancho / s.frame.alto).toFixed(4));
+      }
+
+      // Selector de cámara: al primer estado, mostrar solo la cámara activa
+      if (!selInicializada && s.indice_camara != null && s.indice_camara >= 0) {
+        poblarCamaras([s.indice_camara], s.indice_camara);
+        selInicializada = true;
+      }
+
+      // Alerta de seguridad
+      const alerta = $("alerta");
+      if (s.estop_activo) {
+        let msg = "⛔ Parada de seguridad activa.";
+        if (s.ultimo_evento === "emergencia_fisica")
+          msg = "⛔ BOTÓN DE EMERGENCIA pulsado. Reinicie la parada para operar.";
+        else if (s.ultimo_evento === "stop_proximidad")
+          msg = "⚠ Objeto detectado a menos de 15 cm del gripper. Retírelo y reinicie la parada.";
+        alerta.textContent = msg;
+        alerta.classList.add("show");
+      } else {
+        alerta.classList.remove("show");
+      }
+    }
+
+    // ------------------------------------------------ selección de cámara
+    function poblarCamaras(disponibles, actual) {
+      const sel = $("sel-camara");
+      sel.innerHTML = "";
+      if (!disponibles || !disponibles.length) {
+        sel.innerHTML = '<option value="">sin cámaras</option>';
+        return;
+      }
+      for (const i of disponibles) {
+        const o = document.createElement("option");
+        o.value = i;
+        o.textContent = "Cámara " + i + (i === actual ? " (activa)" : "");
+        if (i === actual) o.selected = true;
+        sel.appendChild(o);
+      }
+    }
+
+    async function escanearCamaras() {
+      const sel = $("sel-camara");
+      sel.innerHTML = '<option value="">escaneando...</option>';
+      toast("Buscando cámaras (el video se congela un instante)...");
+      try {
+        const r = await fetch("/api/camaras");
+        const d = await r.json();
+        poblarCamaras(d.disponibles, d.actual);
+        if (!d.disponibles || !d.disponibles.length) toast("No se detectaron cámaras.");
+        else toast("Cámaras: " + d.disponibles.join(", "));
+      } catch (e) {
+        toast("Error escaneando: " + e);
+        sel.innerHTML = '<option value="">— cámara —</option>';
+      }
+    }
+
+    async function cambiarCamara() {
+      const sel = $("sel-camara");
+      if (!sel.value) { toast("Escanee y elija una cámara."); return; }
+      toast("Cambiando a cámara " + sel.value + "...");
+      try {
+        const r = await fetch("/api/camara", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ indice: Number(sel.value) }),
+        });
+        const d = await r.json();
+        toast(d.mensaje || "Listo.");
+        poblarCamaras([d.indice], d.indice); // provisional hasta nuevo escaneo
+      } catch (e) {
+        toast("Error cambiando cámara: " + e);
+      }
+    }
+
+    // ------------------------------------------------ ajuste visual de ROI
+    async function roi(accion) {
+      try {
+        const r = await fetch("/api/roi", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ accion }),
+        });
+        const d = await r.json();
+        toast(d.mensaje || accion);
+        if (d.roi) mostrarRoi(d.roi);
+      } catch (e) {
+        toast("Error de red: " + e);
+      }
+    }
+
+    function mostrarRoi(roi) {
+      const el = $("roi-texto");
+      el.textContent = roi.texto || "—";
+      el.style.opacity = roi.mostrar ? "1" : "0.4";
+    }
+
+    // ------------------------------------------------ calibración HSV colores
+    async function hsv(accion, valor) {
+      try {
+        const r = await fetch("/api/hsv", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ accion, valor: valor || "" }),
+        });
+        const d = await r.json();
+        toast(d.mensaje || accion);
+        if (d.hsv) mostrarHsv(d.hsv);
+      } catch (e) {
+        toast("Error de red: " + e);
+      }
+    }
+
+    function mostrarHsv(h) {
+      $("hsv-texto").textContent = h.texto || "—";
+      for (const c of ["rojo", "azul", "verde", "violeta"]) {
+        const b = $("hsv-" + c);
+        if (b) b.classList.toggle("hsv-sel", h.color_actual === c);
+      }
+      const p = h.pixeles || {};
+      const vacio = Object.keys(p).length === 0;
+      $("hsv-px").textContent = vacio ? "— (máscara apagada)" :
+        "A " + (p.A ?? 0) + " · B " + (p.B ?? 0) +
+        " · C " + (p.C ?? 0) + " · D " + (p.D ?? 0) + " px";
+      if (h.confianza_minima != null) {
+        $("hsv-conf").textContent = Number(h.confianza_minima).toFixed(2);
+      }
+    }
+
+    // ------------------------------------------- asistente de homografía
+    let frameTamano = { ancho: 1280, alto: 720 };
+    let calibrandoHom = false;
+
+    async function homografia(accion, valor) {
+      try {
+        const r = await fetch("/api/homografia", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ accion, valor: valor || "" }),
+        });
+        const d = await r.json();
+        toast(d.mensaje || accion);
+        if (d.homografia) mostrarHomografia(d.homografia);
+      } catch (e) {
+        toast("Error de red: " + e);
+      }
+    }
+
+    function mostrarHomografia(h) {
+      calibrandoHom = !!h.calibrando;
+      // Si otra sesión inició la calibración, desplegar el panel para verla
+      if (calibrandoHom) {
+        const d = $("panel-homografia");
+        if (d && !d.open) d.open = true;
+      }
+      $("hom-estado").textContent = calibrandoHom
+        ? "CALIBRANDO — " + h.registrados + "/4 puntos, falta " + h.proximo
+        : "inactiva";
+      $("hom-puntos").textContent = (h.puntos_px || [])
+        .map(p => "(" + p[0] + ", " + p[1] + ")").join(" ");
+      $("hom-ur5").textContent = (h.puntos_ur5 || [])
+        .map(p => "(" + p[0] + ", " + p[1] + ")").join(" ");
+    }
+
+    // Clic sobre el video: si el asistente está calibrando, registra el punto.
+    // Las coordenadas se convierten del tamaño mostrado al frame nativo; el
+    // backend las traduce a coordenadas de la ROI.
+    function clicVideo(ev) {
+      if (!calibrandoHom) return;
+      const img = ev.target;
+      const r = img.getBoundingClientRect();
+      if (!r.width || !r.height) return;
+      // Con object-fit: contain el video puede ocupar solo parte del rect del
+      // <img> (barras negras): se mapea sobre el área real del contenido.
+      const escala = Math.min(r.width / frameTamano.ancho,
+                              r.height / frameTamano.alto);
+      const offX = r.left + (r.width - frameTamano.ancho * escala) / 2;
+      const offY = r.top + (r.height - frameTamano.alto * escala) / 2;
+      const x = Math.round((ev.clientX - offX) / escala);
+      const y = Math.round((ev.clientY - offY) / escala);
+      if (x < 0 || y < 0 || x >= frameTamano.ancho || y >= frameTamano.alto) return;
+      homografia("punto", x + "," + y);
+    }
+
+    // Poblar el selector con la cámara activa al primer estado recibido
+    let selInicializada = false;
+
+    // Server-Sent Events: estado en tiempo real
+    const es = new EventSource("/stream");
+    es.onmessage = (ev) => {
+      try { aplicarEstado(JSON.parse(ev.data)); } catch (e) {}
+    };
+    es.onerror = () => {
+      // el navegador reconecta solo; mostramos aviso breve
+      console.warn("SSE desconectado, reintentando...");
+    };
+
+    // Estado inicial inmediato
+    fetch("/api/state").then(r => r.json()).then(aplicarEstado).catch(() => {});
+
+    // Clics sobre el video para el asistente de homografía
+    const videoImg = document.querySelector(".video-wrap img");
+    if (videoImg) videoImg.addEventListener("click", clicVideo);
+  </script>
+</body>
+</html>
