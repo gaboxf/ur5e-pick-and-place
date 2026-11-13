@@ -23,9 +23,9 @@ class Tester:
 
     def ciclo(self):
         """Permite escribir comandos en un REPL simple."""
-        print("\n=== Probador del gripper (OPEN/CLOSE/STATUS/HELP/QUIT) ===\n")
+        print("\n=== Probador del gripper (OPEN/CLOSE/STOP/STATUS/HELP/QUIT) ===\n")
         while True:
-            cmd = input("\[Comando] > ").strip().lower()
+            cmd = input("[Comando] > ").strip().lower()
             if cmd == "quit":
                 break
             elif cmd == "help":
@@ -34,12 +34,13 @@ class Tester:
                 self._mostrar_estado()
             else:
                 if not self._ejecutar(cmd):
-                    print("(no se pudo ejecutar \"{}– ignorado)".format(cmd))
+                    print("(no se pudo ejecutar \"{}\" - ignorado)".format(cmd))
 
     def _mostrar_ayuda(self):
         print("Comandos:")
         print("  open    – abrir gripper (continuar presionando para probar)")
         print("  close   – cerrar gripper (agarrar)")
+        print("  stop    – parada suave: invierte el movimiento y abre")
         print("  status  – consultar estado")
         print("  help    – repetir esta ayuda")
         print("  quit    – salir")
@@ -62,6 +63,13 @@ class Tester:
                 return True
             else:
                 print("Fallo: no se pudo cerrar (¿ocupado o error?)")
+                return False
+        elif cmd == "stop":
+            if self.client.stop():
+                print("Parada suave: pieza soltada.")
+                return True
+            else:
+                print("Fallo: no se pudo ejecutar STOP")
                 return False
         elif cmd in ("status", "help"):
             # Ya mostrados arriba

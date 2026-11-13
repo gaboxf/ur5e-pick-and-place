@@ -12,18 +12,21 @@ con control por voz e interfaz web de monitoreo.
 
 1. Cámara USB → notebook. Cenital, fija (cinta/abrazadera). No moverla después
    de calibrar la homografía.
-2. Arduino → USB de la notebook (con el sketch `gripper_4servos.ino` cargado).
-3. Servos MG996R → Arduino (señales D3, D5, D6, D9) + fuente externa
-   5–6 V (GND común con el Arduino).
-4. Botón de emergencia → **D8 ↔ GND**.
-5. Sensor ultrasónico HC-SR04 → VCC 5 V, GND, TRIG **D10**, ECHO **D11**.
-6. UR5e → **cable Ethernet al Control Box** (no al teach pendant).
-7. Verificar `vision/config.json` (`gripper_port`) y `.env` (`UR5_IP`).
-8. Encender el robot y liberar frenos (`power on` / `brake release`).
-9. Ejecutar **uno** de los dashboards (escritorio o web).
+2. Arduino → USB de la notebook (con el sketch `gripper_1signal.ino` cargado).
+3. Servos MG996R → **señal puenteada a D3** (las 4 naranjas juntas) + fuente
+   externa 5–6 V con **tierra común** con el Arduino y **límite de corriente
+   ≥ 5 A** (ver `gripper/README.md` §2 y §2.2).
+4. UR5e → **cable Ethernet al Control Box** (no al teach pendant).
+5. Verificar `vision/config.json` (`gripper_port`) y `.env` (`UR5_IP`).
+6. Encender el robot y liberar frenos (`power on` / `brake release`).
+7. Ejecutar **uno** de los dashboards (escritorio o web).
 
 > ⚠️ La palabra del día: **no** conectar los servos al pin 5V del Arduino.
 > Usan fuente externa con tierra común. Ver `gripper/README.md`.
+
+> ℹ️ El montaje **no tiene** LEDs, botón de E-STOP, sensor HC-SR04 ni LCD: son
+> 4 servos y nada más. La parada de emergencia la da el UR5 (joystick / teach
+> pendant) y el operador. Ver §7.
 
 ---
 
@@ -68,15 +71,20 @@ También: `arduino-cli board list`.
   (`UR5_IP` = IP real del robot; se ve en el pendant.)
 
 ### 1.5 Cargar el firmware
+
+> El firmware **en uso** es `gripper/firmware/gripper_1signal/gripper_1signal.ino`
+> (4 servos con **una sola señal** en D3, con watchdog y sin LEDs/E-STOP/HC-SR04).
+> El sketch `gripper_4servos/` es la variante histórica: **no la uses**.
+
 Opción A — Arduino IDE: abrir
-`gripper/firmware/gripper_4servos/gripper_4servos.ino`, placa **UNO**, puerto
+`gripper/firmware/gripper_1signal/gripper_1signal.ino`, placa **UNO**, puerto
 **COM4**, Upload.
 
 Opción B — arduino-cli:
 ```powershell
 arduino-cli lib install Servo
-arduino-cli compile --fqbn arduino:avr:uno gripper/firmware/gripper_4servos
-arduino-cli upload -p COM4 --fqbn arduino:avr:uno gripper/firmware/gripper_4servos
+arduino-cli compile --fqbn arduino:avr:uno gripper/firmware/gripper_1signal
+arduino-cli upload -p COM4 --fqbn arduino:avr:uno gripper/firmware/gripper_1signal
 ```
 
 ### 1.6 Ejecutar
@@ -108,8 +116,8 @@ cd Desafio_Final
 - Permisos: `sudo usermod -aG dialout $USER` (reiniciar sesión).
 - Compilar/subir firmware:
   ```bash
-  arduino-cli compile --fqbn arduino:avr:uno gripper/firmware/gripper_4servos
-  arduino-cli upload -p /dev/ttyUSB0 --fqbn arduino:avr:uno gripper/firmware/gripper_4servos
+  arduino-cli compile --fqbn arduino:avr:uno gripper/firmware/gripper_1signal
+  arduino-cli upload -p /dev/ttyUSB0 --fqbn arduino:avr:uno gripper/firmware/gripper_1signal
   ```
 
 ---
@@ -190,25 +198,44 @@ hacia el micrófono de la notebook:
 | “Estado” / “¿Qué ves?” / “Diagnóstico” | Informa estado y piezas | “Sistema en estado… Hay una pieza…” |
 
 - Tecla `[v]`: activa/silencia la voz.
-- Teclas `[e]` / `[r]`: parada de emergencia manual / reiniciar parada.
+- Teclas `[e]` / `[r]`: parada de seguridad manual / reiniciar parada.
 
 > **La voz necesita internet**: `SpeechRecognition` usa Google. Sin red, usar
 > botones, teclas o la interfaz web.
 
 ---
 
-## 7. Seguridad física (E-STOP y proximidad)
+## 7. Seguridad física
 
-### Botón de emergencia
-- Pulsador **NA** entre **D8** y **GND** (pull-up interno).
-- Al pulsar: frena servos, emite `EMERGENCY`, el Python detiene el UR5
-  (`stopJ`) y bloquea ciclos.
-- Al soltar: emite `READY`; se reanuda con “Reiniciar parada” (web) o `[r]`.
+### Qué hay y qué no hay
 
-### Sensor HC-SR04
-- VCC 5 V, GND, TRIG **D10**, ECHO **D11**.
-- Objeto a **< 15 cm** → `PROXIMITY_STOP` (una sola vez, se rearma a > 20 cm).
-- Mismo tratamiento que el E-stop: frena el UR5 y bloquea ciclos.
+El montaje del gripper es **4 servos, una señal y nada más**: **no hay LEDs,
+ni botón de E-STOP, ni sensor HC-SR04, ni LCD**. Las capas de seguridad
+efectivas son:
+
+| Capa | Qué hace | Dónde |
+|---|---|---|
+| **E-STOP del UR5e** | Parada física certificada del robot | Teach pendant / botón físico del robot |
+| **Parada por software** | Frena el UR5 (`stopJ`) y bloquea ciclos | Tecla `[e]` del dashboard de escritorio, botón en la web o comando de voz “Parar” |
+| **Watchdog del gripper (15 s)** | Si la PC muere, el firmware **abre el gripper** y suelta la pieza | `gripper/firmware/gripper_1signal/` |
+| **Operador** | Nadie entra a la zona con el robot en movimiento | Persona a cargo |
+
+> El sketch histórico `gripper_4servos` emitía `EMERGENCY` y
+> `PROXIMITY_STOP`; **el código de Python ya no los maneja** (se eliminaron:
+> con el firmware en uso nunca llegaban). Si alguna vez se recarga ese sketch
+> viejo, el cliente los treatará como respuestas desconocidas.
+
+### Botón de emergencia (NO montado)
+
+> En el montaje actual **no hay pulsador**: el E-STOP es el del UR5e.
+> El esquema histórico (pulsador NA entre D8 y GND, evento `EMERGENCY`)
+> pertenecía al sketch `gripper_4servos`, que ya no se usa.
+
+### Sensor HC-SR04 (NO montado)
+
+> En el montaje actual **no hay sensor**: nada emite `PROXIMITY_STOP`.
+> El esquema histórico (TRIG D10 / ECHO D11) pertenecía al sketch
+> `gripper_4servos`, que ya no se usa.
 
 > ⚠️ **Esta capa es un complemento de software. No reemplaza el sistema de
 > seguridad certificado del UR** (E-stop hardware, protecciones, límites). La
@@ -229,7 +256,9 @@ Detalle completo: `Seguridad_E_Interfaz_Web.md`.
 | La cámara no abre | Índice ocupado / otro programa | Cerrar apps de cámara; probar otro `indice_camara` |
 | La voz no reconoce | Sin internet | Usar teclado/web, o proveedor local |
 | Web no abre desde el celular | Firewall de Windows | Regla de puerto 5000 (ver 1.7) |
-| El gripper “hace cosas” sin pieza | Calibración `cerrado1..4` | Ajustar ángulos con la pieza real |
+| El gripper “hace cosas” sin pieza | Calibración `cerrado` / `abierto` del firmware | Ajustar con el sketch de calibración y la pieza real (ver `gripper/README.md` §4) |
+| La fuente marca “CC” al moverse el servo | Límite de corriente de la fuente muy bajo | Subir el límite a ≥ 5 A y medir V en los bornes del servo (> 4.8 V). Ver `gripper/README.md` §2.2 |
+| El servo tiembla o se resetea | Caída de tensión / falta tierra común | Verificar tierra común, condensador de 1000 µF y cableado (ver `gripper/README.md` §4.0) |
 
 ---
 
@@ -244,8 +273,10 @@ Detalle completo: `Seguridad_E_Interfaz_Web.md`.
 | `core/ur5_client.py` | Cliente RTDE del UR5 (incluye `stop()`) |
 | `core/voice_control.py` | Reconocimiento y síntesis de voz |
 | `vision/` | Pipeline de visión (cámara, detección, homografía) |
-| `gripper/firmware/gripper_4servos/` | Sketch del Arduino |
-| `gripper/tools/gripper_client.py` | Cliente serial (eventos E-stop/proximidad) |
+| `gripper/firmware/gripper_1signal/` | Sketch del Arduino (el que va cargado) |
+| `gripper/firmware/calibracion_1signal/` | Sketch de laboratorio (calibración de pulsos) |
+| `gripper/README.md` | Wiring, fuente, calibración y diagnóstico del gripper |
+| `gripper/tools/gripper_client.py` | Cliente serial (heartbeat + watchdog) |
 | `tools/gestionar_logs.py` | Listar/limpiar logs por corrida |
 | `scripts/instalar.ps1` / `scripts/instalar.sh` | Instalación de dependencias |
 | `scripts/run_ursim.sh` | Simulador URSim en Docker |

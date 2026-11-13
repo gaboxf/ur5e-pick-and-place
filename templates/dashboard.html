@@ -234,6 +234,7 @@
           <button class="cerrar" onclick="cmd('cerrar')">Cerrar gripper</button>
           <button class="home" onclick="cmd('home')">Home</button>
           <button class="stop" onclick="cmd('detener')">■ Parar</button>
+          <button class="abrir" onclick="cmd('soltar')" title="Invierte el movimiento en curso y abre el gripper, soltando la pieza de forma controlada">⇩ Soltar pieza</button>
           <button class="reset full" onclick="cmd('reset')">Reiniciar parada</button>
         </div>
         <div class="cat-btns">
@@ -418,13 +419,8 @@
 
       // Alerta de seguridad
       const alerta = $("alerta");
-      if (s.estop_activo) {
-        let msg = "⛔ Parada de seguridad activa.";
-        if (s.ultimo_evento === "emergencia_fisica")
-          msg = "⛔ BOTÓN DE EMERGENCIA pulsado. Reinicie la parada para operar.";
-        else if (s.ultimo_evento === "stop_proximidad")
-          msg = "⚠ Objeto detectado a menos de 15 cm del gripper. Retírelo y reinicie la parada.";
-        alerta.textContent = msg;
+      if (s.parada_activa) {
+        alerta.textContent = "⛔ Parada de seguridad activa. Reinicie la parada para operar.";
         alerta.classList.add("show");
       } else {
         alerta.classList.remove("show");

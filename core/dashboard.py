@@ -91,7 +91,9 @@ class DashboardApp:
         self.estado_actual = "INACTIVO"
         self.ultima_deteccion = {"ok": False, "motivo_fallo": "sistema no iniciado"}
         self.abortar_ciclo = False
-        self.estop_activo = False
+        # Parada de seguridad por software (tecla [e] / boton "detener").
+        # No hay E-STOP fisico en el gripper: la parada certificada es la del UR5.
+        self.parada_activa = False
 
         # Cámara predeterminada (índice guardado en config.json)
         self.camara_predeterminada = int(self.cfg.get("camara", {}).get("indice_camara", 0))
@@ -254,7 +256,12 @@ class DashboardApp:
         return self.robot_controller.mover_a(x, y, z)
 
     def procesar_eventos_seguridad(self):
-        """Atiende los eventos asíncronos de seguridad del Arduino (E-stop / proximidad)."""
+        """Atiende los eventos asíncronos de seguridad del firmware del gripper.
+
+        Con el hardware actual (4 servos, sin E-STOP ni sensor de proximidad)
+        el unico evento posible es el watchdog: el firmware se abrio solo
+        porque la PC dejo de mandar comandos validos.
+        """
         try:
             evento = self.gripper.get_evento()
         except Exception:
@@ -263,24 +270,25 @@ class DashboardApp:
             return
 
         logger.warning("Evento de seguridad: %s", evento)
-        if evento == "emergencia_fisica":
-            self.estop_activo = True
+        if evento == "apertura_watchdog":
+            # El firmware se abrio solo: la PC dejo de mandar comandos
+            # validos por mas de 15 s. La pieza ya no esta sujeta, asi que
+            # el ciclo se aborta y el robot frena.
             self.abortar_ciclo = True
-            self.estado_actual = "EMERGENCIA_E_STOP"
+            self.estado_actual = "APERTURA_WATCHDOG"
             self.robot_controller.detener()
+            logger.error(
+                "El gripper se abrió solo por watchdog: la PC dejó de "
+                "comunicarse. La pieza se soltó; el robot fue frenado."
+            )
             if self.voice:
-                self.voice.hablar("Parada de emergencia física activada.")
-        elif evento == "stop_proximidad":
-            self.estop_activo = True
-            self.abortar_ciclo = True
-            self.estado_actual = "PARADA_PROXIMIDAD"
-            self.robot_controller.detener()
-            if self.voice:
-                self.voice.hablar("Objeto demasiado cerca. Parada de seguridad.")
+                self.voice.hablar("El gripper se abrió solo. Pieza soltada.")
+        elif evento == "apertura_watchdog_completada":
+            logger.warning("Terminó la apertura por watchdog del gripper")
 
     def ejecutar_ciclo(self, categoria_filtro: str | None = None):
         """Ejecuta un ciclo completo de Pick and Place con verificación en bucle cerrado."""
-        if self.estop_activo:
+        if self.parada_activa:
             logger.warning("Ciclo bloqueado: parada de seguridad activa.")
             return
         if not self.conectado_camara:
@@ -324,18 +332,18 @@ class DashboardApp:
 
         # 1. Aproximación y Pick
         self.mover_ur5(x_ur5, y_ur5, z_seguro)
-        if self.abortar_ciclo or self.estop_activo:
+        if self.abortar_ciclo or self.parada_activa:
             return
 
         self.mover_ur5(x_ur5, y_ur5, z_pick)
-        if self.abortar_ciclo or self.estop_activo:
+        if self.abortar_ciclo or self.parada_activa:
             return
         logger.debug("Cerrando gripper...")
         self.gripper.close()
         cv2.waitKey(1000)
 
         self.mover_ur5(x_ur5, y_ur5, z_seguro)
-        if self.abortar_ciclo or self.estop_activo:
+        if self.abortar_ciclo or self.parada_activa:
             return
 
         # 2. Place según categoría
@@ -348,10 +356,10 @@ class DashboardApp:
         dest = destinos.get(categoria, {"x": 0.4, "y": 0.0})
 
         self.mover_ur5(dest["x"], dest["y"], z_seguro)
-        if self.abortar_ciclo or self.estop_activo:
+        if self.abortar_ciclo or self.parada_activa:
             return
         self.mover_ur5(dest["x"], dest["y"], z_deposit)
-        if self.abortar_ciclo or self.estop_activo:
+        if self.abortar_ciclo or self.parada_activa:
             return
 
         logger.debug("Abriendo gripper...")
@@ -554,13 +562,13 @@ class DashboardApp:
                     logger.debug("Re-selección de cámara en caliente...")
                     self.seleccionar_camara(conectar=True)
                 elif key == ord('e'):
-                    self.estop_activo = True
+                    self.parada_activa = True
                     self.abortar_ciclo = True
-                    self.estado_actual = "EMERGENCIA_MANUAL"
+                    self.estado_actual = "PARADA_MANUAL"
                     self.robot_controller.detener()
-                    logger.warning("¡Parada de emergencia MANUAL activada!")
+                    logger.warning("¡Parada de seguridad MANUAL activada!")
                 elif key == ord('r'):
-                    self.estop_activo = False
+                    self.parada_activa = False
                     self.abortar_ciclo = False
                     self.estado_actual = "LISTO"
                     logger.info("Parada de seguridad reiniciada.")

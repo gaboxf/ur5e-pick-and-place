@@ -87,7 +87,7 @@ class WebDashboard:
         self.deteccion: dict = {"ok": False, "motivo_fallo": "sin iniciar"}
         self.ultimo_evento: str | None = None
         self.ultimo_comando: str | None = None
-        self.estop_activo = False
+        self.parada_activa = False
         self.abortar_ciclo = False
         self.camara_ok = False
         self.gripper_ok = False
@@ -214,7 +214,7 @@ class WebDashboard:
 
     def iniciar(self):
         self.conectar()
-        self.estado = "LISTO" if not self.estop_activo else "EMERGENCIA_E_STOP"
+        self.estado = "LISTO" if not self.parada_activa else "PARADA_SEGURIDAD"
         self._running = True
         self._hilo_captura = threading.Thread(
             target=self._loop_captura, name="WebCapture", daemon=True
@@ -298,7 +298,7 @@ class WebDashboard:
 
         # 3. Mantener estado coherente
         with self._lock:
-            if self.estop_activo:
+            if self.parada_activa:
                 # conserva el estado de emergencia fijado por el evento
                 pass
             elif self.estado not in ("ROBOT_ACTUANDO", "VERIFICANDO"):
@@ -315,7 +315,7 @@ class WebDashboard:
     def _dibujar_hud(self, frame: np.ndarray, det: dict) -> np.ndarray:
         h, w = frame.shape[:2]
         cv2.rectangle(frame, (0, 0), (w, 34), (40, 40, 40), -1)
-        color = (0, 0, 255) if self.estop_activo else (0, 255, 0)
+        color = (0, 0, 255) if self.parada_activa else (0, 255, 0)
 
         # Texto izquierdo (estado)
         txt_izq = f"{self.estado}"
@@ -346,28 +346,36 @@ class WebDashboard:
         return frame
 
     def _procesar_evento(self, evento: str):
+        """Atiende un evento asíncrono de seguridad del firmware del gripper.
+
+        Con el hardware actual (4 servos, sin E-STOP ni sensor de proximidad)
+        el unico evento posible es el watchdog.
+        """
         logger.warning("Evento de seguridad recibido: %s", evento)
         self.ultimo_evento = evento
-        if evento == "emergencia_fisica":
-            self.estop_activo = True
+        if evento == "apertura_watchdog":
+            # El firmware se abrio solo: la PC dejo de mandar comandos
+            # validos por mas de 15 s. La pieza ya no esta sujeta, asi que
+            # el ciclo debe abortarse y el robot frenarse.
             self.abortar_ciclo = True
-            self.estado = "EMERGENCIA_E_STOP"
+            self.estado = "APERTURA_WATCHDOG"
             self.controller.detener()
-        elif evento == "stop_proximidad":
-            self.estop_activo = True
-            self.abortar_ciclo = True
-            self.estado = "PARADA_PROXIMIDAD"
-            self.controller.detener()
+            logger.error(
+                "El gripper se abrió solo por watchdog: la PC dejó de "
+                "comunicarse. La pieza se soltó; el robot fue frenado."
+            )
+        elif evento == "apertura_watchdog_completada":
+            logger.warning("Terminó la apertura por watchdog del gripper")
 
     # ------------------------------------------------------------ comandos
     def comando(self, accion: str, categoria: str | None = None) -> tuple[bool, str]:
         self.ultimo_comando = accion
         logger.info("Comando remoto: %s (cat=%s)", accion, categoria)
 
-        if accion in ("abrir", "cerrar", "home", "ciclo", "detener", "reset"):
-            # El reset es la única acción permitida con E-stop activo.
-            if self.estop_activo and accion != "reset":
-                return False, "E-stop activo: reinicie la parada antes de operar."
+        if accion in ("abrir", "cerrar", "home", "ciclo", "detener", "reset", "soltar"):
+            # El reset es la única acción permitida con la parada activa.
+            if self.parada_activa and accion != "reset":
+                return False, "Parada de seguridad activa: reinicie la parada antes de operar."
 
         if accion == "abrir":
             self.controller.gripper.open()
@@ -375,6 +383,14 @@ class WebDashboard:
         if accion == "cerrar":
             self.controller.gripper.close()
             return True, "Gripper cerrado."
+        if accion == "soltar":
+            # Parada suave: invierte el movimiento en curso y abre el
+            # gripper, soltando la pieza de forma controlada (no de golpe
+            # como el watchdog de 15 s del firmware).
+            ok = self.controller.gripper.stop()
+            return (True, "Pieza soltada (gripper abierto).") if ok else (
+                False, "No se pudo soltar la pieza."
+            )
         if accion == "home":
             self.controller.mover_a(0.30, 0.0, 0.25)
             return True, "Movido a posición Home."
@@ -384,7 +400,7 @@ class WebDashboard:
             self.estado = "PARADA_SEGURIDAD"
             return True, "Parada solicitada."
         if accion == "reset":
-            self.estop_activo = False
+            self.parada_activa = False
             self.abortar_ciclo = False
             self.ultimo_evento = None
             self.estado = "LISTO"
@@ -400,7 +416,7 @@ class WebDashboard:
         return False, f"Acción desconocida: {accion}"
 
     def ejecutar_ciclo(self, categoria_filtro: str | None = None) -> bool:
-        if self.estop_activo:
+        if self.parada_activa:
             return False
 
         self.abortar_ciclo = False
@@ -465,11 +481,11 @@ class WebDashboard:
             logger.warning("Ciclo interrumpido: %s", e)
             with self._lock:
                 self.ciclos_error += 1
-                self.estado = "PARADA_SEGURIDAD" if self.estop_activo else "ERROR_CICLO"
+                self.estado = "PARADA_SEGURIDAD" if self.parada_activa else "ERROR_CICLO"
             return False
 
     def _abortado(self) -> bool:
-        return self.abortar_ciclo or self.estop_activo
+        return self.abortar_ciclo or self.parada_activa
 
     # ------------------------------------------------------------- estado
     def estado_json(self) -> dict:
@@ -477,7 +493,7 @@ class WebDashboard:
             det = dict(self.deteccion) if self.deteccion else {}
             return {
                 "estado": self.estado,
-                "estop_activo": self.estop_activo,
+                "parada_activa": self.parada_activa,
                 "ultimo_evento": self.ultimo_evento,
                 "ultimo_comando": self.ultimo_comando,
                 "camara_ok": self.camara_ok,

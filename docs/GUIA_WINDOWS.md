@@ -82,9 +82,13 @@ ROBOT_MODE=real
 
 ## 6. Cargar el firmware del Arduino
 
+> El firmware en uso es `gripper_1signal` (4 servos con **una sola señal** en
+> D3, con watchdog y **sin LEDs / E-STOP / HC-SR04**). La carpeta
+> `gripper_4servos/` es la variante histórica: **no la uses**.
+
 ### Opción A — Arduino IDE (más simple en Windows)
 
-1. Abrí `gripper/firmware/gripper_4servos/gripper_4servos.ino`.
+1. Abrí `gripper/firmware/gripper_1signal/gripper_1signal.ino`.
 2. Placa: **Arduino UNO**.
 3. Puerto: el COM detectado (COM4).
 4. **Upload**.
@@ -93,8 +97,8 @@ ROBOT_MODE=real
 
 ```powershell
 arduino-cli lib install Servo
-arduino-cli compile --fqbn arduino:avr:uno gripper/firmware/gripper_4servos
-arduino-cli upload -p COM4 --fqbn arduino:avr:uno gripper/firmware/gripper_4servos
+arduino-cli compile --fqbn arduino:avr:uno gripper/firmware/gripper_1signal
+arduino-cli upload -p COM4 --fqbn arduino:avr:uno gripper/firmware/gripper_1signal
 ```
 
 ## 7. Red: PC ↔ Control Box del UR5
