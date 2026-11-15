@@ -1,0 +1,29 @@
+# Dependencias del Desafío 2 — Pick & Place UR5
+# Instalar con:  pip install -r requirements.txt
+#
+# Versiones fijadas para reproducibilidad (nov 2026).
+# numpy 2.2.x es la última línea compatible con Python 3.10 (el rango que
+# soporta instalar.ps1/instalar.sh). Si actualizas numpy a >=2.5, se
+# necesita Python >=3.12.
+# Si necesitas actualizar alguna, prueba primero que el proyecto siga funcionando.
+
+# Visión
+opencv-python==5.0.0.93
+numpy==2.2.6
+
+# Comunicación con Arduino (gripper)
+pyserial==3.5
+
+# Variables de entorno (.env)
+python-dotenv==1.2.4
+
+# Robot UR5 (RTDE)
+ur_rtde==1.6.5
+
+# Control por voz (reconocimiento + síntesis)
+SpeechRecognition==3.17.0
+pyttsx3==2.99
+PyAudio==0.2.14
+
+# Interfaz web de monitoreo
+Flask==3.1.3
