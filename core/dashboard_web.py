@@ -531,6 +531,7 @@ def logo_upro():
     return send_from_directory(str(BASE_DIR.parent), "logo-upro.jpg")
 
 
+
 def _generar_mjpeg():
     while True:
         with dashboard._lock:
