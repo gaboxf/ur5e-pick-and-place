@@ -69,3 +69,7 @@ $RECYCLE.BIN/
 # (descomentar si las fotos de la cámara son solo salidas de prueba)
 # fotos/salidas/
 # capturas/
+
+# ---------- Archivo simulador UR5 (binario grande, no va en git) ----------
+*.urup
+robot/*.urup
