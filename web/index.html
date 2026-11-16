@@ -1,0 +1,775 @@
+<!DOCTYPE html><html class="dark" lang="es"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_standard" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"secondary":"#4cd7f6","surface-container-highest":"#313540","surface-variant":"#313540","outline-variant":"#534434","surface-bright":"#353944","error-container":"#93000a","primary":"#ffc174","error":"#ffb4ab","on-primary-container":"#613b00","on-primary-fixed-variant":"#653e00","on-secondary-container":"#00424e","on-background":"#dfe2f1","tertiary-fixed":"#6ffbbe","inverse-on-surface":"#2c303b","surface-container-low":"#171b26","primary-fixed":"#ffddb8","primary-container":"#f59e0b","secondary-fixed":"#acedff","surface-container-high":"#262a35","on-tertiary-container":"#004e34","on-tertiary-fixed":"#002113","on-tertiary":"#003824","secondary-fixed-dim":"#4cd7f6","tertiary-container":"#30c88f","surface-container-lowest":"#0a0e18","surface":"#0f131d","on-secondary":"#003640","tertiary-fixed-dim":"#4edea3","on-primary":"#472a00","on-secondary-fixed":"#001f26","on-surface-variant":"#d8c3ad","on-secondary-fixed-variant":"#004e5c","tertiary":"#56e5a9","secondary-container":"#03b5d3","background":"#0f131d","surface-tint":"#ffb95f","on-error":"#690005","on-primary-fixed":"#2a1700","on-surface":"#dfe2f1","primary-fixed-dim":"#ffb95f","on-tertiary-fixed-variant":"#005236","surface-dim":"#0f131d","surface-container":"#1c1f2a","on-error-container":"#ffdad6","inverse-surface":"#dfe2f1","inverse-primary":"#855300","outline":"#a08e7a"},borderRadius:{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},spacing:{"space-md":"1rem","gutter-mobile":"0.75rem","margin-mobile":"1rem","gutter":"1.5rem","space-lg":"1.5rem","space-sm":"0.5rem","space-xl":"2.5rem","space-xs":"0.25rem","margin":"2rem"},fontFamily:{"headline-xl-mobile":["Inter"],"headline-md":["Inter"],"telemetry-data":["JetBrains Mono"],"headline-xl":["Inter"],"label-caps":["JetBrains Mono"],"headline-sm":["Inter"],"headline-lg":["Inter"],"code-md":["JetBrains Mono"],"body-sm":["Inter"],"body-lg":["Inter"],"code-lg":["JetBrains Mono"],"body-md":["Inter"],"headline-lg-mobile":["Inter"]},fontSize:{"headline-xl-mobile":["2rem",{"lineHeight":"2.5rem","letterSpacing":"-0.02em","fontWeight":"700"}],"headline-md":["1.5rem",{"lineHeight":"2rem","letterSpacing":"-0.015em","fontWeight":"600"}],"telemetry-data":["0.8125rem",{"lineHeight":"1rem","letterSpacing":"0.05em","fontWeight":"600"}],"headline-xl":["3rem",{"lineHeight":"3.5rem","letterSpacing":"-0.025em","fontWeight":"700"}],"label-caps":["0.6875rem",{"lineHeight":"0.875rem","letterSpacing":"0.08em","fontWeight":"600"}],"headline-sm":["1.25rem",{"lineHeight":"1.75rem","fontWeight":"600"}],"headline-lg":["2.25rem",{"lineHeight":"2.75rem","letterSpacing":"-0.02em","fontWeight":"600"}],"code-md":["0.875rem",{"lineHeight":"1.375rem","fontWeight":"400"}],"body-sm":["0.875rem",{"lineHeight":"1.25rem","fontWeight":"400"}],"body-lg":["1.125rem",{"lineHeight":"1.75rem","fontWeight":"400"}],"code-lg":["1rem",{"lineHeight":"1.5rem","fontWeight":"500"}],"body-md":["1rem",{"lineHeight":"1.5rem","fontWeight":"400"}],"headline-lg-mobile":["1.75rem",{"lineHeight":"2.25rem","letterSpacing":"-0.015em","fontWeight":"600"}]}}}}</script></head><body class="bg-background font-body-md text-body-md text-on-surface antialiased min-h-screen flex flex-col"><header class="fixed top-0 left-0 w-full z-50 bg-surface-container-lowest/90 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.4)]"><div class="h-20 w-full px-margin flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-lg"><div class="flex items-center gap-space-sm"><img src="https://lh3.googleusercontent.com/aida/ALJJyrDdBKBKasxBugh37v8qA_4UbVTnHUYo-_LvMZWhzseg-4ZoSnApcve38306II1VmuOcu5uWtcuMfI2U7_R45x1uk2p44sOnn87qcUfSdkUQ2DP3SS-S7U3DaRVJP8uozf3Qs1N6YO5c_nKHVI-n7aH5cqDqm7NJHyU-W3web0JyCZg2xSDurcTJegYcIEVKgtKzB6dbMTpTuvSLRoNlEnw68_uyLMDeoZi8qKzJtQMU" alt="Logo UPrO" class="h-10 w-10 object-cover rounded shadow-sm border border-surface-container-highest"><div class="flex flex-col"><div class="flex items-center gap-space-xs"><span class="text-on-surface font-headline-sm text-headline-sm font-semibold tracking-tight">Vision Cell</span><span class="text-primary font-label-caps text-label-caps uppercase tracking-wider bg-surface-container px-space-xs py-0.5 rounded border border-surface-container-highest">DESAFÍO 2</span></div><span class="text-on-surface-variant font-label-caps text-label-caps uppercase tracking-wider">Pick &amp; Place Guiado por Visión</span></div></div><div class="hidden xl:flex items-center gap-space-xs"><div class="flex items-center gap-space-xs bg-surface-container px-space-sm py-space-xs rounded border border-surface-container-highest"><span class="w-2 h-2 rounded-full bg-tertiary shadow-[0_0_8px_#56e5a9]"></span><span class="font-label-caps text-label-caps text-on-surface uppercase">CAM: OK (60 FPS)</span></div><div class="flex items-center gap-space-xs bg-surface-container px-space-sm py-space-xs rounded border border-surface-container-highest"><span class="w-2 h-2 rounded-full bg-tertiary shadow-[0_0_8px_#56e5a9]"></span><span class="font-label-caps text-label-caps text-on-surface uppercase">GRP: COM3 OK</span></div><div class="flex items-center gap-space-xs bg-surface-container px-space-sm py-space-xs rounded border border-surface-container-highest"><span class="w-2 h-2 rounded-full bg-tertiary shadow-[0_0_8px_#56e5a9]"></span><span class="font-label-caps text-label-caps text-on-surface uppercase">UR5: 127.0.0.1:30004 READY</span></div><div class="flex items-center gap-space-xs bg-surface-container px-space-sm py-space-xs rounded border border-surface-container-highest"><span class="w-2 h-2 rounded-full bg-primary-container shadow-[0_0_8px_#f59e0b]"></span><span class="font-label-caps text-label-caps text-primary uppercase">E-STOP: PENDANT ARMED</span></div></div></div><nav class="hidden lg:flex items-center gap-space-xs bg-surface-container-lowest p-space-xs rounded-lg" data-active-classes="bg-surface-container-high text-primary font-semibold"><a aria-current="page" class="px-space-md py-space-xs rounded transition-all bg-surface-container-high text-primary font-semibold" data-path="modo-presentacion" href="#">Modo Presentación (Slides)</a><a class="px-space-md py-space-xs rounded font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all" data-path="dashboard-hmi" href="#">Dashboard HMI (Control en Vivo)</a><a class="px-space-md py-space-xs rounded font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all" data-path="arquitectura-vision" href="#">Arquitectura &amp; Visión</a><a class="px-space-md py-space-xs rounded font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all" data-path="manual-operativo-seguridad" href="#">Manual Operativo &amp; Seguridad</a></nav><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs bg-surface-container-low px-space-md py-space-xs rounded border border-surface-container-high"><span class="material-symbols-outlined text-secondary text-[18px]">timer</span><span class="font-telemetry-data text-telemetry-data text-secondary">15:00 REMAINING</span></div><button class="w-9 h-9 flex items-center justify-center rounded bg-surface-container text-on-surface-variant hover:text-secondary hover:bg-surface-container-high transition-colors" title="Pantalla Completa" type="button"><span class="material-symbols-outlined text-[20px]">fullscreen</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-20 bg-background flex-1"><div class="flex flex-col w-full">
+<!-- Progress Header Micro-Bar -->
+<div class="w-full bg-surface-container-lowest h-1.5 sticky top-20 z-40 overflow-hidden">
+<div class="h-full bg-primary transition-all duration-300 shadow-[0_0_12px_#ffc174]" id="slide-progress" style="width: 25%;"></div>
+</div>
+<!-- Deck Layout Grid -->
+<div class="w-full px-margin py-space-md flex flex-col gap-space-lg">
+<!-- Top Action & Presenter Pill Header -->
+<div class="flex flex-wrap items-center justify-between gap-space-md bg-surface-container-low px-space-md py-space-sm rounded-xl shadow-md">
+<div class="flex items-center gap-space-md flex-wrap">
+<div class="flex items-center gap-space-xs bg-surface-container px-space-sm py-space-xs rounded">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">BLOQUE ACTIVO:</span>
+<span class="font-telemetry-data text-telemetry-data text-primary uppercase font-bold" id="block-indicator">BLOQUE 1 / 4</span>
+</div>
+<div class="flex items-center gap-space-xs bg-surface-container px-space-sm py-space-xs rounded">
+<span class="w-2 h-2 rounded-full bg-secondary shadow-[0_0_6px_#4cd7f6]"></span>
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">DISERTANTE:</span>
+<span class="font-code-md text-code-md text-secondary font-semibold" id="speaker-indicator">Alfredo Becerra</span>
+</div>
+<div class="hidden sm:flex items-center gap-space-xs bg-surface-container px-space-sm py-space-xs rounded">
+<span class="material-symbols-outlined text-[16px] text-tertiary">verified_user</span>
+<span class="font-label-caps text-label-caps text-tertiary uppercase">RÉGIMEN DEFENSIVO: NOMINAL</span>
+</div>
+</div>
+<!-- Quick Switcher & Controls -->
+<div class="flex items-center gap-space-xs">
+<button class="flex items-center gap-space-xs px-space-sm py-space-xs rounded bg-surface-container-high text-on-surface hover:text-primary transition-colors text-label-caps font-label-caps uppercase" id="toggle-speaker-notes" type="button">
+<span class="material-symbols-outlined text-[16px]">record_voice_over</span>
+<span class="hidden md:inline">Guión Disertante</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-sm py-space-xs rounded bg-surface-container-high text-on-surface hover:text-secondary transition-colors text-label-caps font-label-caps uppercase" id="toggle-drawer" type="button">
+<span class="material-symbols-outlined text-[16px]">view_carousel</span>
+<span class="hidden md:inline">Índice Bloques</span>
+</button>
+<a class="flex items-center gap-space-xs px-space-md py-space-xs rounded bg-primary-container text-on-primary-container font-headline-sm text-label-caps font-bold shadow-[0_0_12px_rgba(245,158,11,0.3)] hover:brightness-110 transition-all uppercase" href="dashboard-hmi.html">
+<span class="material-symbols-outlined text-[18px]">terminal</span>
+<span>Saltar a HMI en Vivo</span>
+</a>
+</div>
+</div>
+<!-- Main Deck Container: Slide Surface & Dynamic Content -->
+<div class="relative w-full min-h-[580px] bg-surface-container-low rounded-xl shadow-xl overflow-hidden flex flex-col justify-between p-space-lg">
+<!-- Slide Content Viewport (JS Swapped) -->
+<div class="w-full flex-1" id="slides-wrapper">
+<!-- ==================== SLIDE 1 ==================== -->
+<div class="slide-pane flex flex-col gap-space-lg w-full transition-opacity duration-300" id="slide-1">
+<!-- Slide Meta Header -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-space-sm">
+<div>
+<span class="text-primary font-label-caps text-label-caps uppercase tracking-wider block">BLOQUE 1 · VISIÓN GENERAL DEL SISTEMA &amp; PIEZAS</span>
+<h1 class="text-on-surface font-headline-lg text-headline-lg font-bold tracking-tight">Pick &amp; Place Guiado por Visión: UR5 + Gripper de 4 Servos</h1>
+</div>
+<div class="flex items-center gap-space-xs bg-surface-container px-space-sm py-space-xs rounded self-start md:self-auto">
+<span class="material-symbols-outlined text-[16px] text-primary">person</span>
+<span class="font-telemetry-data text-telemetry-data text-on-surface">Alfredo Becerra</span>
+</div>
+</div>
+<!-- Hero Bento Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-md">
+<!-- Left Main: Interactive Cycle Flow Diagram -->
+<div class="lg:col-span-7 bg-surface-container p-space-md rounded-xl flex flex-col justify-between shadow-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-secondary uppercase tracking-wider">// FLUJO DETERMINISTA DEL CICLO</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant">UNA PIEZA POR CICLO · POSICIÓN VARIABLE</span>
+</div>
+<!-- Cycle Step Flow -->
+<div class="grid grid-cols-2 sm:grid-cols-3 gap-space-xs my-space-md">
+<div class="bg-surface-container-high p-space-sm rounded flex flex-col justify-between relative overflow-hidden group">
+<span class="font-label-caps text-label-caps text-primary">01 / CAPTURA</span>
+<p class="font-body-sm text-body-sm text-on-surface font-semibold mt-space-xs">Cámara USB cenital</p>
+<p class="font-label-caps text-label-caps text-on-surface-variant">Frame 1280×720 @ 30 FPS</p>
+<div class="w-1.5 h-full bg-secondary absolute top-0 left-0"></div>
+</div>
+<div class="bg-surface-container-high p-space-sm rounded flex flex-col justify-between relative overflow-hidden group">
+<span class="font-label-caps text-label-caps text-primary">02 / DETECCIÓN</span>
+<p class="font-body-sm text-body-sm text-on-surface font-semibold mt-space-xs">Segmentación HSV</p>
+<p class="font-label-caps text-label-caps text-on-surface-variant">Filtrado morfológico</p>
+<div class="w-1.5 h-full bg-secondary absolute top-0 left-0"></div>
+</div>
+<div class="bg-surface-container-high p-space-sm rounded flex flex-col justify-between relative overflow-hidden group">
+<span class="font-label-caps text-label-caps text-primary">03 / HOMOGRAFÍA</span>
+<p class="font-body-sm text-body-sm text-on-surface font-semibold mt-space-xs">Transformación H</p>
+<p class="font-label-caps text-label-caps text-on-surface-variant">Píxel (u,v) → Base UR5 (X,Y)</p>
+<div class="w-1.5 h-full bg-primary absolute top-0 left-0"></div>
+</div>
+<div class="bg-surface-container-high p-space-sm rounded flex flex-col justify-between relative overflow-hidden group">
+<span class="font-label-caps text-label-caps text-primary">04 / KINEMÁTICA</span>
+<p class="font-body-sm text-body-sm text-on-surface font-semibold mt-space-xs">Aproximación Z</p>
+<p class="font-label-caps text-label-caps text-on-surface-variant">movej + movel blend 50mm</p>
+<div class="w-1.5 h-full bg-primary absolute top-0 left-0"></div>
+</div>
+<div class="bg-surface-container-high p-space-sm rounded flex flex-col justify-between relative overflow-hidden group">
+<span class="font-label-caps text-label-caps text-primary">05 / AGARRE</span>
+<p class="font-body-sm text-body-sm text-on-surface font-semibold mt-space-xs">4 Servos TPU</p>
+<p class="font-label-caps text-label-caps text-on-surface-variant">Cierre adaptativo 1.2Nm</p>
+<div class="w-1.5 h-full bg-tertiary absolute top-0 left-0"></div>
+</div>
+<div class="bg-surface-container-high p-space-sm rounded flex flex-col justify-between relative overflow-hidden group">
+<span class="font-label-caps text-label-caps text-primary">06 / DEPÓSITO</span>
+<p class="font-body-sm text-body-sm text-on-surface font-semibold mt-space-xs">Drop &amp; Reset</p>
+<p class="font-label-caps text-label-caps text-on-surface-variant">Contenedor B / Home Pos</p>
+<div class="w-1.5 h-full bg-tertiary absolute top-0 left-0"></div>
+</div>
+</div>
+<!-- Bottom live pill data -->
+<div class="flex items-center justify-between bg-surface-container-lowest px-space-sm py-space-xs rounded">
+<span class="font-code-md text-code-md text-on-surface-variant">El ciclo se repite con la pieza en <strong class="text-tertiary">cualquier posición permitida</strong></span>
+<span class="font-telemetry-data text-telemetry-data text-secondary">SYNC REAL-TIME</span>
+</div>
+</div>
+<!-- Right: Diseños de Piezas Propias & FDM Specs -->
+<div class="lg:col-span-5 flex flex-col gap-space-md">
+<div class="bg-surface-container p-space-md rounded-xl shadow-sm flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-primary uppercase">// PIEZAS IMPRESAS 3D DISEÑO PROPIO</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant">Impresión FDM · Puntas TPU</span>
+</div>
+<div class="h-40 rounded-lg overflow-hidden relative">
+<img class="w-full h-full object-cover" alt="Gripper de 4 servos con puntas flexibles TPU montado en la muñeca del UR5, con Arduino UNO integrado a bordo." src="assets/foto-gripper.jpg">
+<div class="absolute bottom-2 left-2 bg-surface-container-lowest/80 backdrop-blur px-space-xs rounded text-label-caps font-label-caps text-secondary">
+                    PUNTERAS TPU CON ALTO COEFICIENTE DE FRICCIÓN
+                  </div>
+</div>
+<ul class="flex flex-col gap-space-xs text-body-sm font-body-sm text-on-surface">
+<li class="flex items-center justify-between py-space-xs px-space-sm bg-surface-container-high rounded">
+<span class="text-on-surface-variant">Geometría de Puntas:</span>
+<span class="font-code-md text-code-md text-primary">TPU Flexible (efecto Fin Ray)</span>
+</li>
+<li class="flex items-center justify-between py-space-xs px-space-sm bg-surface-container-high rounded">
+<span class="text-on-surface-variant">Gama Cromática HSV:</span>
+<span class="font-code-md text-code-md text-secondary">A Roja · B Azul (C Verde · D Violeta)</span>
+</li>
+<li class="flex items-center justify-between py-space-xs px-space-sm bg-surface-container-high rounded">
+<span class="text-on-surface-variant">Estabilidad Mecánica:</span>
+<span class="font-code-md text-code-md text-tertiary">Altura uniforme · base estable</span>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<!-- ==================== SLIDE 2 ==================== -->
+<div class="slide-pane hidden flex flex-col gap-space-lg w-full transition-opacity duration-300" id="slide-2">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-space-sm">
+<div>
+<span class="text-primary font-label-caps text-label-caps uppercase tracking-wider block">BLOQUE 2 · SOFTWARE, OPENCV &amp; HOMOGRAFÍA PÍXEL-ROBOT</span>
+<h2 class="text-on-surface font-headline-lg text-headline-lg font-bold tracking-tight">Arquitectura Modular &amp; Transformación de Coordenadas</h2>
+</div>
+<div class="flex items-center gap-space-xs bg-surface-container px-space-sm py-space-xs rounded self-start md:self-auto">
+<span class="material-symbols-outlined text-[16px] text-secondary">person</span>
+<span class="font-telemetry-data text-telemetry-data text-on-surface">Claudio Flores</span>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-md">
+<!-- OpenCV Pipeline Visualizer Card -->
+<div class="lg:col-span-6 bg-surface-container p-space-md rounded-xl shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-space-sm">
+<span class="font-label-caps text-label-caps text-secondary uppercase">// PIPELINE OPENCV MODULAR</span>
+<span class="font-telemetry-data text-telemetry-data text-tertiary">OPENCV · TIEMPO REAL</span>
+</div>
+<!-- 5-stage graphic timeline -->
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between p-space-xs bg-surface-container-high rounded">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[18px]">photo_camera</span>
+<span class="font-code-md text-code-md text-on-surface">1. Captura con Buffer Cero</span>
+</div>
+<span class="font-label-caps text-label-caps text-on-surface-variant">cv2.VideoCapture()</span>
+</div>
+<div class="flex items-center justify-between p-space-xs bg-surface-container-high rounded">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[18px]">crop</span>
+<span class="font-code-md text-code-md text-on-surface">2. ROI Dinámico &amp; Pre-filtro</span>
+</div>
+<span class="font-label-caps text-label-caps text-on-surface-variant">Mesa de trabajo [y1:y2, x1:x2]</span>
+</div>
+<div class="flex items-center justify-between p-space-xs bg-surface-container-high rounded">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[18px]">palette</span>
+<span class="font-code-md text-code-md text-on-surface">3. Máscara HSV &amp; Morfología</span>
+</div>
+<span class="font-label-caps text-label-caps text-primary font-bold">H: [0–15]+[165–180] A · H: [100–135] B</span>
+</div>
+<div class="flex items-center justify-between p-space-xs bg-surface-container-high rounded">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[18px]">adjust</span>
+<span class="font-code-md text-code-md text-on-surface">4. Contornos &amp; Momentos</span>
+</div>
+<span class="font-label-caps text-label-caps text-on-surface-variant">cv2.moments(M) -&gt; (cX, cY)</span>
+</div>
+<div class="flex items-center justify-between p-space-xs bg-surface-container-high rounded">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-tertiary text-[18px]">transform</span>
+<span class="font-code-md text-code-md text-on-surface">5. Proyección Homográfica H</span>
+</div>
+<span class="font-label-caps text-label-caps text-tertiary font-bold">cv2.perspectiveTransform()</span>
+</div>
+</div>
+</div>
+<div class="mt-space-sm p-space-sm bg-surface-container-lowest rounded">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase block mb-space-xs">// FRAGMENTO HOMOGRAFÍA</span>
+<code class="font-code-md text-code-md text-secondary block whitespace-pre">pts_src = np.array([[u1,v1], [u2,v2], [u3,v3], [u4,v4]])
+H, _ = cv2.findHomography(pts_src, pts_robot_ur5)
+pt_ur5 = cv2.perspectiveTransform(pt_pixel, H)</code>
+</div>
+</div>
+<!-- Right: 4-Point Homography & Calibration Visual -->
+<div class="lg:col-span-6 flex flex-col gap-space-md">
+<div class="bg-surface-container p-space-md rounded-xl shadow-sm flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-primary uppercase">// CALIBRACIÓN ASISTIDA: 4 PUNTOS</span>
+<span class="font-label-caps text-label-caps text-tertiary">PUNTOS_PX ↔ PUNTOS_UR5</span>
+</div>
+<!-- Matrix Map Representation -->
+<div class="bg-surface-container-lowest p-space-md rounded-lg flex flex-col gap-space-sm relative overflow-hidden">
+<div class="flex justify-between items-center text-label-caps font-label-caps text-on-surface-variant">
+<span>P1 px(159, 35) → UR5 (0.1, 0.4)</span>
+<span>P2 px(977, 19) → UR5 (0.5, 0.4)</span>
+</div>
+<div class="w-full h-32 border-dashed border-2 border-surface-container-highest rounded flex items-center justify-center relative">
+<!-- SVG Homography Grid Lines -->
+<svg class="w-full h-full text-secondary/30" xmlns="http://www.w3.org/2000/svg">
+<line stroke="currentColor" stroke-width="2" x1="15%" x2="85%" y1="20%" y2="25%"></line>
+<line stroke="currentColor" stroke-width="2" x1="85%" x2="75%" y1="25%" y2="85%"></line>
+<line stroke="currentColor" stroke-width="2" x1="75%" x2="25%" y1="85%" y2="80%"></line>
+<line stroke="currentColor" stroke-width="2" x1="25%" x2="15%" y1="80%" y2="20%"></line>
+<circle cx="15%" cy="20%" fill="#4cd7f6" r="5"></circle>
+<circle cx="85%" cy="25%" fill="#4cd7f6" r="5"></circle>
+<circle cx="75%" cy="85%" fill="#4cd7f6" r="5"></circle>
+<circle cx="25%" cy="80%" fill="#4cd7f6" r="5"></circle>
+<circle cx="50%" cy="50%" fill="#f59e0b" r="6"></circle>
+</svg>
+<div class="absolute text-center">
+<span class="font-code-md text-code-md text-primary font-bold">Target Detectado (cX, cY)</span>
+<span class="block font-label-caps text-label-caps text-on-surface-variant">Salida en base UR5: X, Y en metros</span>
+</div>
+</div>
+<div class="flex justify-between items-center text-label-caps font-label-caps text-on-surface-variant">
+<span>P3 px(91, 546) → UR5 (0.5, 0.0)</span>
+<span>P4 px(1043, 535) → UR5 (0.1, 0.0)</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-space-xs text-body-sm font-body-sm">
+<div class="bg-surface-container-high p-space-xs rounded">
+<span class="text-on-surface-variant block font-label-caps text-label-caps">ESTABILIZACIÓN TEMPORAL</span>
+<span class="text-on-surface font-code-md text-code-md">Media móvil (n=5 frames)</span>
+</div>
+<div class="bg-surface-container-high p-space-xs rounded">
+<span class="text-on-surface-variant block font-label-caps text-label-caps">LÍMITES MESA · ZONA DE TRABAJO</span>
+<span class="text-tertiary font-code-md text-code-md">Clamping X 0.05–0.55 · Y −0.05–0.45</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- ==================== SLIDE 3 ==================== -->
+<div class="slide-pane hidden flex flex-col gap-space-lg w-full transition-opacity duration-300" id="slide-3">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-space-sm">
+<div>
+<span class="text-primary font-label-caps text-label-caps uppercase tracking-wider block">BLOQUE 3 · PROGRAMACIÓN UR5, GRIPPER &amp; SEGURIDAD INDUSTRIAL</span>
+<h2 class="text-on-surface font-headline-lg text-headline-lg font-bold tracking-tight">Control Cinemático RTDE, Gripper Arduino &amp; E-Stop Crítico</h2>
+</div>
+<div class="flex items-center gap-space-xs bg-surface-container px-space-sm py-space-xs rounded self-start md:self-auto">
+<span class="material-symbols-outlined text-[16px] text-tertiary">person</span>
+<span class="font-telemetry-data text-telemetry-data text-on-surface">Lucio Vita</span>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-md">
+<!-- Left: UR5 RTDE State Machine & Gripper COM -->
+<div class="lg:col-span-7 flex flex-col gap-space-md">
+<div class="bg-surface-container p-space-md rounded-xl shadow-sm flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-secondary uppercase">// MÁQUINA DE ESTADOS FINITA (UR_RTDE)</span>
+<span class="font-label-caps text-label-caps text-primary">URsim → UR5 REAL · PUERTO 30004</span>
+</div>
+<div class="grid grid-cols-3 gap-space-xs text-center font-code-md text-code-md">
+<div class="bg-surface-container-high p-space-sm rounded">
+<span class="text-primary font-bold block">1. APROXIMAR</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant">HOME → punto sobre la pieza (z_seguro 0.25 m)</span>
+</div>
+<div class="bg-surface-container-high p-space-sm rounded">
+<span class="text-secondary font-bold block">2. AGARRAR</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant">descender a z_pick → cierre de gripper → elevar</span>
+</div>
+<div class="bg-surface-container-high p-space-sm rounded">
+<span class="text-tertiary font-bold block">3. DEPOSITAR</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant">transportar al destino según categoría → HOME</span>
+</div>
+</div>
+<!-- Gripper Arduino Watchdog Details -->
+<div class="bg-surface-container-lowest p-space-sm rounded-lg flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-on-surface uppercase">// COMUNICACIÓN SERIAL GRIPPER (COM3 @ 115200 BAUD)</span>
+<span class="font-label-caps text-label-caps text-error">WATCHDOG: 15s AUTO-ABORT</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+                    4 Servos sincronizados mecánicamente con perfiles de velocidad por pulsos PWM (`Servo.h`). Si no recibe keepalive cada 500ms o un ciclo excede 15s, se dispara la rutina segura de desenergización y apertura.
+                  </p>
+</div>
+</div>
+<!-- Real vs Simulator Benchmark -->
+<div class="grid grid-cols-2 gap-space-sm">
+<div class="bg-surface-container p-space-sm rounded-xl">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">URSIM VS BRAZO FÍSICO</span>
+<p class="font-headline-sm text-headline-sm font-bold text-on-surface mt-space-xs">0 Diferencias Lógicas</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Mismo script URScript / RTDE socket 30004.</p>
+</div>
+<div class="bg-surface-container p-space-sm rounded-xl">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">REPETIBILIDAD (FICHA TÉCNICA UR5)</span>
+<p class="font-headline-sm text-headline-sm font-bold text-tertiary mt-space-xs">± 0.1 mm UR5</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Spec del fabricante; la precisión real depende de la calibración de homografía.</p>
+</div>
+</div>
+</div>
+<!-- Right: Safety Directives & Teach Pendant Strict Rule -->
+<div class="lg:col-span-5 bg-surface-container p-space-md rounded-xl shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-space-sm">
+<span class="font-label-caps text-label-caps text-error uppercase">// FILOSOFÍA DE SEGURIDAD CRÍTICA</span>
+<span class="material-symbols-outlined text-error text-[20px]">warning</span>
+</div>
+<div class="bg-error-container/20 p-space-sm rounded-lg mb-space-sm">
+<h3 class="text-error font-headline-sm text-headline-sm font-bold flex items-center gap-space-xs">
+<span class="material-symbols-outlined">e911_emergency</span>
+                    E-Stop Estricto por Teach Pendant
+                  </h3>
+<p class="font-body-sm text-body-sm text-on-surface mt-space-xs leading-relaxed">
+<strong>Por normativa industrial y seguridad de célula:</strong> Queda terminantemente prohibido delegar el E-Stop a un botón de Arduino o software no certificado. La parada de emergencia reside exclusivamente en el circuito cableado redundante (Categoría 3, PLd) del Teach Pendant del UR5.
+                  </p>
+</div>
+<ul class="flex flex-col gap-space-xs font-body-sm text-body-sm text-on-surface">
+<li class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-tertiary text-[18px]">check_circle</span>
+<span>Parada por software del dashboard, con reinicio explícito del ciclo.</span>
+</li>
+<li class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-tertiary text-[18px]">check_circle</span>
+<span>La visión rechaza coordenadas fuera de la zona calibrada (X 0.05–0.55 · Y −0.05–0.45 m): ningún movimiento fuera de límites.</span>
+</li>
+<li class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-tertiary text-[18px]">check_circle</span>
+<span>Operación sin personas dentro del espacio de movimiento del robot.</span>
+</li>
+</ul>
+</div>
+<!-- HMI Compliance Requirement Badge -->
+<div class="bg-surface-container-lowest p-space-sm rounded mt-space-md">
+<span class="font-label-caps text-label-caps text-primary uppercase font-bold block mb-space-xs">CUMPLIMIENTO DE REQUISITOS HMI</span>
+<span class="font-code-md text-code-md text-on-surface-variant">Dashboard Reactivo con feeds independientes de cámara, sliders HSV interactivos, estado de RTDE y conmutación manual.</span>
+</div>
+</div>
+</div>
+</div>
+<!-- ==================== SLIDE 4 ==================== -->
+<div class="slide-pane hidden flex flex-col gap-space-lg w-full transition-opacity duration-300" id="slide-4">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-space-sm">
+<div>
+<span class="text-primary font-label-caps text-label-caps uppercase tracking-wider block">BLOQUE 4 · RESULTADOS DE 10 PRUEBAS, RESOLUCIÓN DE PROBLEMAS &amp; CONCLUSIONES</span>
+<h2 class="text-on-surface font-headline-lg text-headline-lg font-bold tracking-tight">Resultados de las 10 Pruebas del Enunciado &amp; Conclusiones</h2>
+</div>
+<div class="flex items-center gap-space-xs bg-surface-container px-space-sm py-space-xs rounded self-start md:self-auto">
+<span class="material-symbols-outlined text-[16px] text-primary">person</span>
+<span class="font-telemetry-data text-telemetry-data text-on-surface">Alfredo Becerra</span>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-md">
+<!-- Left: 10 Tests Scoreboard -->
+<div class="lg:col-span-6 bg-surface-container p-space-md rounded-xl shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-space-sm">
+<span class="font-label-caps text-label-caps text-tertiary uppercase">// PROTOCOLO DE PRUEBAS (10 DEL ENUNCIADO)</span>
+<span class="font-telemetry-data text-telemetry-data text-tertiary font-bold">VER EN DEMO</span>
+</div>
+<!-- 10 Item Compact Indicator Grid -->
+<div class="grid grid-cols-5 gap-space-xs mb-space-md">
+<div class="bg-surface-container-high p-space-xs rounded text-center">
+<span class="font-label-caps text-label-caps text-on-surface-variant">TEST 01</span>
+<span class="font-code-md text-code-md text-tertiary block font-bold">Detección</span>
+</div>
+<div class="bg-surface-container-high p-space-xs rounded text-center">
+<span class="font-label-caps text-label-caps text-on-surface-variant">TEST 02</span>
+<span class="font-code-md text-code-md text-tertiary block font-bold">Clasificación</span>
+</div>
+<div class="bg-surface-container-high p-space-xs rounded text-center">
+<span class="font-label-caps text-label-caps text-on-surface-variant">TEST 03</span>
+<span class="font-code-md text-code-md text-tertiary block font-bold">Localización</span>
+</div>
+<div class="bg-surface-container-high p-space-xs rounded text-center">
+<span class="font-label-caps text-label-caps text-on-surface-variant">TEST 04</span>
+<span class="font-code-md text-code-md text-tertiary block font-bold">Pos. variable</span>
+</div>
+<div class="bg-surface-container-high p-space-xs rounded text-center">
+<span class="font-label-caps text-label-caps text-on-surface-variant">TEST 05</span>
+<span class="font-code-md text-code-md text-tertiary block font-bold">Gripper</span>
+</div>
+<div class="bg-surface-container-high p-space-xs rounded text-center">
+<span class="font-label-caps text-label-caps text-on-surface-variant">TEST 06</span>
+<span class="font-code-md text-code-md text-tertiary block font-bold">Manipulación</span>
+</div>
+<div class="bg-surface-container-high p-space-xs rounded text-center">
+<span class="font-label-caps text-label-caps text-on-surface-variant">TEST 07</span>
+<span class="font-code-md text-code-md text-tertiary block font-bold">Depósito</span>
+</div>
+<div class="bg-surface-container-high p-space-xs rounded text-center">
+<span class="font-label-caps text-label-caps text-on-surface-variant">TEST 08</span>
+<span class="font-code-md text-code-md text-tertiary block font-bold">Integración</span>
+</div>
+<div class="bg-surface-container-high p-space-xs rounded text-center">
+<span class="font-label-caps text-label-caps text-on-surface-variant">TEST 09</span>
+<span class="font-code-md text-code-md text-tertiary block font-bold">Nuevo ciclo</span>
+</div>
+<div class="bg-surface-container-high p-space-xs rounded text-center">
+<span class="font-label-caps text-label-caps text-on-surface-variant">TEST 10</span>
+<span class="font-code-md text-code-md text-tertiary block font-bold">Sin pieza</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-space-sm rounded">
+<span class="font-label-caps text-label-caps text-on-surface-variant block mb-space-xs">REGISTRO DE PRODUCCIÓN (PANEL DEL DASHBOARD)</span>
+<div class="flex justify-between items-center font-telemetry-data text-telemetry-data text-on-surface">
+<span>Ciclos OK: <strong>ver demo</strong></span>
+<span>Errores: <strong>ver demo</strong></span>
+<span class="text-tertiary font-bold">Piezas por categoría</span>
+</div>
+</div>
+</div>
+<!-- Ready for Live Demo Call to Action -->
+<div class="mt-space-md p-space-md bg-primary-container/20 rounded-xl flex items-center justify-between">
+<div>
+<h4 class="font-headline-sm text-headline-sm font-bold text-primary">¿Listos para la Prueba en Vivo?</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Mesa calibrada, cámara lista y UR5 en modo remoto.</p>
+</div>
+<a class="px-space-md py-space-sm bg-primary text-on-primary rounded font-label-caps text-label-caps uppercase font-bold hover:brightness-110 shadow-md" href="dashboard-hmi.html">
+                  Iniciar Celda
+                </a>
+</div>
+</div>
+<!-- Right: Real Problems Solved on Floor -->
+<div class="lg:col-span-6 flex flex-col gap-space-md">
+<div class="bg-surface-container p-space-md rounded-xl shadow-sm flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-secondary uppercase">// RETOS TÉCNICOS RESUELTOS EN PLANTA</span>
+<span class="material-symbols-outlined text-secondary text-[20px]">build</span>
+</div>
+<div class="flex flex-col gap-space-xs">
+<div class="bg-surface-container-high p-space-sm rounded">
+<span class="font-headline-sm text-code-lg font-bold text-primary block">1. Coordenadas desplazadas tras mover la ROI</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-space-xs">
+                      Al reencuadrar la ROI, el centroide quedaba en coordenadas relativas al recorte y el robot iba a un lugar equivocado. Solución: recalibración de homografía y conversión ROI-relativa automática en el asistente de calibración.
+                    </p>
+</div>
+<div class="bg-surface-container-high p-space-sm rounded">
+<span class="font-headline-sm text-code-lg font-bold text-secondary block">2. Falsas detecciones del fondo de la mesa</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-space-xs">
+                      El pipeline detectaba manchas y reflejos fuera de la zona útil. Solución: recorte por ROI más umbral de área mínima/máxima y confianza mínima (0.7) antes de aceptar una detección.
+                    </p>
+</div>
+<div class="bg-surface-container-high p-space-sm rounded">
+<span class="font-headline-sm text-code-lg font-bold text-tertiary block">3. Cambios de luz del laboratorio</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-space-xs">
+                      Al cambiar la iluminación del aula, los rangos HSV dejaban de segmentar. Solución: recalibración asistida desde el dashboard, con máscara en vivo para verificar cada ajuste antes de guardarlo.
+                    </p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Speaker Notes Drawer (Toggled by default or via header button) -->
+<div class="hidden mt-space-md bg-surface-container p-space-md rounded-xl shadow-lg transition-all duration-200" id="speaker-drawer">
+<div class="flex items-center justify-between mb-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[18px]">record_voice_over</span>
+<span class="font-label-caps text-label-caps text-primary uppercase font-bold">Guión Disertante &amp; Evidencias a Mostrar</span>
+</div>
+<span class="font-telemetry-data text-telemetry-data text-on-surface-variant">Sincronizado con diapositiva</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+<div class="bg-surface-container-lowest p-space-sm rounded">
+<span class="font-label-caps text-label-caps text-secondary uppercase block mb-space-xs">// QUÉ DECIR:</span>
+<p class="font-body-sm text-body-sm text-on-surface leading-relaxed" id="speaker-text">
+              "La pregunta del desafío es: ¿puede un robot industrial encontrar una pieza, recogerla y clasificarla sin conocer previamente su posición exacta? Nuestra respuesta es sí, y acá está cómo."
+            </p>
+</div>
+<div class="bg-surface-container-lowest p-space-sm rounded">
+<span class="font-label-caps text-label-caps text-tertiary uppercase block mb-space-xs">// EVIDENCIA A MOSTRAR:</span>
+<p class="font-body-sm text-body-sm text-on-surface leading-relaxed" id="evidence-text">
+              Mostrar las piezas reales de ambas categorías, la foto del gripper con puntas TPU y el diagrama del ciclo: cámara → detección → homografía → UR5 → gripper → depósito.
+            </p>
+</div>
+</div>
+</div>
+</div>
+<!-- Presentation HUD Navigation Deck (Fixed/Floating at bottom) -->
+<div class="w-full flex flex-col sm:flex-row items-center justify-between gap-space-md bg-surface-container-low px-space-lg py-space-sm rounded-xl shadow-md">
+<!-- Left: Slide Index Counter -->
+<div class="flex items-center gap-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="font-headline-sm text-headline-sm text-primary font-bold" id="current-slide-num">01</span>
+<span class="font-headline-sm text-headline-sm text-on-surface-variant">/ 04</span>
+</div>
+<div class="h-6 w-px bg-surface-container-highest"></div>
+<div class="flex items-center gap-space-xs">
+<button class="flex items-center gap-space-xs text-on-surface-variant hover:text-secondary font-telemetry-data text-telemetry-data" id="btn-timer-toggle" type="button">
+<span class="material-symbols-outlined text-[16px]" id="timer-icon">play_arrow</span>
+<span id="speaker-timer-deck">00:00</span>
+</button>
+<button class="text-on-surface-variant hover:text-error text-label-caps font-label-caps" id="btn-timer-reset" title="Reiniciar Cronómetro" type="button">
+<span class="material-symbols-outlined text-[16px]">restart_alt</span>
+</button>
+</div>
+</div>
+<!-- Center: Tactile Navigation Arrow Controls -->
+<div class="flex items-center gap-space-xs">
+<button class="w-10 h-10 flex items-center justify-center rounded bg-surface-container text-on-surface hover:bg-surface-container-high hover:text-primary transition-all shadow-sm" id="btn-prev" type="button">
+<span class="material-symbols-outlined text-[20px]">arrow_back</span>
+</button>
+<div class="flex items-center gap-space-xs px-space-xs">
+<button class="slide-dot w-3 h-3 rounded-full bg-primary shadow-[0_0_8px_#ffc174] transition-all" data-slide="1"></button>
+<button class="slide-dot w-3 h-3 rounded-full bg-surface-container-highest transition-all" data-slide="2"></button>
+<button class="slide-dot w-3 h-3 rounded-full bg-surface-container-highest transition-all" data-slide="3"></button>
+<button class="slide-dot w-3 h-3 rounded-full bg-surface-container-highest transition-all" data-slide="4"></button>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded bg-surface-container text-on-surface hover:bg-surface-container-high hover:text-primary transition-all shadow-sm" id="btn-next" type="button">
+<span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+</button>
+</div>
+<!-- Right: Direct Link & Key Nav Tip -->
+<div class="hidden sm:flex items-center gap-space-sm">
+<span class="font-label-caps text-label-caps text-on-surface-variant">NAVEGACIÓN: ← / → EN TECLADO</span>
+<button class="w-8 h-8 flex items-center justify-center rounded bg-surface-container text-on-surface-variant hover:text-secondary" id="btn-fullscreen-deck" type="button">
+<span class="material-symbols-outlined text-[18px]">fit_screen</span>
+</button>
+</div>
+</div>
+<!-- Quick Slide Drawer (Modal Overlay) -->
+<div class="fixed inset-0 z-50 bg-background/80 backdrop-blur-md hidden flex items-center justify-center p-space-md" id="drawer-menu">
+<div class="w-full max-w-2xl bg-surface-container-low p-space-lg rounded-xl shadow-2xl flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface">Índice de Bloques de Defensa</span>
+<button class="w-8 h-8 rounded flex items-center justify-center bg-surface-container text-on-surface-variant hover:text-error" id="btn-close-drawer" type="button">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<div class="flex flex-col gap-space-xs">
+<div class="drawer-item p-space-sm bg-surface-container rounded cursor-pointer hover:bg-surface-container-high flex justify-between items-center" data-target="1">
+<div>
+<span class="font-label-caps text-label-caps text-primary uppercase block">BLOQUE 1</span>
+<p class="font-code-lg text-code-lg text-on-surface font-semibold">Portada, Ciclo Determinista &amp; Piezas Propias</p>
+</div>
+<span class="font-telemetry-data text-telemetry-data text-secondary">Alfredo Becerra</span>
+</div>
+<div class="drawer-item p-space-sm bg-surface-container rounded cursor-pointer hover:bg-surface-container-high flex justify-between items-center" data-target="2">
+<div>
+<span class="font-label-caps text-label-caps text-secondary uppercase block">BLOQUE 2</span>
+<p class="font-code-lg text-code-lg text-on-surface font-semibold">Software OpenCV, Homografía Píxel-Robot &amp; Calibración</p>
+</div>
+<span class="font-telemetry-data text-telemetry-data text-secondary">Claudio Flores</span>
+</div>
+<div class="drawer-item p-space-sm bg-surface-container rounded cursor-pointer hover:bg-surface-container-high flex justify-between items-center" data-target="3">
+<div>
+<span class="font-label-caps text-label-caps text-tertiary uppercase block">BLOQUE 3</span>
+<p class="font-code-lg text-code-lg text-on-surface font-semibold">Programación UR5 RTDE, Gripper Arduino &amp; E-Stop Pendant</p>
+</div>
+<span class="font-telemetry-data text-telemetry-data text-secondary">Lucio Vita</span>
+</div>
+<div class="drawer-item p-space-sm bg-surface-container rounded cursor-pointer hover:bg-surface-container-high flex justify-between items-center" data-target="4">
+<div>
+<span class="font-label-caps text-label-caps text-primary uppercase block">BLOQUE 4</span>
+<p class="font-code-lg text-code-lg text-on-surface font-semibold">Resultados (10/10), Retos Reales Resueltos &amp; Demo en Vivo</p>
+</div>
+<span class="font-telemetry-data text-telemetry-data text-secondary">Alfredo Becerra</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+  (function initPresentationDeck() {
+    let currentSlide = 1;
+    const totalSlides = 4;
+
+    const slides = [
+      document.getElementById('slide-1'),
+      document.getElementById('slide-2'),
+      document.getElementById('slide-3'),
+      document.getElementById('slide-4')
+    ];
+
+    const slideData = [
+      {
+        block: 'BLOQUE 1 / 4',
+        speaker: 'Alfredo Becerra',
+        progress: '25%',
+        num: '01',
+        say: '"La pregunta del desafío es: ¿puede un robot industrial encontrar una pieza, recogerla y clasificarla sin conocer previamente su posición exacta? Nuestra respuesta es sí, y acá está cómo."',
+        evidence: 'Mostrar las piezas reales de ambas categorías, el foto del gripper con puntas TPU y el diagrama del ciclo: cámara → detección → homografía → UR5 → gripper → depósito.'
+      },
+      {
+        block: 'BLOQUE 2 / 4',
+        speaker: 'Claudio Flores',
+        progress: '50%',
+        num: '02',
+        say: '"Elegimos HSV clásico en vez de una red neuronal porque el problema es de color plano y controlado: es determinístico, no requiere dataset, y corre en tiempo real en la PC del laboratorio. La consigna lo permite explícitamente."',
+        evidence: 'Mostrar vision/config.json (rangos HSV y puntos_px ↔ puntos_ur5), la máscara en vivo del panel Colores y las 4 marcas de calibración sobre el video.'
+      },
+      {
+        block: 'BLOQUE 3 / 4',
+        speaker: 'Lucio Vita',
+        progress: '75%',
+        num: '03',
+        say: '"El firmware tiene watchdog: si la PC se cuelga con el gripper cerrado, se libera solo. Y las puntas TPU se adaptan a la pieza sin deformarla."',
+        evidence: 'Mostrar la foto del gripper montado en la muñeca del UR5, el firmware (COM3 @ 115200, watchdog de 15 s) y la máquina de estados del ciclo.'
+      },
+      {
+        block: 'BLOQUE 4 / 4',
+        speaker: 'Alfredo Becerra',
+        progress: '100%',
+        num: '04',
+        say: '"Acá está la evidencia: la prueba más importante para nosotros fue \u0027posición variable\u0027 y \u0027ausencia de pieza\u0027 — el sistema recoge en cualquier posición permitida y no se mueve cuando no hay pieza verificada."',
+        evidence: 'Mostrar la tabla de las 10 pruebas del enunciado, los contadores reales del panel Producción (ciclos OK, errores, por categoría) y activar el pase a la pestaña de HMI.'
+      }
+    ];
+
+    const elBlock = document.getElementById('block-indicator');
+    const elSpeaker = document.getElementById('speaker-indicator');
+    const elProgress = document.getElementById('slide-progress');
+    const elSlideNum = document.getElementById('current-slide-num');
+    const elSay = document.getElementById('speaker-text');
+    const elEvidence = document.getElementById('evidence-text');
+    const dots = document.querySelectorAll('.slide-dot');
+
+    function renderSlide(index) {
+      currentSlide = index;
+      const data = slideData[index - 1];
+
+      // Hide all slides
+      slides.forEach((sl, idx) => {
+        if (idx === index - 1) {
+          sl.classList.remove('hidden');
+          sl.classList.add('flex');
+        } else {
+          sl.classList.add('hidden');
+          sl.classList.remove('flex');
+        }
+      });
+
+      // Update Header & HUD text
+      elBlock.textContent = data.block;
+      elSpeaker.textContent = data.speaker;
+      elProgress.style.width = data.progress;
+      elSlideNum.textContent = data.num;
+      elSay.textContent = data.say;
+      elEvidence.textContent = data.evidence;
+
+      // Update dots
+      dots.forEach((dot, idx) => {
+        if (idx === index - 1) {
+          dot.className = 'slide-dot w-3 h-3 rounded-full bg-primary shadow-[0_0_8px_#ffc174] transition-all';
+        } else {
+          dot.className = 'slide-dot w-3 h-3 rounded-full bg-surface-container-highest transition-all';
+        }
+      });
+    }
+
+    // Button Prev / Next
+    document.getElementById('btn-prev').addEventListener('click', () => {
+      let target = currentSlide - 1;
+      if (target < 1) target = totalSlides;
+      renderSlide(target);
+    });
+
+    document.getElementById('btn-next').addEventListener('click', () => {
+      let target = currentSlide + 1;
+      if (target > totalSlides) target = 1;
+      renderSlide(target);
+    });
+
+    // Dot click
+    dots.forEach(d => {
+      d.addEventListener('click', (e) => {
+        const tgt = parseInt(e.target.dataset.slide, 10);
+        renderSlide(tgt);
+      });
+    });
+
+    // Keyboard Arrow Keys
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === 'Space') {
+        let target = currentSlide + 1;
+        if (target <= totalSlides) renderSlide(target);
+      } else if (e.key === 'ArrowLeft') {
+        let target = currentSlide - 1;
+        if (target >= 1) renderSlide(target);
+      }
+    });
+
+    // Speaker Drawer Toggle
+    const notesBtn = document.getElementById('toggle-speaker-notes');
+    const notesDrawer = document.getElementById('speaker-drawer');
+    notesBtn.addEventListener('click', () => {
+      notesDrawer.classList.toggle('hidden');
+    });
+
+    // Slide Index Drawer Menu
+    const drawerMenu = document.getElementById('drawer-menu');
+    document.getElementById('toggle-drawer').addEventListener('click', () => {
+      drawerMenu.classList.remove('hidden');
+    });
+    document.getElementById('btn-close-drawer').addEventListener('click', () => {
+      drawerMenu.classList.add('hidden');
+    });
+
+    document.querySelectorAll('.drawer-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        const target = parseInt(item.dataset.target, 10);
+        renderSlide(target);
+        drawerMenu.classList.add('hidden');
+      });
+    });
+
+    // Timer functionality
+    let timerSeconds = 0;
+    let timerInterval = null;
+    let timerRunning = false;
+    const timerDisplay = document.getElementById('speaker-timer-deck');
+    const timerToggleBtn = document.getElementById('btn-timer-toggle');
+    const timerIcon = document.getElementById('timer-icon');
+
+    function updateTimer() {
+      timerSeconds++;
+      const mins = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
+      const secs = (timerSeconds % 60).toString().padStart(2, '0');
+      timerDisplay.textContent = `${mins}:${secs}`;
+    }
+
+    timerToggleBtn.addEventListener('click', () => {
+      if (!timerRunning) {
+        timerInterval = setInterval(updateTimer, 1000);
+        timerRunning = true;
+        timerIcon.textContent = 'pause';
+      } else {
+        clearInterval(timerInterval);
+        timerRunning = false;
+        timerIcon.textContent = 'play_arrow';
+      }
+    });
+
+    document.getElementById('btn-timer-reset').addEventListener('click', () => {
+      clearInterval(timerInterval);
+      timerRunning = false;
+      timerSeconds = 0;
+      timerDisplay.textContent = '00:00';
+      timerIcon.textContent = 'play_arrow';
+    });
+
+    // Fullscreen Deck Button
+    document.getElementById('btn-fullscreen-deck').addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    });
+
+  })();
+</script></main><footer class="w-full bg-surface-container-lowest py-space-md border-t border-surface-container-high/40"><div class="w-full px-margin flex flex-col md:flex-row items-center justify-between gap-space-sm font-label-caps text-label-caps text-on-surface-variant"><span>UNIVERSIDAD PROVINCIAL DE OFICIOS · ROBÓTICA INDUSTRIAL &amp; VISIÓN POR COMPUTADORA</span><span>DEFENSA TÉCNICA: ALFREDO · CLAUDIO · LUCIO</span><span class="text-tertiary">SISTEMA DISCIPLINADO NOMINAL · 30 FPS</span></div></footer>
+
+</body></html>
