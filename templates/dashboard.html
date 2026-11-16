@@ -5,52 +5,119 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>UR5 · Monitoreo Remoto</title>
   <style>
+    /* Hallmark · genre: modern-minimal · macrostructure: Workbench (app HMI) · tone: utilitarian-industrial · anchor hue: 195 · theme: custom (phosphor-cyan on blue-black) */
+
     :root {
-      --bg: #10141c;
-      --panel: #1b2230;
-      --panel2: #232c3d;
-      --txt: #e6edf3;
-      --muted: #8b98a9;
-      --ok: #2ecc71;
-      --warn: #f1c40f;
-      --bad: #e74c3c;
-      --accent: #3498db;
+      /* color */
+      --color-paper:   oklch(16% 0.015 240);
+      --color-paper-2: oklch(21% 0.02 240);
+      --color-paper-3: oklch(26% 0.025 240);
+      --color-ink:     oklch(93% 0.01 240);
+      --color-ink-2:   oklch(68% 0.02 240);
+      --color-rule:    oklch(32% 0.02 240);
+      --color-accent:  oklch(82% 0.12 195);
+      --color-ok:      oklch(75% 0.17 150);
+      --color-warn:    oklch(82% 0.16 95);
+      --color-bad:     oklch(65% 0.19 25);
+      --color-focus:   oklch(82% 0.12 195);
+
+      /* type */
+      --font-mono: ui-monospace, "Cascadia Code", "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+      --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+      /* spacing (4-pt) */
+      --space-3xs: 0.25rem; --space-2xs: 0.5rem;  --space-xs: 0.75rem;
+      --space-sm:  1rem;    --space-md:  1.5rem;  --space-lg: 2rem;
+
+      /* text */
+      --text-xs: 0.6875rem; --text-sm: 0.75rem;  --text-md: 0.875rem;
+      --text-lg: 1.125rem;  --text-xl: 1.375rem; --text-2xl: 2rem;
+
+      /* motion */
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --dur-short: 220ms;
     }
+
     * { box-sizing: border-box; }
+
+    html, body { overflow-x: clip; }
+
     body {
-      margin: 0; background: var(--bg); color: var(--txt);
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      background: var(--color-paper);
+      color: var(--color-ink);
+      font-family: var(--font-sans);
+      font-size: var(--text-md);
+      line-height: 1.5;
     }
+
+    :focus-visible {
+      outline: 2px solid var(--color-focus);
+      outline-offset: 2px;
+    }
+
+    /* ------------------------------------------------------------ header */
     header {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 14px 20px; background: var(--panel); border-bottom: 1px solid #2c3648;
+      gap: var(--space-sm); flex-wrap: wrap;
+      padding: var(--space-xs) var(--space-md);
+      background: var(--color-paper-2);
+      border-bottom: 1px solid var(--color-rule);
     }
-    header h1 { font-size: 18px; margin: 0; letter-spacing: .5px; }
-    header .sub { color: var(--muted); font-size: 12px; }
+    header h1 {
+      font-family: var(--font-mono);
+      font-size: var(--text-lg);
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin: 0;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+    header .sub,
+    .sub {
+      font-family: var(--font-mono);
+      color: var(--color-ink-2);
+      font-size: var(--text-sm);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .estado-celda {
+      display: flex; align-items: center; gap: var(--space-sm);
+      font-family: var(--font-mono); font-size: var(--text-sm);
+      letter-spacing: 0.08em;
+    }
+    .led-chip {
+      display: inline-flex; align-items: center; gap: var(--space-3xs);
+      border: 1px solid var(--color-rule);
+      padding: var(--space-3xs) var(--space-2xs);
+      color: var(--color-ink-2);
+    }
+    .led {
+      width: 8px; height: 8px; display: inline-block;
+      background: var(--color-rule);
+    }
+    .led[data-on="1"] { background: var(--color-ok); }
+    .led[data-on="0"] { background: var(--color-bad); }
+
+    /* ------------------------------------------------------------- layout */
     main {
-      display: grid; grid-template-columns: 1fr 340px; gap: 16px; padding: 16px;
+      display: grid; grid-template-columns: 1fr 340px; gap: var(--space-sm);
+      padding: var(--space-sm);
       max-width: 1800px; margin: 0 auto; align-items: start;
     }
-    /* En pantallas grandes, columna interactiva un poco más ancha */
     @media (min-width: 1600px) {
       main { grid-template-columns: 1fr 380px; }
     }
-    /* Columna principal: video + paneles informativos debajo.
-       --ancho-video define el ancho del video y de la fila de datos,
-       para que ambos queden homogéneos. */
-    .col-principal { display: grid; gap: 16px; --ancho-video: 100%; }
-    /* Columna lateral: solo paneles interactivos */
-    .col-lateral { display: grid; gap: 16px; }
-    /* Paneles informativos: en fila debajo del video en pantallas anchas,
-       estirados a la misma altura entre sí */
+    .col-principal { display: grid; gap: var(--space-sm); --ancho-video: 100%; }
+    .col-lateral   { display: grid; gap: var(--space-sm); }
+
     .info-paneles {
-      display: grid; gap: 16px;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      display: grid; gap: var(--space-sm);
+      grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
     }
     @media (max-width: 900px) {
       main { grid-template-columns: 1fr; }
-      /* En mobile se conserva el orden en una sola columna:
-         video, estado, control, homografía, ROI, HSV, detección, producción */
       .col-principal, .col-lateral, .info-paneles { display: contents; }
       .panel-estado     { order: 1; }
       .panel-control    { order: 2; }
@@ -62,126 +129,300 @@
       .panel-logo       { order: 8; }
     }
 
-    /* El video se muestra a tamaño natural (sin barras ni recortes). Para que
-       todo el tablero entre sin scroll, su ancho se limita en desktop para que
-       el alto del video + fila de datos + header entre en el viewport. El
-       aspect real del frame lo informa el backend vía --ar-video. */
+    /* -------------------------------------------------------------- video */
     .video-wrap {
-      background: #000; border-radius: 12px; overflow: hidden; position: relative;
+      background: #000;
+      border: 1px solid var(--color-rule);
+      overflow: hidden; position: relative;
+      width: 100%;
     }
     @media (min-width: 901px) {
       .col-principal {
         --ancho-video: min(100%, max(360px, calc((100vh - 340px) * var(--ar-video, 1.78))));
         --ancho-video: min(100%, max(360px, calc((100dvh - 340px) * var(--ar-video, 1.78))));
       }
-      .video-wrap { width: var(--ancho-video); margin: 0 auto; }
+      .video-wrap   { width: var(--ancho-video); margin: 0 auto; }
       .info-paneles { width: var(--ancho-video); margin: 0 auto; }
     }
     .video-wrap img { width: 100%; display: block; }
 
-    .panel { background: var(--panel); border-radius: 12px; padding: 16px; }
-    .panel h2 { margin: 0 0 12px; font-size: 14px; text-transform: uppercase;
-                letter-spacing: 1px; color: var(--muted); }
-    /* Paneles colapsables de calibración (details/summary) */
+    /* retícula de esquina (marco de targeting) — no interfiere con los clics
+       de calibración de homografía (pointer-events: none) */
+    .video-wrap::before,
+    .video-wrap::after {
+      content: ""; position: absolute; width: 18px; height: 18px;
+      z-index: 2; pointer-events: none;
+    }
+    .video-wrap::before {
+      top: 8px; left: 8px;
+      border-top: 2px solid var(--color-accent);
+      border-left: 2px solid var(--color-accent);
+    }
+    .video-wrap::after {
+      bottom: 8px; right: 8px;
+      border-bottom: 2px solid var(--color-accent);
+      border-right: 2px solid var(--color-accent);
+    }
+
+    /* ------------------------------------------------------------- paneles */
+    .panel {
+      background: var(--color-paper-2);
+      border: 1px solid var(--color-rule);
+      border-radius: 0;
+      padding: var(--space-sm);
+      min-width: 0;
+    }
+    .panel h2 {
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--color-ink-2);
+      margin: 0 0 var(--space-xs);
+      padding-bottom: var(--space-2xs);
+      border-bottom: 1px solid var(--color-rule);
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
     details.panel { padding: 0; }
     details.panel > summary {
       display: flex; align-items: center; justify-content: space-between;
-      gap: 10px; padding: 14px 16px; cursor: pointer; user-select: none;
+      gap: var(--space-xs);
+      padding: var(--space-xs) var(--space-sm);
+      cursor: pointer; user-select: none;
       list-style: none;
+      border-bottom: 1px solid var(--color-rule);
     }
+    details.panel[open] > summary { border-bottom: 1px solid var(--color-rule); }
     details.panel > summary::-webkit-details-marker { display: none; }
-    details.panel > summary h2 { margin: 0; }
-    details.panel > summary:hover h2 { color: var(--txt); }
+    details.panel > summary h2 {
+      margin: 0; padding: 0; border: none;
+      font-family: var(--font-mono); font-size: var(--text-sm);
+      font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em;
+      color: var(--color-ink-2);
+      min-width: 0; overflow-wrap: anywhere;
+    }
+    details.panel > summary:hover h2 { color: var(--color-ink); }
     details.panel > summary .chev {
-      color: var(--muted); font-size: 11px; transition: transform .15s;
+      width: 0; height: 0;
+      border-top: 5px solid transparent;
+      border-bottom: 5px solid transparent;
+      border-left: 6px solid var(--color-ink-2);
+      transition: transform var(--dur-short) var(--ease-out);
+      flex-shrink: 0;
     }
     details[open] > summary .chev { transform: rotate(90deg); }
-    .panel-body { padding: 2px 16px 16px; }
-    .row { display: flex; justify-content: space-between; padding: 6px 0;
-           border-bottom: 1px solid #2a3446; font-size: 14px; }
+    .panel-body { padding: var(--space-2xs) var(--space-sm) var(--space-sm); }
+
+    /* --------------------------------------------------------------- filas */
+    .row {
+      display: flex; justify-content: space-between; gap: var(--space-2xs);
+      padding: var(--space-2xs) 0;
+      border-bottom: 1px solid var(--color-rule);
+      font-size: var(--text-md);
+      min-width: 0;
+    }
     .row:last-child { border-bottom: none; }
-    .row .k { color: var(--muted); }
-    .row .v { font-weight: 600; }
-    .ok { color: var(--ok); } .bad { color: var(--bad); } .warn { color: var(--warn); }
+    .row .k { color: var(--color-ink-2); min-width: 0; overflow-wrap: anywhere; }
+    .row .v {
+      font-family: var(--font-mono);
+      font-weight: 600;
+      text-align: right;
+      min-width: 0; overflow-wrap: anywhere;
+    }
+    .ok  { color: var(--color-ok); }
+    .bad { color: var(--color-bad); }
+    .warn{ color: var(--color-warn); }
 
     .alert {
-      margin-top: 12px; padding: 12px; border-radius: 10px;
-      background: rgba(231,76,60,.15); border: 1px solid var(--bad);
-      color: #ffb3ab; font-size: 13px; display: none;
+      margin-top: var(--space-xs);
+      padding: var(--space-xs);
+      background: transparent;
+      border: 1px solid var(--color-bad);
+      border-left: 4px solid var(--color-bad);
+      color: var(--color-bad);
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      letter-spacing: 0.04em;
+      display: none;
     }
     .alert.show { display: block; }
 
-    .grid-botones { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    /* ------------------------------------------------------------- botones */
+    .grid-botones { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-2xs); }
+
     button {
-      padding: 12px; border: none; border-radius: 10px; cursor: pointer;
-      font-size: 14px; font-weight: 600; color: #fff; background: var(--panel2);
-      transition: transform .06s, filter .15s;
+      font-family: var(--font-mono);
+      font-size: var(--text-md);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: var(--space-xs) var(--space-2xs);
+      border: 1px solid var(--color-rule);
+      border-radius: 0;
+      cursor: pointer;
+      color: var(--color-ink);
+      background: var(--color-paper-3);
+      transition: filter var(--dur-short) var(--ease-out);
+      min-width: 0;
     }
-    button:hover { filter: brightness(1.18); }
-    button:active { transform: scale(.97); }
-    button.abrir { background: #1f6f43; }
-    button.cerrar { background: #8a4b12; }
-    button.ciclo { background: var(--accent); }
-    button.home { background: #5b4b8a; }
-    button.stop { background: var(--bad); }
-    button.reset { background: #34495e; }
-    button:disabled { opacity: .4; cursor: not-allowed; }
+    button:hover  { filter: brightness(1.25); }
+    button:active { transform: translateY(1px); }
+    button:focus-visible {
+      outline: 2px solid var(--color-focus);
+      outline-offset: 2px;
+    }
+    button.abrir  { background: oklch(48% 0.12 150); border-color: var(--color-ok); }
+    button.cerrar { background: oklch(42% 0.1 70);  border-color: var(--color-warn); }
+    button.ciclo  { background: oklch(45% 0.08 195); border-color: var(--color-accent); }
+    button.home   { background: var(--color-paper-3); border-color: var(--color-accent); }
+    button.stop   { background: oklch(40% 0.14 25); border-color: var(--color-bad); }
+    button.reset  { background: var(--color-paper-3); }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
     .full { grid-column: 1 / -1; }
 
-    .cat-btns { display: flex; gap: 8px; margin-top: 10px; }
-    .cat-btns button { flex: 1; font-size: 12px; padding: 8px; }
-    .cat-A { background: #a83232; }
-    .cat-B { background: #2456a8; }
+    .cat-btns { display: flex; gap: var(--space-2xs); margin-top: var(--space-xs); }
+    .cat-btns button { flex: 1; font-size: var(--text-sm); padding: var(--space-2xs); min-width: 0; }
+    .cat-A { background: oklch(42% 0.14 25); border-color: var(--color-bad); }
+    .cat-B { background: oklch(42% 0.12 250); border-color: oklch(70% 0.12 250); }
 
-    .cam-ctl { display: flex; gap: 8px; margin-top: 12px; }
+    .cam-ctl { display: flex; gap: var(--space-2xs); margin-top: var(--space-xs); }
     .cam-ctl select {
-      flex: 1; padding: 8px; border-radius: 8px; border: 1px solid #3a4661;
-      background: var(--panel2); color: var(--txt); font-size: 13px;
+      flex: 1; min-width: 0;
+      padding: var(--space-2xs);
+      border-radius: 0;
+      border: 1px solid var(--color-rule);
+      background: var(--color-paper-3);
+      color: var(--color-ink);
+      font-family: var(--font-mono);
+      font-size: var(--text-md);
     }
-    .cam-ctl button { padding: 8px 12px; font-size: 12px; }
-    .cam-escanear { background: #2c3e50; }
-    .cam-usar { background: var(--accent); }
+    .cam-ctl button   { padding: var(--space-2xs) var(--space-xs); font-size: var(--text-sm); }
+    .cam-escanear     { background: var(--color-paper-3); }
+    .cam-usar         { background: oklch(45% 0.08 195); border-color: var(--color-accent); }
 
-    .roi-btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-    .roi-btns button { padding: 8px; font-size: 13px; }
-    .roi-mover { background: #34495e; }
-    .roi-tamano { background: #5b4b8a; }
-    .roi-mostrar { background: #a08419; }
-    .roi-aplicar { background: #1f6f43; }
-    .roi-reset { background: #444; }
-    .roi-info { margin-top: 10px; font-size: 12px; color: var(--muted); }
-    .roi-info b { color: var(--warn); }
-    .hsv-verde { background: #1f6f43; }
-    .hsv-violeta { background: #7d3c98; }
-    .hsv-sel { outline: 3px solid var(--warn); }
+    /* --------------------------------------------------- calibración ROI/HSV */
+    .roi-btns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2xs); }
+    .roi-btns button { padding: var(--space-2xs); font-size: var(--text-md); }
+    .roi-mostrar  { background: oklch(45% 0.1 95);  border-color: var(--color-warn); }
+    .roi-aplicar  { background: oklch(48% 0.12 150); border-color: var(--color-ok); }
+    .roi-reset    { background: var(--color-paper-3); }
+    .roi-mover    { background: var(--color-paper-3); }
+    .roi-tamano   { background: var(--color-paper-3); border-color: var(--color-accent); }
+    .roi-info {
+      margin-top: var(--space-xs);
+      font-size: var(--text-sm);
+      color: var(--color-ink-2);
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+    .roi-info b { color: var(--color-warn); font-family: var(--font-mono); }
+    .hsv-verde   { background: oklch(48% 0.12 150); border-color: var(--color-ok); }
+    .hsv-violeta { background: oklch(42% 0.12 300); border-color: oklch(70% 0.12 300); }
+    .hsv-sel     { outline: 3px solid var(--color-warn); outline-offset: -1px; }
 
-    .stats { display: flex; gap: 12px; margin-top: 12px; }
-    .stat { flex: 1; background: var(--panel2); border-radius: 10px;
-            padding: 12px; text-align: center;
-            display: flex; flex-direction: column; justify-content: center; }
-    .stat .n { font-size: 22px; font-weight: 700; }
-    .stat .l { font-size: 11px; color: var(--muted); text-transform: uppercase; }
-    /* Producción: sus cajas se reparten el alto del panel para que quede
-       a la misma altura que Estado y Detección */
+    /* ---------------------------------------------------------- producción */
+    .stats { display: flex; gap: var(--space-xs); margin-top: var(--space-xs); }
+    .stat {
+      flex: 1; min-width: 0;
+      background: var(--color-paper-3);
+      border: 1px solid var(--color-rule);
+      padding: var(--space-xs);
+      text-align: center;
+      display: flex; flex-direction: column; justify-content: center;
+    }
+    .stat .n {
+      font-family: var(--font-mono);
+      font-size: var(--text-2xl);
+      font-weight: 700;
+      line-height: 1.1;
+    }
+    .stat .l {
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+      color: var(--color-ink-2);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
     .panel-produccion { display: flex; flex-direction: column; }
     .panel-produccion .stats { flex: 1; }
 
+    /* ---------------------------------------------------------------- toast */
     #toast {
-      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-      background: var(--panel2); padding: 12px 20px; border-radius: 10px;
-      font-size: 14px; opacity: 0; transition: opacity .3s; pointer-events: none;
-      border: 1px solid #3a4661;
+      position: fixed; bottom: 20px; left: 50%;
+      transform: translateX(-50%);
+      background: var(--color-paper-3);
+      border: 1px solid var(--color-rule);
+      border-left: 4px solid var(--color-accent);
+      padding: var(--space-xs) var(--space-md);
+      font-family: var(--font-mono);
+      font-size: var(--text-md);
+      letter-spacing: 0.04em;
+      opacity: 0;
+      transition: opacity var(--dur-short) var(--ease-out);
+      pointer-events: none;
+      max-width: min(90vw, 32rem);
     }
     #toast.show { opacity: 1; }
+
+    /* ------------------------------------------------------------- logo UPrO */
+    .panel-logo {
+      display: flex; align-items: center; gap: var(--space-sm);
+      padding: var(--space-sm);
+      border: 1px solid var(--color-rule);
+    }
+    .panel-logo img {
+      max-width: 64px; height: auto;
+      border-radius: 0;
+      display: block; flex-shrink: 0;
+      filter: grayscale(0.15);
+    }
+    .panel-logo .logo-txt {
+      display: flex; flex-direction: column; justify-content: center;
+      min-width: 0;
+    }
+    .panel-logo .logo-titulo {
+      font-family: var(--font-mono);
+      font-size: var(--text-md);
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      line-height: 1.3;
+      color: var(--color-ink);
+    }
+    .panel-logo .logo-integrantes {
+      font-size: var(--text-sm);
+      color: var(--color-ink-2);
+      margin-top: var(--space-3xs);
+      line-height: 1.4;
+      overflow-wrap: anywhere;
+    }
+
+    @media (max-width: 420px) {
+      .grid-botones { grid-template-columns: 1fr; }
+      button { font-size: var(--text-sm); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { transition: none !important; }
+      button:active { transform: none; }
+    }
   </style>
 </head>
 <body>
   <header>
     <div>
-      <h1>🤖 UR5 · Pick &amp; Place</h1>
+      <h1>UR5 · Pick &amp; Place</h1>
       <div class="sub">Monitoreo remoto · Desafío 2</div>
     </div>
-    <div class="sub" id="uptime">uptime —</div>
+    <div class="estado-celda" aria-label="Estado de hardware de la celda">
+      <span class="led-chip"><i class="led" id="led-camara" data-on="0" aria-hidden="true"></i>CÁM</span>
+      <span class="led-chip"><i class="led" id="led-gripper" data-on="0" aria-hidden="true"></i>GRP</span>
+      <span class="led-chip"><i class="led" id="led-robot" data-on="0" aria-hidden="true"></i>UR5</span>
+      <span class="sub" id="uptime">uptime —</span>
+    </div>
   </header>
 
   <main>
@@ -230,12 +471,12 @@
       <div class="panel panel-control">
         <h2>Control</h2>
         <div class="grid-botones">
-          <button class="ciclo full" onclick="cmd('ciclo')">▶ Ejecutar ciclo</button>
+          <button class="ciclo full" onclick="cmd('ciclo')">Ejecutar ciclo</button>
           <button class="abrir" onclick="cmd('abrir')">Abrir gripper</button>
           <button class="cerrar" onclick="cmd('cerrar')">Cerrar gripper</button>
           <button class="home" onclick="cmd('home')">Home</button>
-          <button class="stop" onclick="cmd('detener')">■ Parar</button>
-          <button class="abrir" onclick="cmd('soltar')" title="Invierte el movimiento en curso y abre el gripper, soltando la pieza de forma controlada">⇩ Soltar pieza</button>
+          <button class="stop" onclick="cmd('detener')">Parar</button>
+          <button class="abrir" onclick="cmd('soltar')" title="Invierte el movimiento en curso y abre el gripper, soltando la pieza de forma controlada">Soltar pieza</button>
           <button class="reset full" onclick="cmd('reset')">Reiniciar parada</button>
         </div>
         <div class="cat-btns">
@@ -252,14 +493,14 @@
       </div>
 
       <details class="panel panel-homografia" id="panel-homografia">
-        <summary><h2>Homografía (píxel → UR5)</h2><span class="chev">▶</span></summary>
+        <summary><h2>Homografía (píxel → UR5)</h2><span class="chev" aria-hidden="true"></span></summary>
         <div class="panel-body">
           <div class="roi-btns">
-            <button class="roi-mostrar" onclick="homografia('iniciar')">🎯 Iniciar calibración</button>
-            <button class="roi-reset" onclick="homografia('deshacer')">↶ Deshacer punto</button>
-            <button class="roi-reset" onclick="homografia('cancelar')">✖ Cancelar</button>
-            <button class="roi-aplicar" onclick="homografia('aplicar')">✔ Aplicar (guardar)</button>
-            <button class="roi-reset" onclick="homografia('reset')">↺ Reset fábrica</button>
+            <button class="roi-mostrar" onclick="homografia('iniciar')">Iniciar calibración</button>
+            <button class="roi-reset" onclick="homografia('deshacer')">Deshacer punto</button>
+            <button class="roi-reset" onclick="homografia('cancelar')">Cancelar</button>
+            <button class="roi-aplicar" onclick="homografia('aplicar')">Aplicar (guardar)</button>
+            <button class="roi-reset" onclick="homografia('reset')">Reset fábrica</button>
           </div>
           <div class="roi-info">Estado: <b id="hom-estado">—</b></div>
           <div class="roi-info">Puntos_px (ROI-relativos): <span id="hom-puntos">—</span></div>
@@ -269,28 +510,28 @@
       </details>
 
       <details class="panel panel-roi" id="panel-roi">
-        <summary><h2>Ajustar ROI (zona de trabajo)</h2><span class="chev">▶</span></summary>
+        <summary><h2>Ajustar ROI (zona de trabajo)</h2><span class="chev" aria-hidden="true"></span></summary>
         <div class="panel-body">
           <div class="roi-btns">
-            <button class="roi-mover" onclick="roi('izquierda')">◀ Izquierda</button>
-            <button class="roi-mover" onclick="roi('arriba')">▲ Arriba</button>
-            <button class="roi-mover" onclick="roi('abajo')">▼ Abajo</button>
-            <button class="roi-mover" onclick="roi('derecha')">▶ Derecha</button>
+            <button class="roi-mover" onclick="roi('izquierda')">Izquierda</button>
+            <button class="roi-mover" onclick="roi('arriba')">Arriba</button>
+            <button class="roi-mover" onclick="roi('abajo')">Abajo</button>
+            <button class="roi-mover" onclick="roi('derecha')">Derecha</button>
             <button class="roi-tamano" onclick="roi('mas_grande')">+ Grande</button>
             <button class="roi-tamano" onclick="roi('mas_pequena')">− Pequeña</button>
-            <button class="roi-mostrar full" style="grid-column:1/-1" onclick="roi('mostrar')">👁 Mostrar / ocultar ROI</button>
+            <button class="roi-mostrar full" style="grid-column:1/-1" onclick="roi('mostrar')">Mostrar / ocultar ROI</button>
           </div>
           <div class="roi-info">ROI actual: <b id="roi-texto">—</b></div>
           <div class="roi-btns" style="margin-top:10px">
-            <button class="roi-aplicar" onclick="roi('aplicar')">✔ Aplicar (guardar)</button>
-            <button class="roi-reset" onclick="roi('reset')">↺ Reset</button>
+            <button class="roi-aplicar" onclick="roi('aplicar')">Aplicar (guardar)</button>
+            <button class="roi-reset" onclick="roi('reset')">Reset</button>
           </div>
           <div class="roi-info">«Aplicar» guarda la ROI en <b>vision/config.json</b> para que quede fija al reiniciar.</div>
         </div>
       </details>
 
       <details class="panel panel-hsv" id="panel-hsv">
-        <summary><h2>Colores (calibración HSV)</h2><span class="chev">▶</span></summary>
+        <summary><h2>Colores (calibración HSV)</h2><span class="chev" aria-hidden="true"></span></summary>
         <div class="panel-body">
           <div class="roi-btns">
             <button id="hsv-rojo" class="cat-A" onclick="hsv('color','rojo')">Rojo (A)</button>
@@ -299,8 +540,8 @@
             <button id="hsv-violeta" class="hsv-violeta" onclick="hsv('color','violeta')">Violeta (D)</button>
           </div>
           <div class="roi-btns" style="margin-top:8px">
-            <button class="roi-mover" onclick="hsv('matiz_izquierda')">◀ Matiz</button>
-            <button class="roi-mover" onclick="hsv('matiz_derecha')">Matiz ▶</button>
+            <button class="roi-mover" onclick="hsv('matiz_izquierda')">Matiz −</button>
+            <button class="roi-mover" onclick="hsv('matiz_derecha')">Matiz +</button>
             <button class="roi-tamano" onclick="hsv('mas_amplio')">+ Ancho</button>
             <button class="roi-tamano" onclick="hsv('mas_estrecho')">− Ancho</button>
             <button class="roi-tamano" onclick="hsv('mas_sensible')">+ Sensible</button>
@@ -310,27 +551,23 @@
             <button class="roi-tamano" onclick="hsv('confianza_menos')">− Confianza</button>
             <button class="roi-tamano" onclick="hsv('confianza_mas')">+ Confianza</button>
           </div>
-          <button class="roi-mostrar" style="grid-column:1/-1;width:100%;margin-top:8px" onclick="hsv('mostrar')">👁 Máscara en vivo sí/no</button>
+          <button class="roi-mostrar" style="grid-column:1/-1;width:100%;margin-top:8px" onclick="hsv('mostrar')">Máscara en vivo sí/no</button>
           <div class="roi-info">Selección: <b id="hsv-texto">—</b></div>
           <div class="roi-info">Píxeles captados: <span id="hsv-px">—</span></div>
           <div class="roi-info">Umbral de confianza: <b id="hsv-conf">—</b> <span style="opacity:.7">(solo se marcan piezas con confianza ≥ umbral)</span></div>
           <div class="roi-btns" style="margin-top:10px">
-            <button class="roi-aplicar" onclick="hsv('aplicar')">✔ Aplicar (guardar)</button>
-            <button class="roi-reset" onclick="hsv('reset')">↺ Reset color</button>
+            <button class="roi-aplicar" onclick="hsv('aplicar')">Aplicar (guardar)</button>
+            <button class="roi-reset" onclick="hsv('reset')">Reset color</button>
           </div>
           <div class="roi-info">Con la máscara activada, poné una pieza en la mesa y ajustá hasta que SOLO se pinte la pieza. «Aplicar» guarda los rangos en <b>vision/config.json</b>.</div>
         </div>
       </details>
 
-      <div class="panel panel-logo" style="display: flex; align-items: center; gap: 14px; padding: 14px; border: 1px solid #2c3648;">
-        <img src="/logo-upro.jpg" alt="Logo UPrO" style="max-width: 64px; height: auto; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: block; flex-shrink: 0;">
-        <div style="display: flex; flex-direction: column; justify-content: center; min-width: 0;">
-          <div style="font-size: 13px; color: var(--txt); font-weight: 700; letter-spacing: 0.5px; line-height: 1.3;">
-            UPrO · Robótica con Orientación IA
-          </div>
-          <div style="font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.4;">
-            Alfredo Becerra · Claudio Flores · Lucio Vita
-          </div>
+      <div class="panel panel-logo">
+        <img src="/logo-upro.jpg" alt="Logo UPrO">
+        <div class="logo-txt">
+          <div class="logo-titulo">UPrO · Robótica con Orientación IA</div>
+          <div class="logo-integrantes">Alfredo Becerra · Claudio Flores · Lucio Vita</div>
         </div>
       </div>
     </aside>
@@ -353,6 +590,12 @@
       t.classList.add("show");
       clearTimeout(window._toastT);
       window._toastT = setTimeout(() => t.classList.remove("show"), 2600);
+    }
+
+    // LEDs del header (estado rápido de hardware, solo visual)
+    function setLed(id, ok) {
+      const el = $(id);
+      if (el) el.dataset.on = ok ? "1" : "0";
     }
 
     // Paneles colapsables de calibración: colapsados por defecto y con el
@@ -389,6 +632,11 @@
       setText("v-gripper", s.gripper_ok ? "OK" : "SIMULADO", s.gripper_ok ? "ok" : "warn");
       setText("v-robot", s.robot_ok ? "OK" : "MOCK", s.robot_ok ? "ok" : "warn");
       setText("v-comando", s.ultimo_comando || "—");
+
+      // LEDs del header
+      setLed("led-camara", s.camara_ok);
+      setLed("led-gripper", s.gripper_ok);
+      setLed("led-robot", s.robot_ok);
 
       const det = s.deteccion || {};
       setText("v-vision", det.ok ? "PIEZA DETECTADA" : "SIN PIEZA", det.ok ? "ok" : "warn");
@@ -433,7 +681,7 @@
       // Alerta de seguridad
       const alerta = $("alerta");
       if (s.parada_activa) {
-        alerta.textContent = "⛔ Parada de seguridad activa. Reinicie la parada para operar.";
+        alerta.textContent = "Parada de seguridad activa. Reinicie la parada para operar.";
         alerta.classList.add("show");
       } else {
         alerta.classList.remove("show");

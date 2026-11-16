@@ -73,3 +73,6 @@ $RECYCLE.BIN/
 # ---------- Archivo simulador UR5 (binario grande, no va en git) ----------
 *.urup
 robot/*.urup
+
+# ---------- Hallmark (memoria interna de diseño, no va en git) ----------
+.hallmark/
