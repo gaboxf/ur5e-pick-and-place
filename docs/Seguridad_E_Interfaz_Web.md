@@ -150,6 +150,24 @@ El hilo lector de `GripperClient` separa respuestas de comandos (cola de líneas
 y eventos de seguridad (cola de eventos), de modo que estos últimos nunca se
 pierden aunque no haya un comando en curso.
 
+### 2.4 Handshake determinista UR5 (RTDE) y Confirmación de agarre en lazo cerrado
+
+Como el gripper no dispone de sensores táctiles físicos de fuerza en los dedos TPU, la celda implementa dos mecanismos avanzados de sincronización y validación por software:
+
+1. **Handshake determinista por RTDE (`core/ur5_client.py`):**
+   - Tras cada comando `moveL`, el cliente valida por la interfaz `rtde_receive` que el error euclidiano entre la pose real del TCP y el objetivo sea $\le 3\text{ mm}$ (`ROBOT_TOL_M`).
+   - Se valida además que el robot esté detenido (`is_steady()`, velocidad residual nula) antes de enviar la orden de cierre o apertura al Arduino.
+
+2. **Confirmación visual de agarre (*Closed-Loop Vision Confirmation*):**
+   - El UR5 desciende a cota de pick y comanda el cierre, esperando la confirmación `DONE` del Arduino.
+   - Sube a `z_seguro` y se desplaza ligeramente ($8\text{ cm}$) hacia el destino para despejar la vista cenital de la cámara.
+   - El sistema pasa transitoriamente al estado **`VERIFICANDO`** y procesa un nuevo frame de la mesa.
+   - Si la pieza **sigue presente en la mesa** (menos de $50\text{ mm}$ del punto de pick original):
+     - El agarre falló (resbaló o no cerró a tiempo).
+     - Se abre el gripper, el robot regresa a Home y se aborta el ciclo de forma segura sin trasladar aire.
+   - Si la mesa está libre:
+     - Se confirma el agarre (`Confirmación visual OK`) y continúa el transporte al área de depósito.
+
 > ⚠️ **Importante (seguridad):** esta capa es un complemento de software. **No
 > reemplaza** el sistema de seguridad certificado del UR (parada de emergencia
 > hardware, protecciones, límites de seguridad). La consigna del Megadesafío lo
@@ -166,10 +184,10 @@ pierden aunque no haya un comando en curso.
 |---|---|
 | `gripper/firmware/gripper_4servos/gripper_4servos.ino` | **Histórico, ya no se graba.** Tenía E-STOP (D8), HC-SR04 (D10/D11), eventos `EMERGENCY` / `PROXIMITY_STOP`, anti-spam. El firmware en uso es `gripper/firmware/gripper_1signal/` (sin LEDs, sin E-STOP, sin sensor) |
 | `gripper/tools/gripper_client.py` | Hilo lector serial, colas de respuestas/eventos, `get_evento()`, `get_estado_completo()`. **Ya no reconoce `EMERGENCY` ni `PROXIMITY_STOP`** (eventos del firmware histórico) |
-| `core/ur5_client.py` | `stop()` con `stopJ` en real y bandera de aborto en simulación |
-| `core/robot_controller.py` | `detener()` delega en `UR5Client.stop()` |
+| `core/ur5_client.py` | `stop()` con `stopJ` en real, handshake determinista de tolerancia milimétrica (`ROBOT_TOL_M`), verificación de quietud (`is_steady`) y bandera de aborto |
+| `core/robot_controller.py` | `detener()` delega en `UR5Client.stop()`; ciclo con validación de agarre por visión en lazo cerrado y confirmación del firmware |
 | `core/dashboard.py` | Atiende eventos de seguridad, bloquea ciclos, teclas `[e]` (paro) y `[r]` (reset) |
-| `core/dashboard_web.py` | **Nuevo**: servidor Flask, MJPEG, SSE y API de comandos |
+| `core/dashboard_web.py` | **Servidor Flask**: MJPEG, SSE, API de comandos y orquestación de ciclo con estado `VERIFICANDO` y validación visual de agarre |
 | `templates/dashboard.html` | **Nuevo**: interfaz web de monitoreo y control |
 
 ---

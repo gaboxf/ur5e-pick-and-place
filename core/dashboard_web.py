@@ -15,7 +15,9 @@ Se puede abrir desde otra máquina de la red con http://<ip-del-pc>:5000
 
 from __future__ import annotations
 
+import collections
 import json
+import math
 import queue
 import socket
 import threading
@@ -96,6 +98,14 @@ class WebDashboard:
         self.ciclos_error = 0
         self.por_categoria = {"A": 0, "B": 0, "C": 0, "D": 0}
         self._t_inicio = time.time()
+        self.logs_recientes: collections.deque[dict] = collections.deque(maxlen=60)
+        self.registrar_log("INFO", "Consola de eventos iniciada.")
+
+    def registrar_log(self, nivel: str, mensaje: str):
+        """Registra un evento visible en la consola web."""
+        hora = time.strftime("%H:%M:%S")
+        with self._lock:
+            self.logs_recientes.append({"hora": hora, "nivel": nivel, "mensaje": mensaje})
 
     # ------------------------------------------------------------- hardware
     def conectar(self):
@@ -118,6 +128,19 @@ class WebDashboard:
         except Exception as e:
             logger.error("Robot: %s", e)
             self.robot_ok = False
+
+        self.registrar_log(
+            "OK" if self.camara_ok else "WARN",
+            f"Cámara: {'OK' if self.camara_ok else 'SIN CÁMARA'}"
+        )
+        self.registrar_log(
+            "OK" if self.gripper_ok else "WARN",
+            f"Gripper: {'OK (Arduino conectado)' if self.gripper_ok else 'SIMULADO'}"
+        )
+        self.registrar_log(
+            "INFO",
+            f"Robot UR5: {'OK' if self.robot_ok else 'FALLO'} (Modo {self.controller.robot.mode.upper()})"
+        )
 
         logger.info(
             "Hardware -> cámara:%s gripper:%s robot:%s",
@@ -375,31 +398,35 @@ class WebDashboard:
         if accion in ("abrir", "cerrar", "home", "ciclo", "detener", "reset", "soltar"):
             # El reset es la única acción permitida con la parada activa.
             if self.parada_activa and accion != "reset":
+                self.registrar_log("WARN", f"Comando '{accion}' rechazado: parada de seguridad activa.")
                 return False, "Parada de seguridad activa: reinicie la parada antes de operar."
 
         if accion == "abrir":
+            self.registrar_log("INFO", "Comando manual: abrir gripper")
             self.controller.gripper.open()
             return True, "Gripper abierto."
         if accion == "cerrar":
+            self.registrar_log("INFO", "Comando manual: cerrar gripper")
             self.controller.gripper.close()
             return True, "Gripper cerrado."
         if accion == "soltar":
-            # Parada suave: invierte el movimiento en curso y abre el
-            # gripper, soltando la pieza de forma controlada (no de golpe
-            # como el watchdog de 15 s del firmware).
+            self.registrar_log("WARN", "Comando: soltar pieza (apertura suave)")
             ok = self.controller.gripper.stop()
             return (True, "Pieza soltada (gripper abierto).") if ok else (
                 False, "No se pudo soltar la pieza."
             )
         if accion == "home":
+            self.registrar_log("INFO", "Comando manual: mover a Home")
             self.controller.mover_a(0.30, 0.0, 0.25)
             return True, "Movido a posición Home."
         if accion == "detener":
+            self.registrar_log("ERROR", "Comando: PARADA DE SEGURIDAD solicitada")
             self.abortar_ciclo = True
             self.controller.detener()
             self.estado = "PARADA_SEGURIDAD"
             return True, "Parada solicitada."
         if accion == "reset":
+            self.registrar_log("OK", "Parada de seguridad reiniciada")
             self.parada_activa = False
             self.abortar_ciclo = False
             self.ultimo_evento = None
@@ -407,6 +434,7 @@ class WebDashboard:
             return True, "Parada reiniciada."
         if accion == "ciclo":
             if self.estado == "ROBOT_ACTUANDO":
+                self.registrar_log("WARN", "Ya hay un ciclo en curso.")
                 return False, "Ya hay un ciclo en curso."
             threading.Thread(
                 target=self.ejecutar_ciclo, args=(categoria,), daemon=True
@@ -425,11 +453,13 @@ class WebDashboard:
 
         if not det.get("ok"):
             self.estado = "ESPERANDO_PIEZA"
+            self.registrar_log("WARN", f"Ciclo cancelado: {det.get('motivo_fallo', 'sin pieza detectada')}")
             return False
 
         categoria = det["categoria"]
         if categoria_filtro and categoria != categoria_filtro:
             self.estado = "ESPERANDO_PIEZA"
+            self.registrar_log("WARN", f"Pieza detectada es {categoria}, pero se filtró por {categoria_filtro}")
             return False
 
         self.estado = "ROBOT_ACTUANDO"
@@ -443,41 +473,107 @@ class WebDashboard:
         })
         dest = destinos.get(categoria, {"x": 0.40, "y": 0.0})
 
+        self.registrar_log("INFO", f"Iniciando ciclo: Pieza {categoria} en ({x*1000:.1f}, {y*1000:.1f}) mm")
+
         try:
+            # 1. Aproximación segura sobre la pieza (Handshake RTDE)
+            self.registrar_log("INFO", f"Aproximación sobre pieza (Z={z_seguro*1000:.0f} mm)...")
             if not self.controller.mover_a(x, y, z_seguro):
                 raise RuntimeError("aproximación fallida")
             if self._abortado():
                 raise RuntimeError("abortado por seguridad")
+
+            # 2. Descenso para recogida (Handshake RTDE)
+            self.registrar_log("INFO", f"Descendiendo a cota de pick (Z={z_pick*1000:.0f} mm)...")
             if not self.controller.mover_a(x, y, z_pick):
-                raise RuntimeError("descenso fallido")
+                raise RuntimeError("descenso a pick fallido")
 
-            self.controller.gripper.close()
-            time.sleep(0.3)
+            # 3. Cierre de pinza con validación de confirmación del firmware
+            self.registrar_log("INFO", "Cerrando gripper (esperando confirmación DONE de Arduino)...")
+            if not self.controller.gripper.close():
+                raise RuntimeError("cierre de gripper fallido (sin confirmación DONE)")
+            self.registrar_log("INFO", "Gripper cerrado OK")
 
+            # 4. Elevación inicial
+            self.registrar_log("INFO", "Elevando a cota segura...")
             if not self.controller.mover_a(x, y, z_seguro):
-                raise RuntimeError("elevación fallida")
+                raise RuntimeError("elevación post-pick fallida")
             if self._abortado():
                 raise RuntimeError("abortado por seguridad")
 
+            # 5. Confirmación visual de agarre (Closed-Loop Vision)
+            dx = dest["x"] - x
+            dy = dest["y"] - y
+            dist_dest = math.hypot(dx, dy)
+            if dist_dest > 0.08:
+                x_check = x + (dx / dist_dest) * 0.08
+                y_check = y + (dy / dist_dest) * 0.08
+            else:
+                x_check, y_check = dest["x"], dest["y"]
+
+            if not self.controller.mover_a(x_check, y_check, z_seguro):
+                raise RuntimeError("desplazamiento a verificación fallido")
+            if self._abortado():
+                raise RuntimeError("abortado por seguridad")
+
+            with self._lock:
+                self.estado = "VERIFICANDO"
+            self.registrar_log("INFO", "Inspeccionando mesa con cámara cenital (Closed-Loop)...")
+            time.sleep(0.15)  # estabilización visual del frame
+
+            es_mock = (self.controller.robot.mode == "mock")
+            det_verif = self.controller.pipeline.procesar_frame()
+            if det_verif.get("ok"):
+                # Si se detecta una pieza cerca de la coordenada original de pick, no fue levantada
+                dist_pick = math.hypot(det_verif["x_ur5"] - x, det_verif["y_ur5"] - y)
+                if dist_pick < 0.050:
+                    if not es_mock:
+                        self.registrar_log(
+                            "ERROR",
+                            f"Fallo de agarre: la pieza sigue en mesa en ({det_verif['x_ur5']:.3f}, {det_verif['y_ur5']:.3f})"
+                        )
+                        self.controller.gripper.open()
+                        self.controller.mover_a(0.30, 0.0, z_seguro)
+                        raise RuntimeError("Fallo de agarre: la pieza no fue recogida (verificado por visión)")
+                    else:
+                        self.registrar_log(
+                            "WARN",
+                            f"Verificación visual: pieza aún en mesa en ({det_verif['x_ur5']*1000:.0f}, {det_verif['y_ur5']*1000:.0f}) mm. "
+                            "[MODO MOCK: robot virtual, continuando ciclo]"
+                        )
+                else:
+                    self.registrar_log("OK", "Confirmación visual OK: pieza levantada exitosamente.")
+            else:
+                self.registrar_log("OK", "Confirmación visual OK: mesa despejada en punto de pick.")
+
+            with self._lock:
+                self.estado = "ROBOT_ACTUANDO"
+
+            # 6. Transporte a la zona de clasificación
+            self.registrar_log("INFO", f"Transportando a destino {categoria} ({dest['x']:.2f}, {dest['y']:.2f}) m...")
             if not self.controller.mover_a(dest["x"], dest["y"], z_seguro):
-                raise RuntimeError("transporte fallido")
+                raise RuntimeError("transporte a destino fallido")
             if not self.controller.mover_a(dest["x"], dest["y"], z_deposit):
                 raise RuntimeError("descenso a destino fallido")
 
-            self.controller.gripper.open()
-            time.sleep(0.3)
+            # 7. Liberación y retirada segura
+            self.registrar_log("INFO", "Abriendo gripper...")
+            if not self.controller.gripper.open():
+                logger.warning("Apertura de gripper no reportó confirmación normal.")
 
             if not self.controller.mover_a(dest["x"], dest["y"], z_seguro):
-                raise RuntimeError("retirada fallida")
+                raise RuntimeError("retirada post-depósito fallida")
 
             with self._lock:
                 self.ciclos_ok += 1
                 self.por_categoria[categoria] = self.por_categoria.get(categoria, 0) + 1
                 self.estado = "LISTO"
+            self.registrar_log("OK", f"¡Ciclo completado con éxito! Categoría {categoria} clasificada.")
             logger.info("Ciclo OK: categoría %s", categoria)
             return True
 
         except Exception as e:
+            self.registrar_log("ERROR", f"Ciclo interrumpido: {e}")
             logger.warning("Ciclo interrumpido: %s", e)
             with self._lock:
                 self.ciclos_error += 1
@@ -496,6 +592,7 @@ class WebDashboard:
                 "parada_activa": self.parada_activa,
                 "ultimo_evento": self.ultimo_evento,
                 "ultimo_comando": self.ultimo_comando,
+                "logs": list(self.logs_recientes),
                 "camara_ok": self.camara_ok,
                 "indice_camara": self.indice_camara_actual(),
                 "gripper_ok": self.gripper_ok,

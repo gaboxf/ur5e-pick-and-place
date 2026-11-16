@@ -1,5 +1,6 @@
 import time
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -85,20 +86,27 @@ class RobotController:
 
         logger.info("Iniciando recogida de pieza categoría [%s] en (%.3f, %.3f)", categoria, x_ur5, y_ur5)
 
-        # 2. Secuencia física del UR5
+        # 2. Secuencia física del UR5 con handshake y confirmación de agarre
         # Acercamiento seguro sobre la pieza
-        self.mover_a(x_ur5, y_ur5, z_seguro, 0.0)
+        if not self.mover_a(x_ur5, y_ur5, z_seguro):
+            logger.error("Aproximación inicial fallida")
+            return False
 
         # Descenso para recogida
-        self.mover_a(x_ur5, y_ur5, z_pick, 0.0)
+        if not self.mover_a(x_ur5, y_ur5, z_pick):
+            logger.error("Descenso a cota de pick fallido")
+            return False
 
-        # Accionar gripper (Cerrar)
+        # Accionar gripper (Cerrar con confirmación del firmware)
         logger.debug("Cerrando gripper...")
-        self.gripper.close()
-        time.sleep(2.0)
+        if not self.gripper.close():
+            logger.error("Cierre de gripper fallido (sin confirmación DONE)")
+            return False
 
-        # Levantar con la pieza
-        self.mover_a(x_ur5, y_ur5, z_seguro, 0.0)
+        # Levantar a cota segura
+        if not self.mover_a(x_ur5, y_ur5, z_seguro):
+            logger.error("Elevación post-pick fallida")
+            return False
 
         # Obtener destino según categoría (A -> Zona A, B -> Zona B)
         destinos = self.config.get("destinos", {
@@ -107,20 +115,57 @@ class RobotController:
         })
         destino = destinos.get(categoria, {"x": 0.40, "y": 0.00})
 
+        # Desplazamiento leve hacia el destino para despejar la vista cenital sobre la mesa
+        dx = destino["x"] - x_ur5
+        dy = destino["y"] - y_ur5
+        dist_dest = math.hypot(dx, dy)
+        if dist_dest > 0.08:
+            x_check = x_ur5 + (dx / dist_dest) * 0.08
+            y_check = y_ur5 + (dy / dist_dest) * 0.08
+        else:
+            x_check, y_check = destino["x"], destino["y"]
+
+        if not self.mover_a(x_check, y_check, z_seguro):
+            logger.error("Desplazamiento a verificación fallido")
+            return False
+
+        # Verificación visual de agarre (Closed-Loop Vision)
+        time.sleep(0.15)
+        det_verif = self.pipeline.procesar_frame()
+        if det_verif.get("ok"):
+            dist_pick = math.hypot(det_verif["x_ur5"] - x_ur5, det_verif["y_ur5"] - y_ur5)
+            if dist_pick < 0.050:
+                logger.warning(
+                    "Fallo de agarre detectado por visión: la pieza sigue en la mesa en (%.3f, %.3f). "
+                    "Distancia al pick: %.1f mm",
+                    det_verif["x_ur5"], det_verif["y_ur5"], dist_pick * 1000
+                )
+                self.gripper.open()
+                self.mover_a(0.30, 0.0, z_seguro)
+                return False
+
+        logger.info("Confirmación visual OK: la pieza fue levantada exitosamente.")
+
         # Transporte a zona de clasificación
         logger.info("Transportando pieza a categoría %s -> (%.3f, %.3f)", categoria, destino["x"], destino["y"])
-        self.mover_a(destino["x"], destino["y"], z_seguro, 0.0)
+        if not self.mover_a(destino["x"], destino["y"], z_seguro):
+            logger.error("Transporte hacia destino fallido")
+            return False
 
         # Descender a zona de depósito
-        self.mover_a(destino["x"], destino["y"], z_deposit, 0.0)
+        if not self.mover_a(destino["x"], destino["y"], z_deposit):
+            logger.error("Descenso a cota de depósito fallido")
+            return False
 
         # Liberar pieza (Abrir gripper)
         logger.debug("Abriendo gripper...")
-        self.gripper.open()
-        time.sleep(2.0)
+        if not self.gripper.open():
+            logger.warning("Apertura de gripper no reportó confirmación normal.")
 
         # Retirada segura
-        self.mover_a(destino["x"], destino["y"], z_seguro, 0.0)
+        if not self.mover_a(destino["x"], destino["y"], z_seguro):
+            logger.error("Retirada post-depósito fallida")
+            return False
 
         logger.info("¡Ciclo de clasificación completado con éxito!")
         return True

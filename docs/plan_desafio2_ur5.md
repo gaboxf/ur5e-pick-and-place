@@ -51,13 +51,20 @@ Celda que clasifica piezas de **dos categorías** colocadas en posiciones variab
 [Gripper: Arduino + 4 servos] ←──── serial ────→ [UR5: URScript / RTDE-socket]
 ```
 
-**Pipeline por ciclo:**
+**Pipeline por ciclo (con Handshake RTDE y Verificación en Lazo Cerrado):**
 1. Operador coloca pieza dentro de la zona y confirma inicio (con el robot en condición segura).
 2. Visión: captura → recorte de ROI → segmentación HSV → contorno → **centroide de la pieza + categoría** (color/forma).
 3. Transformación píxel→UR5 (homografía calibrada, ver punto 5).
-4. Máquina de estados en Python: `LISTO → PIEZA_DETECTADA → ROBOT_ACTUANDO → DEPOSITADO → LISTO`.
-5. UR5 ejecuta: acercamiento seguro → descenso → grip → traslado al destino de su categoría → ascenso → suelto.
-6. Si no hay pieza válida detectada: se informa y **no se ejecuta trayectoria** (estado `SIN_PIEZA`).
+4. Máquina de estados en Python: `LISTO → ESPERANDO_PIEZA → ROBOT_ACTUANDO → VERIFICANDO → DEPOSITADO → LISTO`.
+5. UR5 ejecuta:
+   - Acercamiento y descenso a cota de pick con **handshake RTDE determinista** (tolerancia euclidiana $\le 3\text{ mm}$ y quietud).
+   - Cierre del gripper con espera y validación del token `DONE` del Arduino por puerto serie.
+   - Elevación a `z_seguro` y leve desplazamiento hacia destino ($8\text{ cm}$) para despejar la visual cenital.
+   - **Confirmación visual de agarre (Closed-Loop Vision):** La cámara vuelve a inspeccionar el punto de recogida en la mesa.
+     - Si la pieza sigue en la mesa: se detecta agarre fallido, el gripper se abre, el robot se retira a Home y el ciclo se cancela de forma segura (sin viajar en falso).
+     - Si la mesa está vacía: agarre confirmado, continúa el transporte.
+   - Traslado al destino de su categoría → descenso a `z_deposit` → apertura confirmada → retirada segura a `z_seguro`.
+6. Si no hay pieza válida detectada: se informa y **no se ejecuta trayectoria** (estado `ESPERANDO_PIEZA`).
 
 ---
 
@@ -132,7 +139,8 @@ Es donde se juega la nota (indicador con 8 XP). Estrategia:
 - Piezas en distintas posiciones de la zona (incl. posiciones que no usamos para calibrar).
 - Las dos categorías con sus destinos correctos.
 - Ausencia de pieza → no debe haber trayectoria.
-- Widget/monitor de estado: qué hace el sistema en cada momento.
+- **Confirmación de agarre (Closed-Loop):** si la pieza resbala o no se agarra, la visión detecta su presencia en la mesa tras el intento de pick y aborta el ciclo sin viajar en vacío.
+- Widget/monitor de estado: qué hace el sistema en cada momento (incluyendo estado `VERIFICANDO`).
 - Nuevo trabajo sin tocar código entre trabajo y trabajo.
 
 ---

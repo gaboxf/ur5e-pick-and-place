@@ -261,7 +261,10 @@ Para la demo con el docente:
    coordenada correctas.
 3. **Ejecutar ciclo** (o **Ciclo roja (A)** / **Ciclo azul (B)** para forzar
    una categoría).
-4. El robot recoge, transporta y deposita; **Producción** suma el ciclo.
+4. El robot desciende con precisión RTDE ($\le 3\text{ mm}$), cierra el gripper y eleva la herramienta.
+5. **Confirmación visual automática (estado `VERIFICANDO`):** La cámara revisa que la pieza ya no esté en la mesa.
+   - Si la pieza fue levantada: se transporta y deposita en su destino; **Producción** suma el ciclo.
+   - Si la pieza resbaló y quedó en la mesa: el robot abre el gripper, vuelve a Home y cancela el viaje en vacío para evitar colisiones.
 
 **Si no se detecta una pieza válida, el sistema NO inicia trayectoria de
 recogida con coordenadas inexistentes** — el panel Detección muestra el

@@ -144,11 +144,17 @@ class EditorHomografia:
                     "Continuá marcando o cancelá.")
 
         ancho_roi, alto_roi = self._tamano_roi()
+        puntos_ajustados = []
         for i, (x, y) in enumerate(self.puntos):
-            if not (0 <= x < ancho_roi and 0 <= y < alto_roi):
+            # Tolerar clics en los bordes (hasta 40 px) y clampearlos suavemente al recorte
+            x_c = max(0.0, min(float(ancho_roi - 1), float(x)))
+            y_c = max(0.0, min(float(alto_roi - 1), float(y)))
+            if abs(x - x_c) > 40.0 or abs(y - y_c) > 40.0:
                 return (f"Error: el punto {i + 1} ({x:.0f}, {y:.0f}) queda fuera "
                         f"del recorte ROI ({ancho_roi}x{alto_roi}).")
+            puntos_ajustados.append([x_c, y_c])
 
+        self.puntos = puntos_ajustados
         self.cfg.puntos_px = [list(p) for p in self.puntos]
         self.calibrando = False
         self.puntos = []

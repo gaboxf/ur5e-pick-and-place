@@ -349,6 +349,33 @@
     .panel-produccion { display: flex; flex-direction: column; }
     .panel-produccion .stats { flex: 1; }
 
+    /* ------------------------------------------------------------- consola logs */
+    .panel-logs {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-direction: column;
+      margin-top: var(--space-3xs);
+    }
+    .consola-logs {
+      background: oklch(13% 0.015 240);
+      border: 1px solid var(--color-rule);
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+      padding: var(--space-2xs) var(--space-xs);
+      height: 120px;
+      overflow-y: auto;
+      line-height: 1.5;
+      border-radius: 2px;
+    }
+    .log-item { margin-bottom: 2px; display: flex; gap: var(--space-2xs); }
+    .log-time { color: var(--color-ink-2); flex-shrink: 0; }
+    .log-level { font-weight: 600; flex-shrink: 0; width: 62px; }
+    .log-level-INFO { color: var(--color-accent); }
+    .log-level-OK { color: var(--color-ok); font-weight: 700; }
+    .log-level-WARN { color: var(--color-warn); }
+    .log-level-ERROR { color: var(--color-bad); font-weight: 700; }
+    .log-msg { color: var(--color-ink); word-break: break-word; }
+
     /* ---------------------------------------------------------------- toast */
     #toast {
       position: fixed; bottom: 20px; left: 50%;
@@ -462,6 +489,11 @@
             <div class="stat"><div class="n" id="s-a">0</div><div class="l">Cat A</div></div>
             <div class="stat"><div class="n" id="s-b">0</div><div class="l">Cat B</div></div>
           </div>
+        </div>
+
+        <div class="panel panel-logs">
+          <h2>Registro de Eventos y Diagnóstico</h2>
+          <div class="consola-logs" id="consola-logs" role="log" aria-live="polite"></div>
         </div>
       </div>
     </section>
@@ -678,6 +710,11 @@
         selInicializada = true;
       }
 
+      // Consola de eventos y logs
+      if (s.logs && Array.isArray(s.logs)) {
+        renderLogs(s.logs);
+      }
+
       // Alerta de seguridad
       const alerta = $("alerta");
       if (s.parada_activa) {
@@ -686,6 +723,33 @@
       } else {
         alerta.classList.remove("show");
       }
+    }
+
+    let ultimoLogLen = 0;
+    function renderLogs(logs) {
+      const el = $("consola-logs");
+      if (!el || !logs) return;
+      if (logs.length === ultimoLogLen && el.children.length === logs.length) return;
+      ultimoLogLen = logs.length;
+      el.textContent = "";
+      for (const l of logs) {
+        const row = document.createElement("div");
+        row.className = "log-item";
+        const t = document.createElement("span");
+        t.className = "log-time";
+        t.textContent = "[" + l.hora + "]";
+        const lvl = document.createElement("span");
+        lvl.className = "log-level log-level-" + l.nivel;
+        lvl.textContent = "[" + l.nivel + "]";
+        const msg = document.createElement("span");
+        msg.className = "log-msg";
+        msg.textContent = l.mensaje;
+        row.appendChild(t);
+        row.appendChild(lvl);
+        row.appendChild(msg);
+        el.appendChild(row);
+      }
+      el.scrollTop = el.scrollHeight;
     }
 
     // ------------------------------------------------ selección de cámara
