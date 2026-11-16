@@ -1,736 +1,92 @@
-<!DOCTYPE html><html class="dark" lang="es"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_standard" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"secondary":"#4cd7f6","surface-container-highest":"#313540","surface-variant":"#313540","outline-variant":"#534434","surface-bright":"#353944","error-container":"#93000a","primary":"#ffc174","error":"#ffb4ab","on-primary-container":"#613b00","on-primary-fixed-variant":"#653e00","on-secondary-container":"#00424e","on-background":"#dfe2f1","tertiary-fixed":"#6ffbbe","inverse-on-surface":"#2c303b","surface-container-low":"#171b26","primary-fixed":"#ffddb8","primary-container":"#f59e0b","secondary-fixed":"#acedff","surface-container-high":"#262a35","on-tertiary-container":"#004e34","on-tertiary-fixed":"#002113","on-tertiary":"#003824","secondary-fixed-dim":"#4cd7f6","tertiary-container":"#30c88f","surface-container-lowest":"#0a0e18","surface":"#0f131d","on-secondary":"#003640","tertiary-fixed-dim":"#4edea3","on-primary":"#472a00","on-secondary-fixed":"#001f26","on-surface-variant":"#d8c3ad","on-secondary-fixed-variant":"#004e5c","tertiary":"#56e5a9","secondary-container":"#03b5d3","background":"#0f131d","surface-tint":"#ffb95f","on-error":"#690005","on-primary-fixed":"#2a1700","on-surface":"#dfe2f1","primary-fixed-dim":"#ffb95f","on-tertiary-fixed-variant":"#005236","surface-dim":"#0f131d","surface-container":"#1c1f2a","on-error-container":"#ffdad6","inverse-surface":"#dfe2f1","inverse-primary":"#855300","outline":"#a08e7a"},borderRadius:{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},spacing:{"space-md":"1rem","gutter-mobile":"0.75rem","margin-mobile":"1rem","gutter":"1.5rem","space-lg":"1.5rem","space-sm":"0.5rem","space-xl":"2.5rem","space-xs":"0.25rem","margin":"2rem"},fontFamily:{"headline-xl-mobile":["Inter"],"headline-md":["Inter"],"telemetry-data":["JetBrains Mono"],"headline-xl":["Inter"],"label-caps":["JetBrains Mono"],"headline-sm":["Inter"],"headline-lg":["Inter"],"code-md":["JetBrains Mono"],"body-sm":["Inter"],"body-lg":["Inter"],"code-lg":["JetBrains Mono"],"body-md":["Inter"],"headline-lg-mobile":["Inter"]},fontSize:{"headline-xl-mobile":["2rem",{"lineHeight":"2.5rem","letterSpacing":"-0.02em","fontWeight":"700"}],"headline-md":["1.5rem",{"lineHeight":"2rem","letterSpacing":"-0.015em","fontWeight":"600"}],"telemetry-data":["0.8125rem",{"lineHeight":"1rem","letterSpacing":"0.05em","fontWeight":"600"}],"headline-xl":["3rem",{"lineHeight":"3.5rem","letterSpacing":"-0.025em","fontWeight":"700"}],"label-caps":["0.6875rem",{"lineHeight":"0.875rem","letterSpacing":"0.08em","fontWeight":"600"}],"headline-sm":["1.25rem",{"lineHeight":"1.75rem","fontWeight":"600"}],"headline-lg":["2.25rem",{"lineHeight":"2.75rem","letterSpacing":"-0.02em","fontWeight":"600"}],"code-md":["0.875rem",{"lineHeight":"1.375rem","fontWeight":"400"}],"body-sm":["0.875rem",{"lineHeight":"1.25rem","fontWeight":"400"}],"body-lg":["1.125rem",{"lineHeight":"1.75rem","fontWeight":"400"}],"code-lg":["1rem",{"lineHeight":"1.5rem","fontWeight":"500"}],"body-md":["1rem",{"lineHeight":"1.5rem","fontWeight":"400"}],"headline-lg-mobile":["1.75rem",{"lineHeight":"2.25rem","letterSpacing":"-0.015em","fontWeight":"600"}]}}}}</script></head><body class="bg-background font-body-md text-body-md text-on-surface antialiased min-h-screen flex flex-col"><header class="fixed top-0 left-0 w-full z-50 bg-surface-container-lowest/90 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.4)]"><div class="h-20 w-full px-margin flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-lg"><div class="flex items-center gap-space-md"><div class="h-10 w-10 shrink-0 overflow-hidden flex items-center justify-center rounded"><img src="https://lh3.googleusercontent.com/aida/ALJJyrDdBKBKasxBugh37v8qA_4UbVTnHUYo-_LvMZWhzseg-4ZoSnApcve38306II1VmuOcu5uWtcuMfI2U7_R45x1uk2p44sOnn87qcUfSdkUQ2DP3SS-S7U3DaRVJP8uozf3Qs1N6YO5c_nKHVI-n7aH5cqDqm7NJHyU-W3web0JyCZg2xSDurcTJegYcIEVKgtKzB6dbMTpTuvSLRoNlEnw68_uyLMDeoZi8qKzJtQMU" alt="UPrO Industrial Logo" class="h-full w-full object-contain"></div><div class="flex flex-col"><div class="flex items-center gap-space-xs"><span class="text-on-surface font-headline-sm text-headline-sm font-semibold tracking-tight">Vision Cell</span><span class="text-primary font-code-md text-code-md font-bold tracking-tight">· DESAFÍO 2</span></div><span class="text-on-surface-variant font-label-caps text-label-caps uppercase tracking-wider">Pick &amp; Place Guiado por Visión</span></div></div><div class="hidden xl:flex items-center gap-space-xs"><div class="flex items-center gap-space-xs bg-surface-container px-space-sm py-space-xs rounded border border-surface-container-highest"><span class="w-2 h-2 rounded-full bg-tertiary shadow-[0_0_8px_#56e5a9]"></span><span class="font-label-caps text-label-caps text-on-surface uppercase">CAM: OK (60 FPS)</span></div><div class="flex items-center gap-space-xs bg-surface-container px-space-sm py-space-xs rounded border border-surface-container-highest"><span class="w-2 h-2 rounded-full bg-tertiary shadow-[0_0_8px_#56e5a9]"></span><span class="font-label-caps text-label-caps text-on-surface uppercase">GRP: COM3 OK</span></div><div class="flex items-center gap-space-xs bg-surface-container px-space-sm py-space-xs rounded border border-surface-container-highest"><span class="w-2 h-2 rounded-full bg-tertiary shadow-[0_0_8px_#56e5a9]"></span><span class="font-label-caps text-label-caps text-on-surface uppercase">UR5: 127.0.0.1:30004 READY</span></div><div class="flex items-center gap-space-xs bg-surface-container px-space-sm py-space-xs rounded border border-surface-container-highest"><span class="w-2 h-2 rounded-full bg-primary-container shadow-[0_0_8px_#f59e0b]"></span><span class="font-label-caps text-label-caps text-primary uppercase">E-STOP: PENDANT ARMED</span></div></div></div><nav class="hidden lg:flex items-center gap-space-xs bg-surface-container-lowest p-space-xs rounded-lg" data-active-classes="bg-surface-container-high text-primary font-semibold"><a class="px-space-md py-space-xs rounded font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all" data-path="modo-presentacion" href="#">Modo Presentación (Slides)</a><a aria-current="page" class="px-space-md py-space-xs rounded transition-all bg-surface-container-high text-primary font-semibold" data-path="dashboard-hmi" href="#">Dashboard HMI (Control en Vivo)</a><a class="px-space-md py-space-xs rounded font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all" data-path="arquitectura-vision" href="#">Arquitectura &amp; Visión</a><a class="px-space-md py-space-xs rounded font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all" data-path="manual-operativo-seguridad" href="#">Manual Operativo &amp; Seguridad</a></nav><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs bg-surface-container-low px-space-md py-space-xs rounded border border-surface-container-high"><span class="material-symbols-outlined text-secondary text-[18px]">timer</span><span class="font-telemetry-data text-telemetry-data text-secondary">15:00 REMAINING</span></div><button class="w-9 h-9 flex items-center justify-center rounded bg-surface-container text-on-surface-variant hover:text-secondary hover:bg-surface-container-high transition-colors" title="Pantalla Completa" type="button"><span class="material-symbols-outlined text-[20px]">fullscreen</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-20 bg-background flex-1"><div class="flex flex-col w-full">
-<!-- Telemetry Notification Rail -->
-<div class="w-full bg-surface-container-lowest px-margin py-space-xs flex flex-wrap items-center justify-between gap-space-sm">
-<div class="flex items-center gap-space-md">
-<div class="flex items-center gap-space-xs">
-<span class="w-2.5 h-2.5 rounded-full bg-tertiary shadow-[0_0_8px_#56e5a9] animate-pulse"></span>
-<span class="font-label-caps text-label-caps uppercase text-on-surface">CORE LINK: ESTABLISHED</span>
-</div>
-<div class="hidden sm:flex items-center gap-space-xs font-telemetry-data text-telemetry-data text-on-surface-variant">
-<span>PID: <strong class="text-secondary font-telemetry-data">4892</strong></span>
-<span>•</span>
-<span>TICK: <strong class="text-on-surface font-telemetry-data" id="loop-ticks">167,781</strong></span>
-<span>•</span>
-<span>LATENCY: <strong class="text-tertiary font-telemetry-data">LOCAL</strong></span>
-</div>
-</div>
-<div class="flex items-center gap-space-sm">
-<a class="flex items-center gap-space-xs font-label-caps text-label-caps uppercase px-space-sm py-space-xs rounded bg-surface-container-high text-primary hover:brightness-110" href="index.html"><span class="material-symbols-outlined text-[16px]">arrow_back</span>Presentación</a>
-<span class="font-label-caps text-label-caps uppercase px-space-sm py-space-xs rounded bg-surface-container text-on-surface-variant">
-        TARGET: <span class="text-primary font-bold">URSCRIPT_SOCKET</span>
-</span>
-<span class="font-label-caps text-label-caps uppercase px-space-sm py-space-xs rounded bg-surface-container-high text-secondary">
-        PROFILE: <span class="font-bold">HSV_DUAL_CHANNEL_V3</span>
-</span>
-</div>
-</div>
-<!-- Main Supervisory HUD -->
-<div class="w-full px-margin py-space-lg flex flex-col gap-space-lg">
-<!-- Top System Health Monitor Array -->
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
-<!-- LED Card 1: Cámara -->
-<div class="bg-surface-container-low rounded-xl p-space-md shadow-md flex items-center justify-between">
-<div class="flex flex-col">
-<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">SENSOR ÓPTICO</span>
-<span class="font-headline-sm text-headline-sm text-on-surface font-bold tracking-tight">CÁMARA RGB</span>
-<span class="font-code-md text-code-md text-secondary">30 FPS · ROI Activa</span>
-</div>
-<div class="flex flex-col items-end gap-space-xs">
-<div class="w-3.5 h-3.5 rounded-full bg-tertiary shadow-[0_0_10px_#56e5a9]"></div>
-<span class="font-label-caps text-label-caps text-tertiary uppercase font-bold">OK / ONLINE</span>
-</div>
-</div>
-<!-- LED Card 2: Gripper Arduino -->
-<div class="bg-surface-container-low rounded-xl p-space-md shadow-md flex items-center justify-between">
-<div class="flex flex-col">
-<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">ACTUADOR FINAL</span>
-<span class="font-headline-sm text-headline-sm text-on-surface font-bold tracking-tight">ARDUINO COM3</span>
-<span class="font-code-md text-code-md text-secondary">Gripper 4 Servos · TPU</span>
-</div>
-<div class="flex flex-col items-end gap-space-xs">
-<div class="w-3.5 h-3.5 rounded-full bg-tertiary shadow-[0_0_10px_#56e5a9]" id="gripper-led"></div>
-<span class="font-label-caps text-label-caps text-tertiary uppercase font-bold" id="gripper-status-text">CONECTADO</span>
-</div>
-</div>
-<!-- LED Card 3: UR5e / URsim -->
-<div class="bg-surface-container-low rounded-xl p-space-md shadow-md flex items-center justify-between">
-<div class="flex flex-col">
-<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">BRAZO ROBÓTICO</span>
-<span class="font-headline-sm text-headline-sm text-on-surface font-bold tracking-tight">UR5e / URSIM</span>
-<span class="font-code-md text-code-md text-primary">127.0.0.1 : 30004</span>
-</div>
-<div class="flex flex-col items-end gap-space-xs">
-<div class="w-3.5 h-3.5 rounded-full bg-tertiary shadow-[0_0_10px_#56e5a9]"></div>
-<span class="font-label-caps text-label-caps text-tertiary uppercase font-bold">CONECTADO</span>
-</div>
-</div>
-<!-- LED Card 4: Ciclo State -->
-<div class="bg-surface-container rounded-xl p-space-md shadow-md flex items-center justify-between">
-<div class="flex flex-col">
-<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">ESTADO GLOBAL DE CICLO</span>
-<span class="font-headline-sm text-headline-sm text-primary font-bold tracking-tight" id="global-cycle-state">LISTO</span>
-<span class="font-code-md text-code-md text-on-surface-variant">Modo Supervisado</span>
-</div>
-<div class="flex flex-col items-end gap-space-xs">
-<div class="w-3.5 h-3.5 rounded-full bg-primary-container shadow-[0_0_12px_#f59e0b]" id="cycle-state-indicator"></div>
-<span class="font-label-caps text-label-caps text-primary uppercase font-bold" id="cycle-state-sub">DISPONIBLE</span>
-</div>
-</div>
-</div>
-<!-- Center Instrumentation: Camera Feed + UR5 Controller Panel -->
-<div class="grid grid-cols-1 xl:grid-cols-12 gap-space-lg items-start">
-<!-- Left Panel: 7 Columns Machine Vision Viewport -->
-<div class="xl:col-span-7 flex flex-col gap-space-md">
-<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-xl flex flex-col gap-space-sm relative overflow-hidden">
-<!-- Viewport Header Toolbar -->
-<div class="flex flex-wrap items-center justify-between gap-space-sm pb-space-xs">
-<div class="flex items-center gap-space-sm">
-<span class="material-symbols-outlined text-secondary text-[20px]">videocam</span>
-<span class="font-code-lg text-code-lg text-on-surface font-semibold">// LIVE FEED · HSV SEGMENTATION ENGINE</span>
-</div>
-<div class="flex items-center gap-space-xs">
-<button class="px-space-sm py-space-xs rounded bg-surface-container-high hover:bg-surface-bright text-secondary font-label-caps text-label-caps uppercase transition-all flex items-center gap-space-xs" id="btn-toggle-mask" type="button">
-<span class="material-symbols-outlined text-[16px]">visibility</span>
-<span id="mask-mode-label">MÁSCARA HSV [DESACT.]</span>
-</button>
-<button class="px-space-sm py-space-xs rounded bg-surface-container-high hover:bg-surface-bright text-primary font-label-caps text-label-caps uppercase transition-all flex items-center gap-space-xs" id="btn-trigger-detection" type="button">
-<span class="material-symbols-outlined text-[16px]">flip_camera_android</span>
-<span>SWITCH TARGET</span>
-</button>
-</div>
-</div>
-<!-- Video Stream Simulation Canvas Area -->
-<div class="relative w-full aspect-video bg-black rounded-lg overflow-hidden flex items-center justify-center select-none group">
-<!-- Simulated Camera Background Placeholder (Clean factory floor lighting) -->
-<div class="absolute inset-0 bg-cover bg-center transition-all duration-500 opacity-90" id="sim-feed-bg" style="background-image: url('assets/foto-celda.jpg')"></div>
-<!-- Optical Grid Overlay -->
-<svg class="absolute inset-0 w-full h-full pointer-events-none opacity-25" xmlns="http://www.w3.org/2000/svg">
-<defs>
-<pattern height="40" id="grid-pattern" patternUnits="userSpaceOnUse" width="40">
-<path class="text-secondary" d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" stroke-width="0.5"></path>
-</pattern>
-</defs>
-<rect fill="url(#grid-pattern)" height="100%" width="100%"></rect>
-</svg>
-<!-- ROI (Region Of Interest) Boundary Box -->
-<div class="absolute inset-8 rounded pointer-events-none transition-all duration-300 shadow-[inset_0_0_15px_rgba(76,215,246,0.15)] flex flex-col justify-between p-space-xs">
-<div class="flex justify-between items-start font-label-caps text-label-caps text-secondary font-semibold">
-<span class="bg-surface-container-lowest/80 px-space-xs py-space-xs rounded">ROI: [X0:80, Y0:45, W:1120, H:630]</span>
-<span class="bg-surface-container-lowest/80 px-space-xs py-space-xs rounded">HOMOGRAPHY: MATRIX OK</span>
-</div>
-<div class="flex justify-between items-end font-label-caps text-label-caps text-secondary">
-<span class="bg-surface-container-lowest/80 px-space-xs py-space-xs rounded">SCALE: 0.412 mm/px</span>
-<span class="bg-surface-container-lowest/80 px-space-xs py-space-xs rounded">CAPTURE: 1280×720 @ 30 FPS</span>
-</div>
-</div>
-<!-- Centered Machine Crosshair -->
-<div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-<div class="w-8 h-8 relative flex items-center justify-center">
-<div class="w-full h-px bg-secondary/40"></div>
-<div class="h-full w-px bg-secondary/40 absolute"></div>
-<div class="w-3 h-3 rounded-full border border-secondary/60"></div>
-</div>
-</div>
-<!-- DYNAMIC TARGET BOUNDING BOX & CENTROID (Controlled by JS) -->
-<div class="absolute transition-all duration-700 pointer-events-none flex flex-col items-center justify-center" id="detection-box" style="top: 36%; left: 42%; width: 130px; height: 130px;">
-<!-- Bounding Corner Brackets -->
-<div class="absolute -top-1 -left-1 w-3 h-3 border-t-2 border-l-2 border-secondary"></div>
-<div class="absolute -top-1 -right-1 w-3 h-3 border-t-2 border-r-2 border-secondary"></div>
-<div class="absolute -bottom-1 -left-1 w-3 h-3 border-b-2 border-l-2 border-secondary"></div>
-<div class="absolute -bottom-1 -right-1 w-3 h-3 border-b-2 border-r-2 border-secondary"></div>
-<!-- Color Mask Overlay Preview -->
-<div class="w-full h-full bg-error-container/40 rounded transition-colors duration-300 flex items-center justify-center shadow-[0_0_16px_rgba(255,180,171,0.3)]" id="target-mask-color">
-<!-- Centroid Crosshair -->
-<div class="w-4 h-4 relative flex items-center justify-center">
-<div class="w-full h-0.5 bg-white"></div>
-<div class="h-full w-0.5 bg-white absolute"></div>
-<div class="w-1.5 h-1.5 rounded-full bg-primary absolute"></div>
-</div>
-</div>
-<!-- Floating Centroid Coordinates Tag -->
-<div class="absolute -top-7 left-0 whitespace-nowrap bg-surface-container-lowest/90 px-space-xs py-space-xs rounded shadow-lg flex items-center gap-space-xs" id="target-tag-container">
-<span class="w-2 h-2 rounded-full bg-error" id="target-badge-dot"></span>
-<span class="font-label-caps text-label-caps text-on-surface font-bold" id="target-category-label">Pieza A - Roja</span>
-<span class="font-telemetry-data text-telemetry-data text-secondary" id="target-centroid-coords">X:542 Y:388 px</span>
-</div>
-</div>
-<!-- Viewport Bottom HUD Bar -->
-<div class="absolute bottom-2 left-2 right-2 px-space-md py-space-xs bg-surface-container-lowest/80 backdrop-blur-md rounded flex items-center justify-between text-on-surface font-telemetry-data text-telemetry-data pointer-events-none">
-<div class="flex items-center gap-space-md">
-<span>CONTOUR AREA: <strong class="text-tertiary" id="contour-area">4,280 px²</strong></span>
-<span>SOLIDITY: <strong class="text-on-surface">0.96</strong></span>
-<span>ORIENTATION θ: <strong class="text-primary" id="contour-angle">-12.4°</strong></span>
-</div>
-<div class="flex items-center gap-space-xs text-secondary">
-<span class="material-symbols-outlined text-[16px] animate-spin">refresh</span>
-<span>SYNC PIPELINE</span>
-</div>
-</div>
-</div>
-<!-- Vision Parameter Sliders Simulation -->
-<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md pt-space-xs">
-<div class="bg-surface-container rounded-lg p-space-sm flex flex-col gap-space-xs">
-<div class="flex justify-between items-center font-label-caps text-label-caps">
-<span class="text-on-surface-variant uppercase">FILTRO HUE RANGE (HUE MIN / MAX)</span>
-<span class="text-primary font-telemetry-data" id="hsv-range-val">[0-15] &amp; [165-180] (ROJO)</span>
-</div>
-<div class="w-full h-2 rounded bg-surface-container-highest relative overflow-hidden">
-<div class="h-full bg-error rounded transition-all duration-300" id="hue-bar-indicator" style="width: 35%; margin-left: 0%;"></div>
-</div>
-</div>
-<div class="bg-surface-container rounded-lg p-space-sm flex flex-col gap-space-xs">
-<div class="flex justify-between items-center font-label-caps text-label-caps">
-<span class="text-on-surface-variant uppercase">MÍNIMO ÁREA CONTOUR (PIXELS)</span>
-<span class="text-secondary font-telemetry-data">500 – 50,000 px² (VÁLIDO)</span>
-</div>
-<div class="w-full h-2 rounded bg-surface-container-highest relative overflow-hidden">
-<div class="h-full bg-secondary rounded" style="width: 58%;"></div>
-</div>
-</div>
-</div>
-</div>
-<!-- Vision Diagnostics Quick Actions Banner -->
-<div class="bg-surface-container-low rounded-xl p-space-md flex flex-wrap items-center justify-between gap-space-md shadow-md">
-<div class="flex items-center gap-space-md">
-<div class="w-10 h-10 rounded bg-secondary-container/20 flex items-center justify-center text-secondary">
-<span class="material-symbols-outlined">center_focus_strong</span>
-</div>
-<div class="flex flex-col">
-<span class="font-headline-sm text-headline-sm text-on-surface">Banco de Pruebas de Detección</span>
-<span class="font-body-sm text-body-sm text-on-surface-variant">Fuerza la calibración cromática y recalcula la homografía a coordenadas del plano robot.</span>
-</div>
-</div>
-<div class="flex items-center gap-space-xs">
-<button class="px-space-md py-space-xs rounded bg-surface-container-high hover:bg-surface-bright text-secondary font-body-sm text-body-sm font-semibold transition-all flex items-center gap-space-xs shadow-sm" id="btn-test-detection" type="button">
-<span class="material-symbols-outlined text-[18px]">biotech</span>
-<span>Test Detection</span>
-</button>
-<button class="px-space-md py-space-xs rounded bg-surface-container-high hover:bg-surface-bright text-primary font-body-sm text-body-sm font-semibold transition-all flex items-center gap-space-xs shadow-sm" id="btn-change-category" type="button">
-<span class="material-symbols-outlined text-[18px]">swap_horiz</span>
-<span>Alternar Cat A / B</span>
-</button>
-</div>
-</div>
-</div>
-<!-- Right Panel: 5 Columns UR5 Robot Controller Panel -->
-<div class="xl:col-span-5 flex flex-col gap-space-md">
-<!-- Pose Coordinates & Kinematic Telemetry Card -->
-<div class="bg-surface-container-low rounded-xl p-space-md shadow-xl flex flex-col gap-space-md">
-<div class="flex items-center justify-between">
-<div class="flex items-center gap-space-xs">
-<span class="material-symbols-outlined text-primary text-[20px]">precision_manufacturing</span>
-<span class="font-code-lg text-code-lg text-on-surface font-semibold">// UR5e POSE &amp; KINEMATICS (TCP)</span>
-</div>
-<span class="font-label-caps text-label-caps uppercase px-space-xs py-space-xs rounded bg-surface-container text-tertiary">TOOL0 VEC NOMINAL</span>
-</div>
-<!-- Spatial Pose Readouts 6-DOF Grid -->
-<div class="grid grid-cols-3 gap-space-xs">
-<div class="bg-surface-container rounded p-space-xs flex flex-col">
-<span class="font-label-caps text-label-caps text-on-surface-variant">X (mm)</span>
-<span class="font-telemetry-data text-telemetry-data text-secondary font-bold" id="pose-x">-218.42</span>
-</div>
-<div class="bg-surface-container rounded p-space-xs flex flex-col">
-<span class="font-label-caps text-label-caps text-on-surface-variant">Y (mm)</span>
-<span class="font-telemetry-data text-telemetry-data text-secondary font-bold" id="pose-y">-430.15</span>
-</div>
-<div class="bg-surface-container rounded p-space-xs flex flex-col">
-<span class="font-label-caps text-label-caps text-on-surface-variant">Z (mm)</span>
-<span class="font-telemetry-data text-telemetry-data text-primary font-bold" id="pose-z">150.00</span>
-</div>
-<div class="bg-surface-container rounded p-space-xs flex flex-col">
-<span class="font-label-caps text-label-caps text-on-surface-variant">Rx (rad)</span>
-<span class="font-telemetry-data text-telemetry-data text-on-surface font-bold">3.1415</span>
-</div>
-<div class="bg-surface-container rounded p-space-xs flex flex-col">
-<span class="font-label-caps text-label-caps text-on-surface-variant">Ry (rad)</span>
-<span class="font-telemetry-data text-telemetry-data text-on-surface font-bold">0.0021</span>
-</div>
-<div class="bg-surface-container rounded p-space-xs flex flex-col">
-<span class="font-label-caps text-label-caps text-on-surface-variant">Rz (rad)</span>
-<span class="font-telemetry-data text-telemetry-data text-on-surface font-bold" id="pose-rz">-0.216</span>
-</div>
-</div>
-<!-- Clearance & Trajectory Safety Offsets -->
-<div class="bg-surface-container-lowest rounded-lg p-space-sm flex items-center justify-between font-label-caps text-label-caps">
-<div class="flex flex-col items-center">
-<span class="text-on-surface-variant">Z_SEGURO</span>
-<span class="font-telemetry-data text-secondary text-[14px] font-bold">250.0 mm</span>
-</div>
-<div class="w-px h-6 bg-surface-container-highest"></div>
-<div class="flex flex-col items-center">
-<span class="text-on-surface-variant">Z_PICK</span>
-<span class="font-telemetry-data text-primary text-[14px] font-bold">120.0 mm</span>
-</div>
-<div class="w-px h-6 bg-surface-container-highest"></div>
-<div class="flex flex-col items-center">
-<span class="text-on-surface-variant">Z_DEPOSIT</span>
-<span class="font-telemetry-data text-tertiary text-[14px] font-bold">120.0 mm</span>
-</div>
-</div>
-<!-- State Machine Pipeline Visualization -->
-<div class="flex flex-col gap-space-xs pt-space-xs">
-<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">MÁQUINA DE ESTADOS FINITA (FSM)</span>
-<div class="grid grid-cols-4 gap-space-xs">
-<div class="fsm-node px-space-xs py-space-xs rounded bg-surface-container-high text-primary font-label-caps text-label-caps text-center font-bold transition-all shadow-[0_0_8px_#f59e0b]" id="fsm-step-home">
-                1. HOME
-              </div>
-<div class="fsm-node px-space-xs py-space-xs rounded bg-surface-container text-on-surface-variant font-label-caps text-label-caps text-center transition-all" id="fsm-step-aprox">
-                2. APROXIMAR
-              </div>
-<div class="fsm-node px-space-xs py-space-xs rounded bg-surface-container text-on-surface-variant font-label-caps text-label-caps text-center transition-all" id="fsm-step-desc">
-                3. DESCENDER
-              </div>
-<div class="fsm-node px-space-xs py-space-xs rounded bg-surface-container text-on-surface-variant font-label-caps text-label-caps text-center transition-all" id="fsm-step-grip">
-                4. AGARRAR
-              </div>
-<div class="fsm-node px-space-xs py-space-xs rounded bg-surface-container text-on-surface-variant font-label-caps text-label-caps text-center transition-all" id="fsm-step-elev">
-                5. ELEVAR
-              </div>
-<div class="fsm-node px-space-xs py-space-xs rounded bg-surface-container text-on-surface-variant font-label-caps text-label-caps text-center transition-all" id="fsm-step-trans">
-                6. TRANSPORTAR
-              </div>
-<div class="fsm-node px-space-xs py-space-xs rounded bg-surface-container text-on-surface-variant font-label-caps text-label-caps text-center transition-all" id="fsm-step-depo">
-                7. DEPOSITAR
-              </div>
-<div class="fsm-node px-space-xs py-space-xs rounded bg-surface-container text-on-surface-variant font-label-caps text-label-caps text-center transition-all" id="fsm-step-home2">
-                8. HOME
-              </div>
-</div>
-</div>
-<!-- Gripper Servo Tactile State Readout -->
-<div class="flex items-center justify-between p-space-sm bg-surface-container rounded-lg">
-<div class="flex items-center gap-space-sm">
-<span class="material-symbols-outlined text-secondary text-[22px]">build_circle</span>
-<div class="flex flex-col">
-<span class="font-body-sm text-body-sm text-on-surface font-semibold">Servo Pinza TPU</span>
-<span class="font-telemetry-data text-telemetry-data text-on-surface-variant" id="gripper-angle-sub">ÁNGULO: 170° (ABIERTO) · 4 SERVOS</span>
-</div>
-</div>
-<span class="px-space-sm py-space-xs rounded font-label-caps text-label-caps uppercase bg-secondary/20 text-secondary font-bold" id="gripper-badge">ABIERTO</span>
-</div>
-<!-- Robotic Direct Action Dispatch Controls -->
-<div class="flex flex-col gap-space-sm pt-space-xs">
-<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">COMANDOS MANUALES Y DE DISPATCH</span>
-<div class="grid grid-cols-2 gap-space-sm">
-<button class="w-full py-space-sm px-space-md rounded bg-primary hover:brightness-110 text-on-primary font-body-sm text-body-sm font-bold flex items-center justify-center gap-space-xs shadow-[0_0_16px_rgba(245,158,11,0.25)] transition-all" id="btn-start-cycle" type="button">
-<span class="material-symbols-outlined text-[18px]">play_arrow</span>
-<span>Iniciar Ciclo Auto</span>
-</button>
-<button class="w-full py-space-sm px-space-md rounded bg-surface-container-high hover:bg-surface-bright text-on-surface font-body-sm text-body-sm font-semibold flex items-center justify-center gap-space-xs transition-all" id="btn-pause-cycle" type="button">
-<span class="material-symbols-outlined text-[18px]">pause</span>
-<span>Pausar</span>
-</button>
-</div>
-<div class="grid grid-cols-3 gap-space-sm">
-<button class="py-space-xs px-space-sm rounded bg-surface-container-high hover:bg-surface-bright text-secondary font-body-sm text-body-sm font-semibold flex items-center justify-center gap-space-xs transition-all" id="btn-open-gripper" type="button">
-<span class="material-symbols-outlined text-[16px]">lock_open</span>
-<span>Abrir Grip</span>
-</button>
-<button class="py-space-xs px-space-sm rounded bg-surface-container-high hover:bg-surface-bright text-primary font-body-sm text-body-sm font-semibold flex items-center justify-center gap-space-xs transition-all" id="btn-close-gripper" type="button">
-<span class="material-symbols-outlined text-[16px]">lock</span>
-<span>Cerrar Grip</span>
-</button>
-<button class="py-space-xs px-space-sm rounded bg-surface-container-high hover:bg-surface-bright text-on-surface font-body-sm text-body-sm font-semibold flex items-center justify-center gap-space-xs transition-all" id="btn-go-home" type="button">
-<span class="material-symbols-outlined text-[16px]">home</span>
-<span>Ir a Home</span>
-</button>
-</div>
-<!-- Cycle Simulation Macro Button -->
-<button class="w-full py-space-xs px-space-md rounded bg-surface-container-highest hover:bg-surface-bright text-tertiary font-body-sm text-body-sm font-semibold flex items-center justify-center gap-space-xs transition-all" id="btn-sim-full-cycle" type="button">
-<span class="material-symbols-outlined text-[18px]">rocket_launch</span>
-<span>Pick &amp; Place Cycle Simulation (DEMO)</span>
-</button>
-</div>
-<!-- SAFETY WARNING ADMONITION -->
-<div class="p-space-sm rounded bg-error-container/20 flex items-start gap-space-sm">
-<span class="material-symbols-outlined text-error text-[20px] mt-0.5">warning</span>
-<div class="flex flex-col">
-<span class="font-label-caps text-label-caps text-error font-bold uppercase">ADVERTENCIA DE SEGURIDAD OPERACIONAL</span>
-<p class="font-body-sm text-body-sm text-error/90 leading-tight">
-<strong>E-STOP PRIMARIO:</strong> Teach Pendant UR5 (no hardware button on Arduino). El pulsador físico de parada de emergencia se encuentra únicamente en el pendant oficial de la celda.
-              </p>
-</div>
-</div>
-</div>
-</div>
-</div>
-<!-- Telemetry & Production Batch Counters (Bento Grid Bottom) -->
-<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-space-md">
-<!-- Total Ciclos -->
-<div class="bg-surface-container-low rounded-xl p-space-md shadow-md flex flex-col justify-between">
-<div class="flex items-center justify-between">
-<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">PRODUCCIÓN TOTAL</span>
-<span class="material-symbols-outlined text-secondary text-[20px]">sync</span>
-</div>
-<div class="flex items-baseline gap-space-sm my-space-xs">
-<span class="font-headline-xl text-headline-xl text-on-surface font-bold tracking-tight" id="counter-total">14</span>
-<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">CICLOS COMPLETOS</span>
-</div>
-<div class="w-full bg-surface-container-highest h-1.5 rounded overflow-hidden">
-<div class="bg-secondary h-full" style="width: 100%"></div>
-</div>
-</div>
-<!-- Ciclos OK & Errores -->
-<div class="bg-surface-container-low rounded-xl p-space-md shadow-md flex flex-col justify-between">
-<div class="flex items-center justify-between">
-<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">CALIDAD &amp; CONVERGENCIA</span>
-<div class="flex items-center gap-space-xs">
-<span class="w-2 h-2 rounded-full bg-tertiary"></span>
-<span class="font-label-caps text-label-caps text-tertiary">100% SUCCESS</span>
-</div>
-</div>
-<div class="flex items-center justify-between my-space-xs">
-<div>
-<span class="font-headline-lg text-headline-lg text-tertiary font-bold" id="counter-ok">14</span>
-<span class="font-label-caps text-label-caps text-on-surface-variant uppercase block">CICLOS OK</span>
-</div>
-<div class="text-right">
-<span class="font-headline-lg text-headline-lg text-error font-bold">0</span>
-<span class="font-label-caps text-label-caps text-on-surface-variant uppercase block">ERRORES</span>
-</div>
-</div>
-<span class="font-telemetry-data text-telemetry-data text-on-surface-variant">Tasa de éxito nominal: <strong class="text-tertiary">100.0%</strong></span>
-</div>
-<!-- Depósito 1: Categoría A (Rojo) -->
-<div class="bg-surface-container-low rounded-xl p-space-md shadow-md flex flex-col justify-between">
-<div class="flex items-center justify-between">
-<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">DEPÓSITO 1 · BANDEJA IZQ</span>
-<span class="w-3 h-3 rounded-full bg-error shadow-[0_0_8px_#ffb4ab]"></span>
-</div>
-<div class="flex items-baseline gap-space-sm my-space-xs">
-<span class="font-headline-xl text-headline-xl text-error font-bold tracking-tight" id="counter-cat-a">8</span>
-<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">PIEZAS ROJAS (A)</span>
-</div>
-<div class="flex justify-between items-center font-telemetry-data text-telemetry-data text-on-surface-variant">
-<span>COORDS PICK: <strong class="text-on-surface">[-218, -430]</strong></span>
-<span>BOX: <strong class="text-error">D1_SLOT_A</strong></span>
-</div>
-</div>
-<!-- Depósito 2: Categoría B (Azul) -->
-<div class="bg-surface-container-low rounded-xl p-space-md shadow-md flex flex-col justify-between">
-<div class="flex items-center justify-between">
-<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">DEPÓSITO 2 · BANDEJA DER</span>
-<span class="w-3 h-3 rounded-full bg-secondary shadow-[0_0_8px_#4cd7f6]"></span>
-</div>
-<div class="flex items-baseline gap-space-sm my-space-xs">
-<span class="font-headline-xl text-headline-xl text-secondary font-bold tracking-tight" id="counter-cat-b">6</span>
-<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">PIEZAS AZULES (B)</span>
-</div>
-<div class="flex justify-between items-center font-telemetry-data text-telemetry-data text-on-surface-variant">
-<span>COORDS PICK: <strong class="text-on-surface">[+142, -430]</strong></span>
-<span>BOX: <strong class="text-secondary">D2_SLOT_B</strong></span>
-</div>
-</div>
-</div>
-<!-- Terminal Logging Output Section -->
-<div class="w-full bg-surface-container-lowest rounded-xl p-space-md shadow-xl flex flex-col gap-space-xs">
-<div class="flex items-center justify-between pb-space-xs">
-<div class="flex items-center gap-space-sm">
-<span class="material-symbols-outlined text-secondary text-[18px]">terminal</span>
-<span class="font-code-lg text-code-lg text-on-surface font-semibold">// LIVE SYSTEM EVENT LOG (FLASK ENGINE DISPATCH)</span>
-</div>
-<button class="font-label-caps text-label-caps text-on-surface-variant hover:text-on-surface uppercase" id="btn-clear-logs" type="button">LIMPIAR REGISTRO</button>
-</div>
-<div class="w-full h-32 overflow-y-auto bg-surface rounded p-space-sm font-telemetry-data text-telemetry-data text-on-surface-variant flex flex-col gap-1 select-text" id="terminal-feed">
-<div><span class="text-tertiary">[14:32:01.102]</span> <span class="text-secondary">FLASK_SERVER:</span> Inicia servicio HTTP/REST en puerto :5000 (Thread ID: 0x7fa28b)</div>
-<div><span class="text-tertiary">[14:32:01.442]</span> <span class="text-primary">OPENCV_CAP:</span> Cámara índice 0 inicializada en 1280x720 @ 30 FPS.</div>
-<div><span class="text-tertiary">[14:32:02.018]</span> <span class="text-secondary">SERIAL_COM3:</span> Handshake ACK recibido de Arduino UNO [Baud: 115200] - Gripper calibrado (abierto 170°).</div>
-<div><span class="text-tertiary">[14:32:02.190]</span> <span class="text-primary">UR_RTDE:</span> Conexión TCP establecida con el UR5 (puerto 30004).</div>
-<div><span class="text-tertiary">[14:34:10.822]</span> <span class="text-tertiary">VISION_PIPELINE:</span> Detección confirmada en ROI. Centroid=[542, 388] px -&gt; Robot=[-218.42, -430.15] mm.</div>
-<div><span class="text-tertiary">[14:34:15.654]</span> <span class="text-primary">FSM_CONTROLLER:</span> Ciclo #14 finalizado exitosamente. Robot retornado a HOME pose.</div>
-</div>
-</div>
-</div>
-<!-- Inline Dashboard Interactions Script -->
-<script>
-    (function initDashboard() {
-      // Internal States
-      let isCategoryA = true; // true = Red, false = Blue
-      let isMaskActive = false;
-      let isGripperOpen = true;
-      let isCycleRunning = false;
-      let totalCycles = 14;
-      let cyclesA = 8;
-      let cyclesB = 6;
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dashboard HMI — Celda UR5 · UPrO</title>
+<meta name="description" content="El dashboard HMI de la celda UR5: estado de hardware, detección en vivo, calibración asistida y registro de producción. UPrO · Desafío 2.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
 
-      // Element References
-      const detectionBox = document.getElementById('detection-box');
-      const targetMaskColor = document.getElementById('target-mask-color');
-      const targetBadgeDot = document.getElementById('target-badge-dot');
-      const targetCatLabel = document.getElementById('target-category-label');
-      const targetCoords = document.getElementById('target-centroid-coords');
-      const contourArea = document.getElementById('contour-area');
-      const contourAngle = document.getElementById('contour-angle');
-      const hsvRangeVal = document.getElementById('hsv-range-val');
-      const hueBar = document.getElementById('hue-bar-indicator');
-      const maskModeLabel = document.getElementById('mask-mode-label');
-      
-      const poseX = document.getElementById('pose-x');
-      const poseY = document.getElementById('pose-y');
-      const poseZ = document.getElementById('pose-z');
-      const poseRz = document.getElementById('pose-rz');
-      
-      const globalCycleState = document.getElementById('global-cycle-state');
-      const cycleStateSub = document.getElementById('cycle-state-sub');
-      const cycleStateLed = document.getElementById('cycle-state-indicator');
+<header class="nav">
+  <a class="nav__mark" href="index.html"><img src="assets/logo-upro.jpg" alt="" width="28" height="28">UPrO · Celda UR5</a>
+  <nav aria-label="Principal">
+    <ul class="nav__list">
+      <li><a class="nav__link" href="index.html">Inicio</a></li>
+      <li><a class="nav__link" href="arquitectura.html">Arquitectura</a></li>
+      <li><a class="nav__link" href="dashboard-hmi.html" aria-current="page">HMI</a></li>
+      <li><a class="nav__link" href="manual.html">Manual</a></li>
+    </ul>
+  </nav>
+</header>
 
-      const gripperBadge = document.getElementById('gripper-badge');
-      const gripperAngleSub = document.getElementById('gripper-angle-sub');
+<main class="container">
 
-      const counterTotal = document.getElementById('counter-total');
-      const counterOk = document.getElementById('counter-ok');
-      const counterCatA = document.getElementById('counter-cat-a');
-      const counterCatB = document.getElementById('counter-cat-b');
+  <section class="page-head">
+    <h1 class="display">Dashboard HMI</h1>
+    <p class="lede">El dashboard web (Flask) es el requisito de control de operaciones del enunciado: informa cuándo el sistema está listo, cuándo detecta una pieza válida, cuándo ejecuta, cuándo finaliza el ciclo y cuándo no hay información suficiente — y en ese último caso no arranca trayectoria con coordenadas no verificadas.</p>
+  </section>
 
-      const terminalFeed = document.getElementById('terminal-feed');
-      const loopTicksEl = document.getElementById('loop-ticks');
+  <section class="section--tight">
+    <h2 class="title">Qué muestra, panel por panel</h2>
+    <div class="duo">
+      <div class="spec">
+        <div class="spec__row"><span class="spec__k">LEDs de hardware</span><span class="spec__v">CÁM (cámara índice 0) · GRP (Arduino en COM3) · UR5 (127.0.0.1:30004, o el robot real en la red)</span></div>
+        <div class="spec__row"><span class="spec__k">Feed de cámara</span><span class="spec__v">video en vivo por MJPEG, con la detección superpuesta al cuadro</span></div>
+        <div class="spec__row"><span class="spec__k">Panel Colores</span><span class="spec__v">máscara HSV en vivo para verificar cada ajuste antes de guardarlo</span></div>
+        <div class="spec__row"><span class="spec__k">Panel Detección</span><span class="spec__v">pieza detectada, categoría y centroide; cuando no hay pieza válida, muestra el motivo del rechazo</span></div>
+        <div class="spec__row"><span class="spec__k">Calibración asistida</span><span class="spec__v">paneles Homografía (clic sobre las 4 marcas), ROI y HSV — sin tocar código ni archivos</span></div>
+        <div class="spec__row"><span class="spec__k">Producción</span><span class="spec__v">contadores por categoría y resultado: ciclos OK, errores, piezas por depósito</span></div>
+      </div>
+      <figure class="figure">
+        <img src="assets/foto-celda.jpg" alt="Celda UR5 completa cuya operación se supervisa desde el dashboard." width="944" height="2052" loading="lazy">
+        <figcaption>La celda que se supervisa desde el dashboard; los LEDs del header dan el estado de hardware a distancia.</figcaption>
+      </figure>
+    </div>
+  </section>
 
-      // Ticks counter simulation
-      let tickCount = 142881;
-      setInterval(() => {
-        tickCount += 60;
-        if (loopTicksEl) loopTicksEl.textContent = tickCount.toLocaleString('en-US');
-      }, 1000);
+  <section class="section">
+    <h2 class="title">La máquina de estados del ciclo</h2>
+    <p class="lede">El controlador (<strong>core/robot_controller.py</strong>) recorre ocho estados por ciclo y reporta en cuál está en todo momento. El gripper se acciona únicamente en AGARRAR y DEPOSITAR, con el robot en posición.</p>
+    <ol class="fsm">
+      <li><span>1</span> HOME</li>
+      <li><span>2</span> APROXIMAR</li>
+      <li><span>3</span> DESCENDER</li>
+      <li><span>4</span> AGARRAR</li>
+      <li><span>5</span> ELEVAR</li>
+      <li><span>6</span> TRANSPORTAR</li>
+      <li><span>7</span> DEPOSITAR</li>
+      <li><span>8</span> HOME</li>
+    </ol>
+  </section>
 
-      function logEvent(channel, message, color = 'text-secondary') {
-        if (!terminalFeed) return;
-        const now = new Date();
-        const timeStr = now.toTimeString().split(' ')[0] + '.' + String(now.getMilliseconds()).padStart(3, '0');
-        const row = document.createElement('div');
-        row.innerHTML = `<span class="text-tertiary">[${timeStr}]</span> <span class="${color}">${channel}:</span> ${message}`;
-        terminalFeed.appendChild(row);
-        terminalFeed.scrollTop = terminalFeed.scrollHeight;
-      }
+  <section class="section--tight">
+    <h2 class="title">Controles del operador</h2>
+    <div class="spec">
+      <div class="spec__row"><span class="spec__k">Arrancar el ciclo</span><span class="spec__v">un botón: coloca la pieza el operario, las coordenadas las calcula la visión</span></div>
+      <div class="spec__row"><span class="spec__k">Parada por software</span><span class="spec__v">desde el dashboard, con reinicio explícito del ciclo</span></div>
+      <div class="spec__row"><span class="spec__k">Gripper manual</span><span class="spec__v">abrir y cerrar por comando serie (abrir / cerrar) para pruebas</span></div>
+      <div class="spec__row"><span class="spec__k">Recalibrar en caliente</span><span class="spec__v">HSV, ROI y homografía desde el propio panel; se guarda en config.json y persiste</span></div>
+    </div>
+    <div class="note">
+      <p class="note__title">Parada de emergencia — solo Teach Pendant</p>
+      <p>El E-Stop físico del UR5 es la seguridad primaria y no depende de Python ni del Arduino. El dashboard solo hace paradas programadas por software; la parada de emergencia está exclusivamente en el Teach Pendant.</p>
+    </div>
+    <p style="margin-top: var(--space-xl);"><a class="tlink" href="manual.html">Manual operativo →</a></p>
+  </section>
 
-      function updateCategoryVisuals() {
-        if (isCategoryA) {
-          // Category A: Red
-          detectionBox.style.top = '36%';
-          detectionBox.style.left = '42%';
-          targetMaskColor.className = 'w-full h-full bg-error-container/40 rounded transition-colors duration-300 flex items-center justify-center shadow-[0_0_16px_rgba(255,180,171,0.3)]';
-          targetBadgeDot.className = 'w-2 h-2 rounded-full bg-error';
-          targetCatLabel.textContent = 'Pieza A - Roja';
-          targetCoords.textContent = 'X:542 Y:388 px';
-          contourArea.textContent = '4,280 px²';
-          contourAngle.textContent = '-12.4°';
-          hsvRangeVal.textContent = '[0-10] & [170-180] (ROJO)';
-          hueBar.className = 'h-full bg-error rounded transition-all duration-300';
-          hueBar.style.width = '35%';
-          hueBar.style.marginLeft = '0%';
-          poseX.textContent = '-218.42';
-          poseY.textContent = '-430.15';
-        } else {
-          // Category B: Blue
-          detectionBox.style.top = '52%';
-          detectionBox.style.left = '64%';
-          targetMaskColor.className = 'w-full h-full bg-secondary-container/40 rounded transition-colors duration-300 flex items-center justify-center shadow-[0_0_16px_rgba(76,215,246,0.3)]';
-          targetBadgeDot.className = 'w-2 h-2 rounded-full bg-secondary';
-          targetCatLabel.textContent = 'Pieza B - Azul';
-          targetCoords.textContent = 'X:820 Y:510 px';
-          contourArea.textContent = '3,950 px²';
-          contourAngle.textContent = '+34.8°';
-          hsvRangeVal.textContent = '[100-130] (AZUL)';
-          hueBar.className = 'h-full bg-secondary rounded transition-all duration-300';
-          hueBar.style.width = '30%';
-          hueBar.style.marginLeft = '55%';
-          poseX.textContent = '+142.10';
-          poseY.textContent = '-430.15';
-        }
-      }
+</main>
 
-      function setFSMActive(stepId) {
-        const nodes = document.querySelectorAll('.fsm-node');
-        nodes.forEach(node => {
-          node.className = 'fsm-node px-space-xs py-space-xs rounded bg-surface-container text-on-surface-variant font-label-caps text-label-caps text-center transition-all';
-        });
-        const active = document.getElementById(stepId);
-        if (active) {
-          active.className = 'fsm-node px-space-xs py-space-xs rounded bg-surface-container-high text-primary font-label-caps text-label-caps text-center font-bold transition-all shadow-[0_0_8px_#f59e0b]';
-        }
-      }
+<footer class="colophon">
+  <div class="container">
+    <p>Universidad Provincial de Oficios — Robótica con Orientación IA · Desafío 2: celda robotizada de clasificación por visión artificial, UR5 + gripper de 4 servos. Alfredo Becerra · Claudio Flores · Lucio Vita. Villa Mercedes, San Luis — 2026.</p>
+    <p>Código y documentación: <a href="https://github.com/gaboxf/ur5e-pick-and-place">github.com/gaboxf/ur5e-pick-and-place</a> · Sitio estático en HTML + CSS · Tipografía: Space Grotesk, IBM Plex Sans, JetBrains Mono.</p>
+  </div>
+</footer>
 
-      function setGripperState(open) {
-        isGripperOpen = open;
-        if (open) {
-          gripperBadge.className = 'px-space-sm py-space-xs rounded font-label-caps text-label-caps uppercase bg-secondary/20 text-secondary font-bold';
-          gripperBadge.textContent = 'ABIERTO';
-          gripperAngleSub.textContent = 'ÁNGULO: 45° (ABIERTO) · PWM 1500us';
-          logEvent('ARDUINO_SERIAL', 'Comando servo enviado -> ANGLE: 45 (OPEN)');
-        } else {
-          gripperBadge.className = 'px-space-sm py-space-xs rounded font-label-caps text-label-caps uppercase bg-primary/20 text-primary font-bold';
-          gripperBadge.textContent = 'CERRADO (AGARRE)';
-          gripperAngleSub.textContent = 'ÁNGULO: 110° (GRIP TPU) · PWM 2100us';
-          logEvent('ARDUINO_SERIAL', 'Comando servo enviado -> ANGLE: 110 (HOLD PIECE)', 'text-primary');
-        }
-      }
-
-      // Event Listeners:
-      // 1. Mask Toggle
-      document.getElementById('btn-toggle-mask')?.addEventListener('click', () => {
-        isMaskActive = !isMaskActive;
-        maskModeLabel.textContent = isMaskActive ? 'MÁSCARA HSV [ACTIVA]' : 'MÁSCARA HSV [DESACT.]';
-        const feedBg = document.getElementById('sim-feed-bg');
-        if (feedBg) {
-          feedBg.style.filter = isMaskActive ? 'invert(1) grayscale(1) contrast(200%)' : 'none';
-        }
-        logEvent('OPENCV_DEBUG', `Máscara binaria HSV alternada a: ${isMaskActive ? 'VIEW_MASK' : 'RAW_FEED'}`);
-      });
-
-      // 2. Trigger Detection Test
-      document.getElementById('btn-test-detection')?.addEventListener('click', () => {
-        logEvent('VISION_ENGINE', 'Ejecutando detección forzada one-shot en frame actual...');
-        globalCycleState.textContent = 'DETECTANDO';
-        cycleStateSub.textContent = 'HSV THRESHOLDING';
-        cycleStateLed.className = 'w-3.5 h-3.5 rounded-full bg-secondary shadow-[0_0_12px_#4cd7f6]';
-        
-        setTimeout(() => {
-          updateCategoryVisuals();
-          globalCycleState.textContent = 'LISTO';
-          cycleStateSub.textContent = 'TARGET LOCKED';
-          cycleStateLed.className = 'w-3.5 h-3.5 rounded-full bg-primary-container shadow-[0_0_12px_#f59e0b]';
-          logEvent('VISION_ENGINE', `Coordenadas robot resueltas: (${poseX.textContent}, ${poseY.textContent}, 25.0) mm`);
-        }, 600);
-      });
-
-      // 3. Switch Category A/B Button
-      document.getElementById('btn-change-category')?.addEventListener('click', () => {
-        isCategoryA = !isCategoryA;
-        updateCategoryVisuals();
-        logEvent('USER_INPUT', `Cambio de target a: ${isCategoryA ? 'Cat A (Roja)' : 'Cat B (Azul)'}`);
-      });
-
-      // 4. Manual Gripper Buttons
-      document.getElementById('btn-open-gripper')?.addEventListener('click', () => setGripperState(true));
-      document.getElementById('btn-close-gripper')?.addEventListener('click', () => setGripperState(false));
-      document.getElementById('btn-go-home')?.addEventListener('click', () => {
-        setFSMActive('fsm-step-home');
-        poseZ.textContent = '150.00';
-        globalCycleState.textContent = 'LISTO';
-        cycleStateSub.textContent = 'HOME POSE';
-        logEvent('UR_ROBOT', 'Retornando articulaciones a configuración HOME segura.');
-      });
-
-      // 5. Clear Logs
-      document.getElementById('btn-clear-logs')?.addEventListener('click', () => {
-        if (terminalFeed) terminalFeed.innerHTML = '<div><span class="text-tertiary">-- Terminal limpiada por operador --</span></div>';
-      });
-
-      // 6. Pause Button
-      document.getElementById('btn-pause-cycle')?.addEventListener('click', () => {
-        if (isCycleRunning) {
-          isCycleRunning = false;
-          globalCycleState.textContent = 'PAUSADO';
-          cycleStateSub.textContent = 'HOLD POSITION';
-          cycleStateLed.className = 'w-3.5 h-3.5 rounded-full bg-primary shadow-[0_0_12px_#ffc174]';
-          logEvent('SUPERVISOR', 'Secuencia pausada por operador.', 'text-primary');
-        }
-      });
-
-      // 7. Full Cycle Simulation Sequence
-      function runFullSimulation() {
-        if (isCycleRunning) return;
-        isCycleRunning = true;
-        logEvent('SUPERVISOR', 'INICIANDO CICLO PICK & PLACE AUTOMÁTICO COMPLETO...', 'text-primary');
-
-        // Step 1: Detectando
-        globalCycleState.textContent = 'DETECTANDO';
-        cycleStateSub.textContent = 'EVALUANDO CENTROIDE';
-        cycleStateLed.className = 'w-3.5 h-3.5 rounded-full bg-secondary shadow-[0_0_12px_#4cd7f6]';
-        setFSMActive('fsm-step-home');
-
-        setTimeout(() => {
-          // Step 2: Aproximar
-          setFSMActive('fsm-step-aprox');
-          globalCycleState.textContent = 'EN TRAYECTORIA';
-          cycleStateSub.textContent = 'MOVIMIENTO HORIZONTAL';
-          poseZ.textContent = '150.00';
-          logEvent('UR_CONTROLLER', `movel(p[${poseX.textContent}, ${poseY.textContent}, 150, ...], a=1.2, v=0.25)`);
-          
-          setTimeout(() => {
-            // Step 3: Descender
-            setFSMActive('fsm-step-desc');
-            cycleStateSub.textContent = 'DESCENDIENDO A Z_PICK';
-            poseZ.textContent = '25.00';
-            logEvent('UR_CONTROLLER', 'Descenso completado: Z = 25.0 mm');
-
-            setTimeout(() => {
-              // Step 4: Agarrar
-              setFSMActive('fsm-step-grip');
-              cycleStateSub.textContent = 'ACCIONANDO PINZA TPU';
-              setGripperState(false);
-
-              setTimeout(() => {
-                // Step 5: Elevar
-                setFSMActive('fsm-step-elev');
-                cycleStateSub.textContent = 'ELEVANDO A Z_SEGURO';
-                poseZ.textContent = '150.00';
-                logEvent('UR_CONTROLLER', 'Retracción vertical segura: Z = 150.0 mm');
-
-                setTimeout(() => {
-                  // Step 6: Transportar
-                  setFSMActive('fsm-step-trans');
-                  cycleStateSub.textContent = isCategoryA ? 'TRAYECTORIA A BANDEJA 1' : 'TRAYECTORIA A BANDEJA 2';
-                  if (isCategoryA) {
-                    poseX.textContent = '-350.00';
-                    poseY.textContent = '-200.00';
-                  } else {
-                    poseX.textContent = '350.00';
-                    poseY.textContent = '-200.00';
-                  }
-                  logEvent('UR_CONTROLLER', `Alineado con depósito final: Cat ${isCategoryA ? 'A' : 'B'}`);
-
-                  setTimeout(() => {
-                    // Step 7: Depositar
-                    setFSMActive('fsm-step-depo');
-                    cycleStateSub.textContent = 'APERTURA PINZA EN DEPÓSITO';
-                    poseZ.textContent = '38.50';
-                    setGripperState(true);
-                    logEvent('UR_CONTROLLER', 'Pieza liberada nominalmente en estación de destino.');
-
-                    setTimeout(() => {
-                      // Step 8: Retorno a Home y contadores
-                      setFSMActive('fsm-step-home2');
-                      poseZ.textContent = '150.00';
-                      globalCycleState.textContent = 'COMPLETADO';
-                      cycleStateSub.textContent = 'STANDBY CICLO OK';
-                      cycleStateLed.className = 'w-3.5 h-3.5 rounded-full bg-tertiary shadow-[0_0_12px_#56e5a9]';
-
-                      // Increment counters
-                      totalCycles++;
-                      if (isCategoryA) cyclesA++; else cyclesB++;
-                      counterTotal.textContent = totalCycles;
-                      counterOk.textContent = totalCycles;
-                      counterCatA.textContent = cyclesA;
-                      counterCatB.textContent = cyclesB;
-
-                      logEvent('SUPERVISOR', `Ciclo #${totalCycles} FINALIZADO OK (100% SUCCESS RATE).`, 'text-tertiary');
-                      isCycleRunning = false;
-
-                      // Reset visually to ready after a short pause
-                      setTimeout(() => {
-                        setFSMActive('fsm-step-home');
-                        globalCycleState.textContent = 'LISTO';
-                        cycleStateSub.textContent = 'DISPONIBLE';
-                        cycleStateLed.className = 'w-3.5 h-3.5 rounded-full bg-primary-container shadow-[0_0_12px_#f59e0b]';
-                      }, 2000);
-
-                    }, 900);
-                  }, 900);
-                }, 900);
-              }, 800);
-            }, 800);
-          }, 900);
-        }, 800);
-      }
-
-      document.getElementById('btn-start-cycle')?.addEventListener('click', runFullSimulation);
-      document.getElementById('btn-sim-full-cycle')?.addEventListener('click', runFullSimulation);
-
-      // Initial visual setup
-      updateCategoryVisuals();
-    })();
-  </script>
-</div></main><footer class="w-full bg-surface-container-lowest py-space-md border-t border-surface-container-high/40"><div class="w-full px-margin flex flex-col md:flex-row items-center justify-between gap-space-sm font-label-caps text-label-caps text-on-surface-variant"><span>UNIVERSIDAD PROVINCIAL DE OFICIOS · ROBÓTICA INDUSTRIAL &amp; VISIÓN POR COMPUTADORA</span><span>DEFENSA TÉCNICA: ALFREDO · CLAUDIO · LUCIO</span><span class="text-tertiary">SISTEMA DISCIPLINADO NOMINAL · 30 FPS</span></div></footer>
-
-</body></html>
+</body>
+</html>

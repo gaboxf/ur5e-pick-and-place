@@ -1,692 +1,145 @@
-<!DOCTYPE html><html class="dark" lang="es"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_standard" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"secondary":"#4cd7f6","surface-container-highest":"#313540","surface-variant":"#313540","outline-variant":"#534434","surface-bright":"#353944","error-container":"#93000a","primary":"#ffc174","error":"#ffb4ab","on-primary-container":"#613b00","on-primary-fixed-variant":"#653e00","on-secondary-container":"#00424e","on-background":"#dfe2f1","tertiary-fixed":"#6ffbbe","inverse-on-surface":"#2c303b","surface-container-low":"#171b26","primary-fixed":"#ffddb8","primary-container":"#f59e0b","secondary-fixed":"#acedff","surface-container-high":"#262a35","on-tertiary-container":"#004e34","on-tertiary-fixed":"#002113","on-tertiary":"#003824","secondary-fixed-dim":"#4cd7f6","tertiary-container":"#30c88f","surface-container-lowest":"#0a0e18","surface":"#0f131d","on-secondary":"#003640","tertiary-fixed-dim":"#4edea3","on-primary":"#472a00","on-secondary-fixed":"#001f26","on-surface-variant":"#d8c3ad","on-secondary-fixed-variant":"#004e5c","tertiary":"#56e5a9","secondary-container":"#03b5d3","background":"#0f131d","surface-tint":"#ffb95f","on-error":"#690005","on-primary-fixed":"#2a1700","on-surface":"#dfe2f1","primary-fixed-dim":"#ffb95f","on-tertiary-fixed-variant":"#005236","surface-dim":"#0f131d","surface-container":"#1c1f2a","on-error-container":"#ffdad6","inverse-surface":"#dfe2f1","inverse-primary":"#855300","outline":"#a08e7a"},borderRadius:{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},spacing:{"space-md":"1rem","gutter-mobile":"0.75rem","margin-mobile":"1rem","gutter":"1.5rem","space-lg":"1.5rem","space-sm":"0.5rem","space-xl":"2.5rem","space-xs":"0.25rem","margin":"2rem"},fontFamily:{"headline-xl-mobile":["Inter"],"headline-md":["Inter"],"telemetry-data":["JetBrains Mono"],"headline-xl":["Inter"],"label-caps":["JetBrains Mono"],"headline-sm":["Inter"],"headline-lg":["Inter"],"code-md":["JetBrains Mono"],"body-sm":["Inter"],"body-lg":["Inter"],"code-lg":["JetBrains Mono"],"body-md":["Inter"],"headline-lg-mobile":["Inter"]},fontSize:{"headline-xl-mobile":["2rem",{"lineHeight":"2.5rem","letterSpacing":"-0.02em","fontWeight":"700"}],"headline-md":["1.5rem",{"lineHeight":"2rem","letterSpacing":"-0.015em","fontWeight":"600"}],"telemetry-data":["0.8125rem",{"lineHeight":"1rem","letterSpacing":"0.05em","fontWeight":"600"}],"headline-xl":["3rem",{"lineHeight":"3.5rem","letterSpacing":"-0.025em","fontWeight":"700"}],"label-caps":["0.6875rem",{"lineHeight":"0.875rem","letterSpacing":"0.08em","fontWeight":"600"}],"headline-sm":["1.25rem",{"lineHeight":"1.75rem","fontWeight":"600"}],"headline-lg":["2.25rem",{"lineHeight":"2.75rem","letterSpacing":"-0.02em","fontWeight":"600"}],"code-md":["0.875rem",{"lineHeight":"1.375rem","fontWeight":"400"}],"body-sm":["0.875rem",{"lineHeight":"1.25rem","fontWeight":"400"}],"body-lg":["1.125rem",{"lineHeight":"1.75rem","fontWeight":"400"}],"code-lg":["1rem",{"lineHeight":"1.5rem","fontWeight":"500"}],"body-md":["1rem",{"lineHeight":"1.5rem","fontWeight":"400"}],"headline-lg-mobile":["1.75rem",{"lineHeight":"2.25rem","letterSpacing":"-0.015em","fontWeight":"600"}]}}}}</script></head><body class="bg-background font-body-md text-body-md text-on-surface antialiased min-h-screen flex flex-col"><header class="fixed top-0 left-0 w-full z-50 bg-surface-container-lowest/90 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.4)]"><div class="h-20 w-full px-margin flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-lg"><div class="flex items-center gap-space-sm"><div class="h-10 w-10 flex-shrink-0 flex items-center justify-center rounded border border-surface-container-highest bg-surface-container-lowest p-0.5 overflow-hidden shadow-sm"><img src="https://lh3.googleusercontent.com/aida/ALJJyrDdBKBKasxBugh37v8qA_4UbVTnHUYo-_LvMZWhzseg-4ZoSnApcve38306II1VmuOcu5uWtcuMfI2U7_R45x1uk2p44sOnn87qcUfSdkUQ2DP3SS-S7U3DaRVJP8uozf3Qs1N6YO5c_nKHVI-n7aH5cqDqm7NJHyU-W3web0JyCZg2xSDurcTJegYcIEVKgtKzB6dbMTpTuvSLRoNlEnw68_uyLMDeoZi8qKzJtQMU" alt="Logo UPrO" class="w-full h-full object-contain"></div><div class="flex flex-col"><div class="flex items-center gap-space-xs"><span class="text-on-surface font-headline-sm text-headline-sm font-semibold tracking-tight">Vision Cell</span><span class="text-primary font-code-lg text-code-lg font-bold tracking-tight">· DESAFÍO 2</span></div><span class="text-on-surface-variant font-label-caps text-label-caps uppercase tracking-wider">Pick &amp; Place Guiado por Visión · UPrO</span></div></div><div class="hidden xl:flex items-center gap-space-xs"><div class="flex items-center gap-space-xs bg-surface-container px-space-sm py-space-xs rounded border border-surface-container-highest"><span class="w-2 h-2 rounded-full bg-tertiary shadow-[0_0_8px_#56e5a9]"></span><span class="font-label-caps text-label-caps text-on-surface uppercase">CAM: OK (60 FPS)</span></div><div class="flex items-center gap-space-xs bg-surface-container px-space-sm py-space-xs rounded border border-surface-container-highest"><span class="w-2 h-2 rounded-full bg-tertiary shadow-[0_0_8px_#56e5a9]"></span><span class="font-label-caps text-label-caps text-on-surface uppercase">GRP: COM3 OK</span></div><div class="flex items-center gap-space-xs bg-surface-container px-space-sm py-space-xs rounded border border-surface-container-highest"><span class="w-2 h-2 rounded-full bg-tertiary shadow-[0_0_8px_#56e5a9]"></span><span class="font-label-caps text-label-caps text-on-surface uppercase">UR5: 127.0.0.1:30004 READY</span></div><div class="flex items-center gap-space-xs bg-surface-container px-space-sm py-space-xs rounded border border-surface-container-highest"><span class="w-2 h-2 rounded-full bg-primary-container shadow-[0_0_8px_#f59e0b]"></span><span class="font-label-caps text-label-caps text-primary uppercase">E-STOP: PENDANT ARMED</span></div></div></div><nav class="hidden lg:flex items-center gap-space-xs bg-surface-container-lowest p-space-xs rounded-lg" data-active-classes="bg-surface-container-high text-primary font-semibold"><a class="px-space-md py-space-xs rounded font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all" data-path="modo-presentacion" href="#">Modo Presentación (Slides)</a><a class="px-space-md py-space-xs rounded font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all" data-path="dashboard-hmi" href="#">Dashboard HMI (Control en Vivo)</a><a aria-current="page" class="px-space-md py-space-xs rounded transition-all bg-surface-container-high text-primary font-semibold" data-path="arquitectura-vision" href="#">Arquitectura &amp; Visión</a><a class="px-space-md py-space-xs rounded font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all" data-path="manual-operativo-seguridad" href="#">Manual Operativo &amp; Seguridad</a></nav><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs bg-surface-container-low px-space-md py-space-xs rounded border border-surface-container-high"><span class="material-symbols-outlined text-secondary text-[18px]">timer</span><span class="font-telemetry-data text-telemetry-data text-secondary">15:00 REMAINING</span></div><button class="w-9 h-9 flex items-center justify-center rounded bg-surface-container text-on-surface-variant hover:text-secondary hover:bg-surface-container-high transition-colors" title="Pantalla Completa" type="button"><span class="material-symbols-outlined text-[20px]">fullscreen</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-20 bg-background flex-1"><div class="flex flex-col w-full">
-<!-- Sub-header HUD strip -->
-<section class="w-full px-margin py-space-md bg-surface-container-lowest border-b-0 flex flex-wrap items-center justify-between gap-space-md">
-<div class="flex items-center gap-space-md">
-<div class="w-2.5 h-2.5 rounded-full bg-secondary shadow-[0_0_10px_#4cd7f6] animate-pulse"></div>
-<div class="flex flex-col">
-<span class="font-label-caps text-label-caps text-secondary uppercase tracking-widest">// SUBSISTEMA DE VISIÓN ARTIFICIAL &amp; KINEMÁTICA</span>
-<span class="font-headline-sm text-headline-sm text-on-surface">Arquitectura de Software, Pipeline OpenCV &amp; Calibración Homográfica</span>
-</div>
-</div>
-<div class="flex items-center gap-space-xs bg-surface-container px-space-md py-space-xs rounded-lg">
-<a class="flex items-center gap-space-xs font-label-caps text-label-caps uppercase text-primary hover:brightness-110" href="index.html"><span class="material-symbols-outlined text-[18px]">arrow_back</span>Presentación</a>
-<span class="text-on-surface-variant font-label-caps text-label-caps ml-2">|</span>
-<span class="material-symbols-outlined text-tertiary text-[18px]">verified</span>
-<span class="font-label-caps text-label-caps text-tertiary uppercase">CALIBRACIÓN ASISTIDA: 4 PUNTOS</span>
-<span class="text-on-surface-variant font-label-caps text-label-caps ml-2">|</span>
-<span class="font-label-caps text-label-caps text-on-surface-variant uppercase ml-2">CAM: 1280×720 @ 30 FPS</span>
-</div>
-</section>
-<!-- Main Content Layout -->
-<div class="w-full px-margin py-space-lg flex flex-col gap-space-xl">
-<!-- SECTION 1: SOFTWARE ARCHITECTURE INTERACTIVE DIAGRAM -->
-<section class="w-full bg-surface-container-low rounded-xl p-space-lg relative overflow-hidden shadow-xl">
-<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-sm mb-space-lg">
-<div>
-<div class="flex items-center gap-space-xs text-primary font-label-caps text-label-caps uppercase tracking-wider">
-<span class="material-symbols-outlined text-[16px]">account_tree</span>
-<span>Mapeo Modular del Software // Python 3.10 RTDE</span>
-</div>
-<h2 class="font-headline-md text-headline-md text-on-surface mt-space-xs">Arquitectura de Procesamiento Concurrente</h2>
-</div>
-<div class="flex items-center gap-space-xs">
-<span class="font-label-caps text-label-caps text-on-surface-variant uppercase bg-surface-container-high px-space-sm py-space-xs rounded">Multi-Thread Sync</span>
-<span class="font-label-caps text-label-caps text-secondary uppercase bg-surface-container-high px-space-sm py-space-xs rounded">Socket RTDE 30004</span>
-</div>
-</div>
-<!-- Architecture Flow Graph -->
-<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-md relative">
-<!-- Left: Core Shared State -->
-<div class="lg:col-span-3 flex flex-col gap-space-md">
-<div class="bg-surface-container p-space-md rounded-lg shadow-md hover:bg-surface-container-high transition-colors group cursor-pointer" onclick="selectArchNode('config')">
-<div class="flex items-center justify-between mb-space-xs">
-<span class="font-code-md text-code-md text-primary font-bold">vision/config.json</span>
-<span class="material-symbols-outlined text-primary text-[18px]">data_object</span>
-</div>
-<p class="font-body-sm text-body-sm text-on-surface-variant">SSOT (Single Source of Truth). Rango HSV, matrices H 3x3, coordenadas de dropeo y offsets seguros.</p>
-<div class="mt-space-sm flex items-center justify-between text-on-surface-variant font-label-caps text-label-caps">
-<span>STATUS: WATCHDOG ON</span>
-<span class="text-tertiary">HOT-RELOAD</span>
-</div>
-</div>
-<div class="bg-surface-container p-space-md rounded-lg shadow-md hover:bg-surface-container-high transition-colors cursor-pointer" onclick="selectArchNode('pipeline')">
-<div class="flex items-center justify-between mb-space-xs">
-<span class="font-code-md text-code-md text-secondary font-bold">vision/pipeline.py</span>
-<span class="material-symbols-outlined text-secondary text-[18px]">hub</span>
-</div>
-<p class="font-body-sm text-body-sm text-on-surface-variant">Orquestador de hilos de cámara. Coordina el buffer de captura con el lazo de segmentación en tiempo real.</p>
-<div class="mt-space-sm flex items-center justify-between text-on-surface-variant font-label-caps text-label-caps">
-<span>BUFFER: THREAD-SAFE</span>
-<span class="text-secondary">QUEUE[1] RT</span>
-</div>
-</div>
-</div>
-<!-- Center: Vision Compute Pipeline Nodes -->
-<div class="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-space-md">
-<!-- Detector -->
-<div class="bg-surface-container p-space-md rounded-lg shadow-md cursor-pointer hover:bg-surface-container-high transition-colors" onclick="selectArchNode('detector')">
-<div class="flex items-center justify-between mb-space-xs">
-<span class="font-code-md text-code-md text-tertiary font-bold">detector.py</span>
-<span class="material-symbols-outlined text-tertiary text-[18px]">center_focus_strong</span>
-</div>
-<p class="font-body-sm text-body-sm text-on-surface-variant">Filtrado HSV, apertura/cierre morfológico, cv2.findContours y extracción de momentos espaciales $M_{00}, M_{10}, M_{01}$.</p>
-<div class="mt-space-sm flex items-center justify-between text-on-surface-variant font-label-caps text-label-caps">
-<span>OUTPUT: (cx, cy, color, area)</span>
-<span class="text-tertiary">TIEMPO REAL</span>
-</div>
-</div>
-<!-- Homografia -->
-<div class="bg-surface-container p-space-md rounded-lg shadow-md cursor-pointer hover:bg-surface-container-high transition-colors" onclick="selectArchNode('homografia')">
-<div class="flex items-center justify-between mb-space-xs">
-<span class="font-code-md text-code-md text-primary-container font-bold">homografia.py</span>
-<span class="material-symbols-outlined text-primary-container text-[18px]">transform</span>
-</div>
-<p class="font-body-sm text-body-sm text-on-surface-variant">Transformación proyectiva 2D -&gt; Base Robot. Corrección de perspectiva y normalización del plano de mesa Z=-0.145 m.</p>
-<div class="mt-space-sm flex items-center justify-between text-on-surface-variant font-label-caps text-label-caps">
-<span>MATRIX: 3×3 HOMOGENEOUS</span>
-<span class="text-primary-container">PROJ 2D</span>
-</div>
-</div>
-<!-- Visor GUI Local -->
-<div class="bg-surface-container p-space-md rounded-lg shadow-md cursor-pointer hover:bg-surface-container-high transition-colors" onclick="selectArchNode('visor')">
-<div class="flex items-center justify-between mb-space-xs">
-<span class="font-code-md text-code-md text-on-surface font-bold">visor.py</span>
-<span class="material-symbols-outlined text-on-surface text-[18px]">tv</span>
-</div>
-<p class="font-body-sm text-body-sm text-on-surface-variant">HUD local OpenCV de alta tasa de refresco. Renderizado directo con retículas y bounding box sobre X11/DirectShow.</p>
-<div class="mt-space-sm flex items-center justify-between text-on-surface-variant font-label-caps text-label-caps">
-<span>LATENCIA: ULTRA-LOW</span>
-<span class="text-on-surface">DIRECT DRAW</span>
-</div>
-</div>
-<!-- Dashboard Web Telemetry -->
-<div class="bg-surface-container p-space-md rounded-lg shadow-md cursor-pointer hover:bg-surface-container-high transition-colors" onclick="selectArchNode('dashboard')">
-<div class="flex items-center justify-between mb-space-xs">
-<span class="font-code-md text-code-md text-secondary font-bold">core/dashboard_web.py</span>
-<span class="material-symbols-outlined text-secondary text-[18px]">terminal</span>
-</div>
-<p class="font-body-sm text-body-sm text-on-surface-variant">Servidor WebSocket y streaming MJPEG para control docente/alumno concurrente sin bloqueo del hilo de control.</p>
-<div class="mt-space-sm flex items-center justify-between text-on-surface-variant font-label-caps text-label-caps">
-<span>PORT: 8080/WS</span>
-<span class="text-secondary">BROADCAST</span>
-</div>
-</div>
-</div>
-<!-- Right: Execution Engine -->
-<div class="lg:col-span-3 flex flex-col gap-space-md">
-<div class="bg-surface-container-high p-space-md rounded-lg shadow-lg flex-1 flex flex-col justify-between cursor-pointer hover:bg-surface-container-highest transition-colors" onclick="selectArchNode('robot')">
-<div>
-<div class="flex items-center justify-between mb-space-xs">
-<span class="font-code-md text-code-md text-primary font-bold">core/robot_controller.py</span>
-<span class="material-symbols-outlined text-primary text-[20px]">smart_toy</span>
-</div>
-<p class="font-body-sm text-body-sm text-on-surface">Gestor de cinemática inversa y trayectoria URScript. Encola waypoints seguros [Z_hover, Z_pick, Z_place] con confirmación de agarre neumático TPU.</p>
-<div class="mt-space-md p-space-xs bg-surface-container-lowest rounded font-code-md text-code-md text-on-surface-variant text-[12px] space-y-1">
-<div class="flex justify-between"><span>TCP Speed:</span><span class="text-primary font-bold">250 mm/s</span></div>
-<div class="flex justify-between"><span>Blend Radius:</span><span class="text-tertiary">0.015 m</span></div>
-<div class="flex justify-between"><span>Gripper Modbus:</span><span class="text-secondary">ADDR 0x03E8</span></div>
-</div>
-</div>
-<div class="pt-space-sm flex items-center justify-between text-on-surface-variant font-label-caps text-label-caps border-t border-surface-variant/30">
-<span>RTDE STATE: SYNCHRONIZED</span>
-<span class="text-primary">125 HZ CYCLE</span>
-</div>
-</div>
-</div>
-</div>
-<!-- Node Inspector HUD Drawer -->
-<div class="mt-space-md p-space-md bg-surface-container-lowest rounded-lg border-l-4 border-secondary flex flex-col md:flex-row items-start md:items-center justify-between gap-space-md" id="arch-inspector">
-<div class="flex items-center gap-space-md">
-<span class="material-symbols-outlined text-secondary text-[24px]" id="inspector-icon">hub</span>
-<div>
-<span class="font-label-caps text-label-caps text-secondary uppercase" id="inspector-tag">INTERFAZ ACTIVA: vision/pipeline.py</span>
-<p class="font-body-sm text-body-sm text-on-surface mt-0.5" id="inspector-desc">Lanza el subproceso `cv2.VideoCapture(0)` con backend V4L2/DShow en modo Threaded sin bloqueo de I/O para evitar retraso acumulativo de frames en buffer.</p>
-</div>
-</div>
-<div class="flex items-center gap-space-xs font-telemetry-data text-telemetry-data text-on-surface-variant">
-<span class="text-tertiary">NON-BLOCKING</span> · <span>IPC: SHARED_MEM</span>
-</div>
-</div>
-</section>
-<!-- SECTION 2: STEP-BY-STEP INTERACTIVE OPENCV PIPELINE -->
-<section class="w-full bg-surface-container-low rounded-xl p-space-lg shadow-xl">
-<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-sm mb-space-lg">
-<div>
-<div class="flex items-center gap-space-xs text-secondary font-label-caps text-label-caps uppercase tracking-wider">
-<span class="material-symbols-outlined text-[16px]">filter_alt</span>
-<span>Secuencia Algorítmica de Segmentación</span>
-</div>
-<h2 class="font-headline-md text-headline-md text-on-surface mt-space-xs">Pipeline OpenCV Paso a Paso</h2>
-</div>
-<!-- Pipeline Stage Stepper Selector -->
-<div class="flex flex-wrap items-center gap-space-xs bg-surface-container p-space-xs rounded-lg">
-<button class="px-space-md py-space-xs rounded font-label-caps text-label-caps uppercase transition-all bg-primary text-on-primary font-bold" id="btn-st-1" onclick="setPipelineStage(1)">1. Cenital 1280×720</button>
-<button class="px-space-md py-space-xs rounded font-label-caps text-label-caps uppercase transition-all text-on-surface-variant hover:text-on-surface" id="btn-st-2" onclick="setPipelineStage(2)">2. Recorte ROI</button>
-<button class="px-space-md py-space-xs rounded font-label-caps text-label-caps uppercase transition-all text-on-surface-variant hover:text-on-surface" id="btn-st-3" onclick="setPipelineStage(3)">3. BGR -&gt; HSV</button>
-<button class="px-space-md py-space-xs rounded font-label-caps text-label-caps uppercase transition-all text-on-surface-variant hover:text-on-surface" id="btn-st-4" onclick="setPipelineStage(4)">4. Máscaras HSV</button>
-<button class="px-space-md py-space-xs rounded font-label-caps text-label-caps uppercase transition-all text-on-surface-variant hover:text-on-surface" id="btn-st-5" onclick="setPipelineStage(5)">5. Filtro &amp; Centroide</button>
-</div>
-</div>
-<!-- Pipeline Dynamic Canvas & Explanatory Split Grid -->
-<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg">
-<!-- Simulated Machine Vision Reticle Display -->
-<div class="lg:col-span-7 bg-surface-container-lowest rounded-xl p-space-md relative flex flex-col justify-between overflow-hidden shadow-2xl min-h-[380px]">
-<!-- Top HUD Overlay -->
-<div class="flex items-center justify-between z-10">
-<div class="flex items-center gap-space-xs bg-surface-container/90 px-space-sm py-space-xs rounded">
-<span class="w-2 h-2 rounded-full bg-tertiary"></span>
-<span class="font-telemetry-data text-telemetry-data text-on-surface" id="cam-fps-overlay">FRAME #8942 · 60.0 FPS</span>
-</div>
-<div class="font-label-caps text-label-caps text-secondary bg-surface-container/90 px-space-sm py-space-xs rounded">
-              MODO: <span class="text-primary font-bold" id="pipeline-stage-tag">1. CAPTURA CENITAL COMPLETA</span>
-</div>
-</div>
-<!-- Camera Stream Graphic Simulation -->
-<div class="relative w-full h-[320px] my-space-sm rounded bg-surface-container-high/40 flex items-center justify-center overflow-hidden" id="canvas-vision-viewport">
-<!-- Stage 1 Visual: Full Frame -->
-<div class="absolute inset-0 flex items-center justify-center" id="vis-stage-1">
-<div class="w-full h-full relative flex items-center justify-center">
-<!-- Optical Reticle Lines -->
-<svg class="absolute inset-0 w-full h-full pointer-events-none" xmlns="http://www.w3.org/2000/svg">
-<!-- Corner Machine Vision Reticles -->
-<path d="M 20 50 L 20 20 L 50 20" fill="none" opacity="0.6" stroke="#4cd7f6" stroke-width="2"></path>
-<path d="M 580 50 L 580 20 L 550 20" fill="none" opacity="0.6" stroke="#4cd7f6" stroke-width="2"></path>
-<path d="M 20 270 L 20 300 L 50 300" fill="none" opacity="0.6" stroke="#4cd7f6" stroke-width="2"></path>
-<path d="M 580 270 L 580 300 L 550 300" fill="none" opacity="0.6" stroke="#4cd7f6" stroke-width="2"></path>
-<!-- Center crosshairs -->
-<line opacity="0.4" stroke="#4cd7f6" stroke-width="1" x1="300" x2="300" y1="150" y2="170"></line>
-<line opacity="0.4" stroke="#4cd7f6" stroke-width="1" x1="290" x2="310" y1="160" y2="160"></line>
-</svg>
-<!-- Raw table simulated scene -->
-<div class="w-[85%] h-[80%] rounded bg-surface-container relative flex items-center justify-center shadow-inner">
-<span class="absolute top-2 left-3 font-label-caps text-label-caps text-on-surface-variant">MESA DE TRABAJO (FRAME 1280×720)</span>
-<!-- 4 colored blocks scattered -->
-<div class="absolute top-12 left-16 w-8 h-8 rounded bg-error-container/80 flex items-center justify-center text-[10px] font-telemetry-data text-error font-bold">R</div>
-<div class="absolute bottom-14 left-32 w-8 h-8 rounded bg-secondary-container/80 flex items-center justify-center text-[10px] font-telemetry-data text-secondary font-bold">B</div>
-<div class="absolute top-16 right-24 w-8 h-8 rounded bg-tertiary-container/80 flex items-center justify-center text-[10px] font-telemetry-data text-on-tertiary-container font-bold">G</div>
-<div class="absolute bottom-16 right-36 w-8 h-8 rounded bg-primary-container/80 flex items-center justify-center text-[10px] font-telemetry-data text-on-primary-container font-bold">V</div>
-</div>
-</div>
-</div>
-<!-- Stage 2 Visual: ROI Crop -->
-<div class="absolute inset-0 flex items-center justify-center hidden" id="vis-stage-2">
-<div class="relative w-full h-full flex items-center justify-center">
-<!-- Dimmed outer context -->
-<div class="absolute inset-0 bg-surface-container-lowest/80"></div>
-<!-- ROI active box -->
-<div class="w-[68%] h-[74%] rounded bg-surface-container relative flex items-center justify-center shadow-[0_0_25px_rgba(76,215,246,0.3)] ring-2 ring-secondary">
-<div class="absolute -top-3 left-4 bg-secondary text-on-secondary px-2 py-0.5 rounded font-label-caps text-label-caps">ROI: [y:80..420, x:90..550]</div>
-<div class="absolute top-8 left-12 w-8 h-8 rounded bg-error-container/80 flex items-center justify-center text-[10px] font-telemetry-data text-error font-bold">R</div>
-<div class="absolute bottom-10 left-24 w-8 h-8 rounded bg-secondary-container/80 flex items-center justify-center text-[10px] font-telemetry-data text-secondary font-bold">B</div>
-<div class="absolute top-10 right-16 w-8 h-8 rounded bg-tertiary-container/80 flex items-center justify-center text-[10px] font-telemetry-data text-on-tertiary-container font-bold">G</div>
-<div class="absolute bottom-10 right-28 w-8 h-8 rounded bg-primary-container/80 flex items-center justify-center text-[10px] font-telemetry-data text-on-primary-container font-bold">V</div>
-</div>
-</div>
-</div>
-<!-- Stage 3 Visual: HSV Map -->
-<div class="absolute inset-0 flex items-center justify-center hidden" id="vis-stage-3">
-<div class="w-[68%] h-[74%] rounded bg-surface-container-high relative flex items-center justify-center overflow-hidden">
-<!-- Pseudo-HSV gradient visualization overlay -->
-<div class="absolute inset-0 opacity-40 bg-gradient-to-tr from-error via-secondary to-tertiary"></div>
-<div class="relative z-10 text-center font-telemetry-data text-telemetry-data text-on-surface">
-<span class="bg-surface-container-lowest/80 px-space-sm py-space-xs rounded">ESPACIO HSV: HUE [0..179], SAT [0..255], VAL [0..255]</span>
-<div class="mt-4 flex gap-3 justify-center">
-<span class="px-2 py-1 bg-surface-container text-error text-[10px] rounded">H: [0-10, 160-180]</span>
-<span class="px-2 py-1 bg-surface-container text-secondary text-[10px] rounded">H: [95-130]</span>
-<span class="px-2 py-1 bg-surface-container text-tertiary text-[10px] rounded">H: [40-80]</span>
-<span class="px-2 py-1 bg-surface-container text-primary text-[10px] rounded">H: [135-155]</span>
-</div>
-</div>
-</div>
-</div>
-<!-- Stage 4 Visual: Binary Mask Separation -->
-<div class="absolute inset-0 flex items-center justify-center hidden" id="vis-stage-4">
-<div class="w-[68%] h-[74%] rounded bg-surface-container-lowest relative grid grid-cols-2 gap-2 p-3">
-<div class="bg-surface-container rounded p-2 flex flex-col justify-between">
-<span class="font-label-caps text-label-caps text-error">MÁSCARA ROJA (A)</span>
-<div class="w-6 h-6 rounded bg-on-surface self-center my-auto"></div>
-<span class="font-telemetry-data text-[10px] text-on-surface-variant">COUNT: 1 PIEZA</span>
-</div>
-<div class="bg-surface-container rounded p-2 flex flex-col justify-between">
-<span class="font-label-caps text-label-caps text-secondary">MÁSCARA AZUL (B)</span>
-<div class="w-6 h-6 rounded bg-on-surface self-center my-auto"></div>
-<span class="font-telemetry-data text-[10px] text-on-surface-variant">COUNT: 1 PIEZA</span>
-</div>
-<div class="bg-surface-container rounded p-2 flex flex-col justify-between">
-<span class="font-label-caps text-label-caps text-tertiary">MÁSCARA VERDE (C)</span>
-<div class="w-6 h-6 rounded bg-on-surface self-center my-auto"></div>
-<span class="font-telemetry-data text-[10px] text-on-surface-variant">COUNT: 1 PIEZA</span>
-</div>
-<div class="bg-surface-container rounded p-2 flex flex-col justify-between">
-<span class="font-label-caps text-label-caps text-primary">MÁSCARA VIOLETA (D)</span>
-<div class="w-6 h-6 rounded bg-on-surface self-center my-auto"></div>
-<span class="font-telemetry-data text-[10px] text-on-surface-variant">COUNT: 1 PIEZA</span>
-</div>
-</div>
-</div>
-<!-- Stage 5 Visual: Contour & Centroid Extraction -->
-<div class="absolute inset-0 flex items-center justify-center hidden" id="vis-stage-5">
-<div class="w-[68%] h-[74%] rounded bg-surface-container relative flex items-center justify-center">
-<!-- Identified object with Bounding Box and cross Centroid -->
-<div class="absolute top-10 left-16 p-2 rounded bg-surface-container-high ring-2 ring-tertiary shadow-[0_0_12px_#56e5a9]">
-<div class="w-7 h-7 bg-tertiary/20 flex items-center justify-center relative">
-<span class="material-symbols-outlined text-tertiary text-[16px]">close</span>
-</div>
-<span class="font-telemetry-data text-[9px] text-tertiary block mt-1">G: (182, 145) px</span>
-</div>
-<div class="absolute bottom-10 right-20 p-2 rounded bg-surface-container-high ring-2 ring-secondary shadow-[0_0_12px_#4cd7f6]">
-<div class="w-7 h-7 bg-secondary/20 flex items-center justify-center relative">
-<span class="material-symbols-outlined text-secondary text-[16px]">close</span>
-</div>
-<span class="font-telemetry-data text-[9px] text-secondary block mt-1">B: (398, 288) px</span>
-</div>
-<div class="font-label-caps text-label-caps text-on-surface-variant bg-surface-container-lowest/80 px-2 py-1 rounded">
-                  FILTRO ÁREA: 450 px² &lt; Area &lt; 3800 px² (APLICADO)
-                </div>
-</div>
-</div>
-</div>
-<!-- Bottom Viewport Footer Status -->
-<div class="flex items-center justify-between text-on-surface-variant font-telemetry-data text-telemetry-data">
-<span id="pipeline-stream-meta">CÁM: 0 · COLOR: BGR · RESOLUCIÓN NATIVA: 1280×720 @ 30 FPS</span>
-<span class="text-tertiary">FILTRO MORFOLÓGICO: MORPH_OPEN (3x3)</span>
-</div>
-</div>
-<!-- Explanatory Technical Description Panel -->
-<div class="lg:col-span-5 flex flex-col justify-between gap-space-md">
-<div class="bg-surface-container p-space-md rounded-lg shadow-md flex-1">
-<div class="flex items-center justify-between mb-space-sm">
-<span class="font-label-caps text-label-caps text-primary uppercase" id="stage-desc-title">Etapa 1: Captura Cenital Calibrada</span>
-<span class="material-symbols-outlined text-primary text-[20px]">videocam</span>
-</div>
-<p class="font-body-md text-body-md text-on-surface" id="stage-desc-body">
-              La cámara USB está montada rígidamente en cenital sobre la mesa, con eje óptico perpendicular al plano de trabajo. El sensor entrega cuadros de 1280x720 píxeles a 30 cuadros por segundo, sin moverse desde la calibración.
-            </p>
-<!-- Code snippet dynamic for selected stage -->
-<div class="mt-space-md bg-surface-container-lowest p-space-sm rounded font-code-md text-code-md text-on-surface overflow-x-auto text-[13px] leading-relaxed">
-<pre id="stage-code-block"><span class="text-secondary">cap</span> = cv2.VideoCapture(config[<span class="text-primary">"indice_camara"</span>])
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-cap.set(cv2.CAP_PROP_FPS, 30)
-ret, frame = cap.read()</pre>
-</div>
-<!-- Mathematical justification metric -->
-<div class="mt-space-md grid grid-cols-2 gap-space-sm">
-<div class="bg-surface-container-high p-space-sm rounded">
-<span class="font-label-caps text-label-caps text-on-surface-variant block uppercase">Tasa de Pérdida Frame</span>
-<span class="font-telemetry-data text-telemetry-data text-tertiary font-bold">0.00 % (0 dropped)</span>
-</div>
-<div class="bg-surface-container-high p-space-sm rounded">
-<span class="font-label-caps text-label-caps text-on-surface-variant block uppercase">Cómputo</span>
-<span class="font-telemetry-data text-telemetry-data text-primary font-bold">CPU LOCAL · TIEMPO REAL</span>
-</div>
-</div>
-</div>
-<!-- Color Classification Quick Table -->
-<div class="bg-surface-container p-space-md rounded-lg shadow-md">
-<span class="font-label-caps text-label-caps text-secondary uppercase block mb-space-xs">Matriz de Clasificación por Máscaras Activas</span>
-<div class="grid grid-cols-4 gap-space-xs text-center font-telemetry-data text-telemetry-data">
-<div class="p-2 rounded bg-surface-container-high">
-<span class="text-error font-bold block">A: ROJO</span>
-<span class="text-[10px] text-on-surface-variant">H:[0,15]+[165,180]</span>
-</div>
-<div class="p-2 rounded bg-surface-container-high">
-<span class="text-secondary font-bold block">B: AZUL</span>
-<span class="text-[10px] text-on-surface-variant">H:[100,135]</span>
-</div>
-<div class="p-2 rounded bg-surface-container-high">
-<span class="text-tertiary font-bold block">C: VERDE</span>
-<span class="text-[10px] text-on-surface-variant">extra · soportado</span>
-</div>
-<div class="p-2 rounded bg-surface-container-high">
-<span class="text-primary font-bold block">D: VIOLETA</span>
-<span class="text-[10px] text-on-surface-variant">extra · soportado</span>
-</div>
-</div>
-</div>
-</div>
-</div>
-</section>
-<!-- SECTION 3: HOMOGRAPHY VISUALIZER & KINEMATIC TRANSFORMATION -->
-<section class="w-full bg-surface-container-low rounded-xl p-space-lg shadow-xl">
-<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-sm mb-space-lg">
-<div>
-<div class="flex items-center gap-space-xs text-primary font-label-caps text-label-caps uppercase tracking-wider">
-<span class="material-symbols-outlined text-[16px]">grid_on</span>
-<span>Mapeo Proyectivo Bidimensional Planar (Píxel -&gt; Milímetro Robot)</span>
-</div>
-<h2 class="font-headline-md text-headline-md text-on-surface mt-space-xs">Calibrador Homográfico &amp; Matriz H</h2>
-</div>
-<div class="flex items-center gap-space-sm">
-<button class="px-space-md py-space-xs rounded bg-primary text-on-primary font-body-sm text-body-sm font-semibold hover:bg-primary-container transition-colors shadow-md flex items-center gap-1" onclick="recalculateHomography()">
-<span class="material-symbols-outlined text-[16px]">sync</span>
-<span>Recomputar Matriz</span>
-</button>
-</div>
-</div>
-<!-- Homography Split Visualizer -->
-<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg">
-<!-- Interactive 4-Point Calibration Canvas -->
-<div class="lg:col-span-6 bg-surface-container-lowest rounded-xl p-space-md flex flex-col justify-between shadow-xl">
-<div class="flex items-center justify-between">
-<span class="font-label-caps text-label-caps text-secondary uppercase">// PLANO DE CALIBRACIÓN: INTERACTIVO (4 PUNTOS)</span>
-<span class="font-label-caps text-label-caps text-on-surface-variant">ARRASTRAR O CLIC PARA INSPECCIÓN</span>
-</div>
-<!-- Interactive SVG/HTML Plane representation -->
-<div class="relative w-full h-[320px] my-space-sm bg-surface-container rounded overflow-hidden flex items-center justify-center" id="homography-board">
-<!-- Grid lines simulating table millimeters -->
-<svg class="absolute inset-0 w-full h-full opacity-20" xmlns="http://www.w3.org/2000/svg">
-<defs>
-<pattern height="30" id="grid" patternUnits="userSpaceOnUse" width="30">
-<path d="M 30 0 L 0 0 0 30" fill="none" stroke="currentColor" stroke-width="0.5"></path>
-</pattern>
-</defs>
-<rect fill="url(#grid)" height="100%" width="100%"></rect>
-</svg>
-<!-- Homography ROI Polygon -->
-<svg class="absolute inset-0 w-full h-full pointer-events-none" xmlns="http://www.w3.org/2000/svg">
-<polygon fill="rgba(76,215,246,0.08)" id="poly-calibration" points="80,60 480,75 450,260 110,245" stroke="#4cd7f6" stroke-dasharray="4 2" stroke-width="2"></polygon>
-</svg>
-<!-- Calibration Point 1 -->
-<div class="absolute left-[80px] top-[60px] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center cursor-pointer group" id="p1" onclick="selectPoint(1)">
-<div class="w-6 h-6 rounded-full bg-secondary text-on-secondary font-telemetry-data text-[11px] font-bold flex items-center justify-center shadow-[0_0_12px_#4cd7f6]">P1</div>
-<span class="mt-1 font-label-caps text-[9px] bg-surface-container-lowest px-1 rounded text-secondary">[159, 35] px</span>
-</div>
-<!-- Calibration Point 2 -->
-<div class="absolute left-[480px] top-[75px] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center cursor-pointer group" id="p2" onclick="selectPoint(2)">
-<div class="w-6 h-6 rounded-full bg-secondary text-on-secondary font-telemetry-data text-[11px] font-bold flex items-center justify-center shadow-[0_0_12px_#4cd7f6]">P2</div>
-<span class="mt-1 font-label-caps text-[9px] bg-surface-container-lowest px-1 rounded text-secondary">[977, 19] px</span>
-</div>
-<!-- Calibration Point 3 -->
-<div class="absolute left-[450px] top-[260px] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center cursor-pointer group" id="p3" onclick="selectPoint(3)">
-<div class="w-6 h-6 rounded-full bg-secondary text-on-secondary font-telemetry-data text-[11px] font-bold flex items-center justify-center shadow-[0_0_12px_#4cd7f6]">P3</div>
-<span class="mt-1 font-label-caps text-[9px] bg-surface-container-lowest px-1 rounded text-secondary">[91, 546] px</span>
-</div>
-<!-- Calibration Point 4 -->
-<div class="absolute left-[110px] top-[245px] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center cursor-pointer group" id="p4" onclick="selectPoint(4)">
-<div class="w-6 h-6 rounded-full bg-secondary text-on-secondary font-telemetry-data text-[11px] font-bold flex items-center justify-center shadow-[0_0_12px_#4cd7f6]">P4</div>
-<span class="mt-1 font-label-caps text-[9px] bg-surface-container-lowest px-1 rounded text-secondary">[1043, 535] px</span>
-</div>
-<!-- Live test point cursor -->
-<div class="absolute left-[290px] top-[165px] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center pointer-events-none animate-bounce" id="live-target-point">
-<span class="material-symbols-outlined text-primary text-[22px]">my_location</span>
-<span class="font-telemetry-data text-[9px] bg-primary text-on-primary px-1 rounded font-bold">X: 0.100m | Y: 0.400m</span>
-</div>
-</div>
-<div class="flex items-center justify-between text-on-surface-variant font-telemetry-data text-telemetry-data">
-<span>MODELO: <code>cv2.findHomography(src, dst, cv2.RANSAC)</code></span>
-<span class="text-tertiary">CONVERGENCIA: OPTIMAL</span>
-</div>
-</div>
-<!-- Mathematical Foundation & Transformation Matrix Report -->
-<div class="lg:col-span-6 flex flex-col justify-between gap-space-md">
-<!-- Formulation Card -->
-<div class="bg-surface-container p-space-md rounded-lg shadow-md">
-<div class="flex items-center justify-between mb-space-sm">
-<span class="font-label-caps text-label-caps text-primary uppercase">Ecuación Proyectiva Homogénea</span>
-<span class="material-symbols-outlined text-primary text-[18px]">functions</span>
-</div>
-<p class="font-body-sm text-body-sm text-on-surface-variant mb-space-sm">
-              Toda coordenada en el plano de la imagen $(u, v, 1)^T$ se relaciona con el marco de base del UR5 $(X_R, Y_R, 1)^T$ mediante una matriz $H \in \mathbb{R}^{3 \times 3}$ sujeta a escala homogénea $s$:
-            </p>
-<div class="bg-surface-container-lowest p-space-sm rounded font-telemetry-data text-telemetry-data text-primary text-center">
-              $$\begin{bmatrix} s X_R \\ s Y_R \\ s \end{bmatrix} = \mathbf{H} \begin{bmatrix} u \\ v \\ 1 \end{bmatrix} = \begin{bmatrix} h_{11} &amp; h_{12} &amp; h_{13} \\ h_{21} &amp; h_{22} &amp; h_{23} \\ h_{31} &amp; h_{32} &amp; 1 \end{bmatrix} \begin{bmatrix} u \\ v \\ 1 \end{bmatrix}$$
-            </div>
-<!-- Current Calibration Correspondences (from config.json) -->
-<div class="mt-space-md grid grid-cols-2 gap-2 font-telemetry-data text-telemetry-data text-center">
-<div class="bg-surface-container-high p-2 rounded text-secondary">P1 px(159, 35) → (0.1, 0.4)</div>
-<div class="bg-surface-container-high p-2 rounded text-secondary">P2 px(977, 19) → (0.5, 0.4)</div>
-<div class="bg-surface-container-high p-2 rounded text-secondary">P3 px(91, 546) → (0.5, 0.0)</div>
-<div class="bg-surface-container-high p-2 rounded text-secondary">P4 px(1043, 535) → (0.1, 0.0)</div>
-<div class="col-span-2 bg-surface-container-high p-2 rounded text-on-surface-variant">La matriz H se calcula en runtime con cv2.findHomography y se recalibra desde el dashboard; se persiste en vision/config.json.</div>
-</div>
-</div>
-<!-- Calibration Accuracy Validation Report -->
-<div class="bg-surface-container p-space-md rounded-lg shadow-md">
-<div class="flex items-center justify-between mb-space-sm">
-<span class="font-label-caps text-label-caps text-tertiary uppercase">Validación de la Correspondencia (procedimiento real)</span>
-<span class="material-symbols-outlined text-tertiary text-[18px]">gpp_good</span>
-</div>
-<p class="font-body-sm text-body-sm text-on-surface-variant mb-space-sm">
-                Validamos el error apoyando piezas en posiciones <strong>no usadas para calibrar</strong> y comparando la coordenada reportada contra la real. Los valores de la sesión de demostración se registran en el panel Producción del dashboard.
-              </p>
-<div class="space-y-space-xs font-telemetry-data text-telemetry-data">
-<div class="flex items-center justify-between p-2 rounded bg-surface-container-high">
-<span class="text-on-surface-variant">P1: px(159, 35)</span>
-<span class="text-on-surface">UR5: (0.1, 0.4) m</span>
-<span class="text-tertiary font-bold">CALIBRACIÓN</span>
-</div>
-<div class="flex items-center justify-between p-2 rounded bg-surface-container-high">
-<span class="text-on-surface-variant">P2: px(977, 19)</span>
-<span class="text-on-surface">UR5: (0.5, 0.4) m</span>
-<span class="text-tertiary font-bold">CALIBRACIÓN</span>
-</div>
-<div class="flex items-center justify-between p-2 rounded bg-surface-container-high">
-<span class="text-on-surface-variant">P3: px(91, 546)</span>
-<span class="text-on-surface">UR5: (0.5, 0.0) m</span>
-<span class="text-tertiary font-bold">CALIBRACIÓN</span>
-</div>
-<div class="flex items-center justify-between p-2 rounded bg-surface-container-high">
-<span class="text-on-surface-variant">P4: px(1043, 535)</span>
-<span class="text-on-surface">UR5: (0.1, 0.0) m</span>
-<span class="text-tertiary font-bold">CALIBRACIÓN</span>
-</div>
-</div>
-<div class="mt-space-sm p-2 rounded bg-tertiary/10 flex items-center justify-between font-label-caps text-label-caps text-tertiary font-bold">
-<span>VERIFICACIÓN EN VIVO:</span>
-<span>PIEZAS EN POSICIONES NO CALIBRADAS → DEMO</span>
-</div>
-</div>
-</div>
-</div>
-</section>
-<!-- SECTION 4: SHARED JSON CONFIG VIEWER (HOT-RELOADABLE) -->
-<section class="w-full bg-surface-container-low rounded-xl p-space-lg shadow-xl mb-space-lg">
-<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-sm mb-space-md">
-<div>
-<div class="flex items-center gap-space-xs text-secondary font-label-caps text-label-caps uppercase tracking-wider">
-<span class="material-symbols-outlined text-[16px]">integration_instructions</span>
-<span>Configuración Centralizada del Sistema</span>
-</div>
-<h2 class="font-headline-md text-headline-md text-on-surface mt-space-xs">Inspector de `vision/config.json`</h2>
-</div>
-<div class="flex items-center gap-space-xs">
-<button class="px-space-md py-space-xs rounded bg-surface-container hover:bg-surface-container-high font-body-sm text-body-sm text-on-surface transition-colors flex items-center gap-1" id="btn-copy-json" onclick="copyConfigJson()">
-<span class="material-symbols-outlined text-[16px]">content_copy</span>
-<span>Copiar Parámetros</span>
-</button>
-<button class="px-space-md py-space-xs rounded bg-surface-container hover:bg-surface-container-high font-body-sm text-body-sm text-secondary transition-colors flex items-center gap-1" onclick="resetDefaults()">
-<span class="material-symbols-outlined text-[16px]">restart_alt</span>
-<span>Restaurar Nominales</span>
-</button>
-</div>
-</div>
-<!-- JSON Code Window with Syntax Highlighting Look -->
-<div class="w-full bg-surface-container-lowest rounded-xl p-space-md font-code-md text-code-md text-on-surface overflow-x-auto shadow-2xl">
-<div class="flex items-center justify-between pb-space-sm border-b border-surface-container-high mb-space-sm text-on-surface-variant font-label-caps text-label-caps">
-<div class="flex items-center gap-2">
-<span class="w-3 h-3 rounded-full bg-error inline-block"></span>
-<span class="w-3 h-3 rounded-full bg-primary inline-block"></span>
-<span class="w-3 h-3 rounded-full bg-tertiary inline-block"></span>
-<span class="ml-2 text-on-surface">vision/config.json</span>
-</div>
-<div class="flex items-center gap-3">
-<span>FORMAT: UTF-8</span>
-<span class="text-tertiary">VALID JSON</span>
-</div>
-</div>
-<pre class="text-[13px] leading-relaxed text-on-surface">{
-  <span class="text-secondary">"camara"</span>: { <span class="text-primary">"indice_camara"</span>: 0, <span class="text-primary">"ancho"</span>: 1280, <span class="text-primary">"alto"</span>: 720, <span class="text-primary">"fps"</span>: 30,
-    <span class="text-primary">"roi_desde_x"</span>: 0.05, <span class="text-primary">"roi_hasta_x"</span>: 0.95, <span class="text-primary">"roi_desde_y"</span>: 0.19, <span class="text-primary">"roi_hasta_y"</span>: 0.99 },
-  <span class="text-secondary">"segmentacion"</span>: {
-    <span class="text-primary">"rojo_bajo1"</span>: [0, 120, 70],   <span class="text-primary">"rojo_alto1"</span>: [15, 255, 255],
-    <span class="text-primary">"rojo_bajo2"</span>: [165, 120, 70], <span class="text-primary">"rojo_alto2"</span>: [180, 255, 255],
-    <span class="text-primary">"azul_bajo"</span>: [100, 120, 70],  <span class="text-primary">"azul_alto"</span>: [135, 255, 255],
-    <span class="text-primary">"area_minima"</span>: 500, <span class="text-primary">"area_maxima"</span>: 50000, <span class="text-primary">"kernel_tamano"</span>: 5, <span class="text-primary">"confianza_minima"</span>: 0.7 },
-  <span class="text-secondary">"homografia"</span>: {
-    <span class="text-primary">"puntos_px"</span>:  [[159.0, 35.0], [977.0, 19.0], [91.0, 546.0], [1043.0, 535.0]],
-    <span class="text-primary">"puntos_ur5"</span>: [[0.1, 0.4], [0.5, 0.4], [0.5, 0.0], [0.1, 0.0]] },
-  <span class="text-secondary">"zona_trabajo_min_x"</span>: 0.05, <span class="text-secondary">"zona_trabajo_max_x"</span>: 0.55,
-  <span class="text-secondary">"zona_trabajo_min_y"</span>: -0.05, <span class="text-secondary">"zona_trabajo_max_y"</span>: 0.45,
-  <span class="text-secondary">"gripper_port"</span>: <span class="text-tertiary">"COM3"</span>,
-  <span class="text-secondary">"z_seguro"</span>: 0.25, <span class="text-secondary">"z_pick"</span>: 0.12, <span class="text-secondary">"z_deposit"</span>: 0.12,
-  <span class="text-secondary">"destinos"</span>: { <span class="text-primary">"A"</span>: { <span class="text-primary">"x"</span>: 0.4, <span class="text-primary">"y"</span>: 0.2 }, <span class="text-primary">"B"</span>: { <span class="text-primary">"x"</span>: 0.4, <span class="text-primary">"y"</span>: -0.2 } }
-}</pre>
-</div>
-</section>
-</div>
-<!-- Interactive JavaScript logic for pipeline toggles and architecture inspection -->
-<script>
-    const stageDetails = {
-      1: {
-        tag: "1. CAPTURA CENITAL COMPLETA",
-        title: "Etapa 1: Captura Cenital Calibrada",
-        desc: "La cámara USB está montada rígidamente en cenital sobre la mesa, con eje óptico perpendicular al plano de trabajo. El sensor entrega cuadros de 1280x720 píxeles a 30 cuadros por segundo, sin moverse desde la calibración.",
-        code: `cap = cv2.VideoCapture(config["camara"]["indice_camara"])
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-cap.set(cv2.CAP_PROP_FPS, 30)
-ret, frame = cap.read()`
-      },
-      2: {
-        tag: "2. RECORTE ROI (ZONA DE TRABAJO ÚTIL)",
-        title: "Etapa 2: Aislamiento de ROI Mecánica",
-        desc: "Se recorta el marco a la ROI configurada (x: 0.05–0.95 · y: 0.19–0.99 del cuadro). Esto descarta bordes de mesa, cables del robot y reflejos perimetrales, y define el origen de coordenadas relativas al recorte.",
-        code: `cfg = config["camara"]
-h, w = frame.shape[:2]
-roi = frame[int(cfg["roi_desde_y"]*h):int(cfg["roi_hasta_y"]*h),
-            int(cfg["roi_desde_x"]*w):int(cfg["roi_hasta_x"]*w)]
-# Coordenadas locales trasladadas respecto al origen de la ROI`
-      },
-      3: {
-        tag: "3. CONVERSIÓN ESPACIAL BGR -> HSV",
-        title: "Etapa 3: Desacoplamiento de Luminancia (HSV)",
-        desc: "El espacio RGB es altamente sensible a variaciones de sombra proyectada por el brazo del robot. La conversión a HSV desacopla la cromaticidad pura (Hue) de la intensidad luminosa (Value), garantizando detección invariable bajo cualquier ángulo.",
-        code: `hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
-# Hue queda normalizado entre [0, 179]
-# Filtro bilateral previo opcional para supresión de ruido térmico
-hsv_smooth = cv2.bilateralFilter(hsv, d=5, sigmaColor=75, sigmaSpace=75)`
-      },
-      4: {
-        tag: "4. SEGMENTACIÓN DE MÁSCARAS POR COLOR",
-        title: "Etapa 4: Binarización & Envolvente Rojo Doble",
-        desc: "Se calculan máscaras independientes para los objetivos A (Rojo), B (Azul), C (Verde) y D (Violeta). Para el color rojo se realiza una unión lógica de rangos [0-15] y [165-180] para contemplar la continuidad circular del círculo cromático de Hue.",
-        code: `mask_red1 = cv2.inRange(hsv, lower_r1, upper_r1)
-mask_red2 = cv2.inRange(hsv, lower_r2, upper_r2)
-mask_red = cv2.bitwise_or(mask_red1, mask_red2)
-mask_blue = cv2.inRange(hsv, lower_b, upper_b)`
-      },
-      5: {
-        tag: "5. CONTORNOS, FILTRO DE ÁREA & CENTROIDE",
-        title: "Etapa 5: Momentos Espaciales & Coordenada Centroide",
-        desc: "Se ejecutan operaciones morfológicas de apertura (eliminación de ruido salt-and-pepper) y cierre. Posteriormente se localizan contornos cerrados, se descartan áreas fuera del umbral (500 a 50000 px²) y se calcula el baricentro exacto (cx, cy) mediante momentos espaciales.",
-        code: `kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
-clean = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
-cnts, _ = cv2.findContours(clean, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-for c in cnts:
-    if 500 < cv2.contourArea(c) < 50000:
-        M = cv2.moments(c)
-        cx = int(M["m10"] / M["m00"])
-        cy = int(M["m01"] / M["m00"])`
-      }
-    };
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Arquitectura del sistema — Celda UR5 · UPrO</title>
+<meta name="description" content="Módulos de software, pipeline OpenCV y calibración homográfica de la celda UR5 guiada por visión artificial. UPrO · Desafío 2.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
 
-    function setPipelineStage(stageNum) {
-      for (let i = 1; i <= 5; i++) {
-        const btn = document.getElementById('btn-st-' + i);
-        const vis = document.getElementById('vis-stage-' + i);
-        if (i === stageNum) {
-          btn.className = "px-space-md py-space-xs rounded font-label-caps text-label-caps uppercase transition-all bg-primary text-on-primary font-bold";
-          vis.classList.remove('hidden');
-        } else {
-          btn.className = "px-space-md py-space-xs rounded font-label-caps text-label-caps uppercase transition-all text-on-surface-variant hover:text-on-surface";
-          vis.classList.add('hidden');
-        }
-      }
+<header class="nav">
+  <a class="nav__mark" href="index.html"><img src="assets/logo-upro.jpg" alt="" width="28" height="28">UPrO · Celda UR5</a>
+  <nav aria-label="Principal">
+    <ul class="nav__list">
+      <li><a class="nav__link" href="index.html">Inicio</a></li>
+      <li><a class="nav__link" href="arquitectura.html" aria-current="page">Arquitectura</a></li>
+      <li><a class="nav__link" href="dashboard-hmi.html">HMI</a></li>
+      <li><a class="nav__link" href="manual.html">Manual</a></li>
+    </ul>
+  </nav>
+</header>
 
-      const data = stageDetails[stageNum];
-      document.getElementById('pipeline-stage-tag').innerText = data.tag;
-      document.getElementById('stage-desc-title').innerText = data.title;
-      document.getElementById('stage-desc-body').innerText = data.desc;
-      document.getElementById('stage-code-block').innerText = data.code;
-    }
+<main class="container">
 
-    function selectArchNode(type) {
-      const tag = document.getElementById('inspector-tag');
-      const desc = document.getElementById('inspector-desc');
-      const icon = document.getElementById('inspector-icon');
-      
-      if (type === 'config') {
-        tag.innerText = "CONFIGURACIÓN: vision/config.json";
-        desc.innerText = "Parámetros globales compartidos. Utiliza patrón Singleton y lectura reactiva para permitir el ajuste de umbrales HSV en caliente sin reiniciar la celda ni interrumpir el socket de comunicación con el UR5.";
-        icon.innerText = "data_object";
-      } else if (type === 'pipeline') {
-        tag.innerText = "COORDINADOR: vision/pipeline.py";
-        desc.innerText = "Adquiere frames de la cámara (índice 0, 1280×720 @ 30 FPS) en un hilo dedicado, evitando que las fluctuaciones de renderizado web o cinemática introduzcan desincronización temporal en el muestreo de piezas.";
-        icon.innerText = "hub";
-      } else if (type === 'detector') {
-        tag.innerText = "SEGMENTADOR: detector.py";
-        desc.innerText = "Módulo puramente algorítmico sin efectos colaterales de I/O. Recibe matrices Numpy BGR y devuelve lista serializada de tuplas: (color_id, pixel_cx, pixel_cy, orientation_theta, contour_area).";
-        icon.innerText = "center_focus_strong";
-      } else if (type === 'homografia') {
-        tag.innerText = "GEOMETRÍA: homografia.py";
-        desc.innerText = "Aplica la transformación proyectiva usando cv2.perspectiveTransform. Aplica el offset de origen de la ROI para devolver metros exactos [X, Y, Z_mesa] en el sistema de coordenadas base del UR5.";
-        icon.innerText = "transform";
-      } else if (type === 'visor') {
-        tag.innerText = "GUI LOCAL: visor.py";
-        desc.innerText = "Ventana nativa ultraliviana para diagnóstico y calibración manual con sliders Trackbar en banco de pruebas antes de energizar la potencia de servomotores.";
-        icon.innerText = "tv";
-      } else if (type === 'dashboard') {
-        tag.innerText = "TELEMETRÍA: core/dashboard_web.py";
-        desc.innerText = "Servidor Flask que transmite el feed de video vía MJPEG y expone la telemetría y los comandos de la interfaz HMI en el navegador.";
-        icon.innerText = "terminal";
-      } else if (type === 'robot') {
-        tag.innerText = "CONTROLADOR ROBÓTICO: core/robot_controller.py";
-        desc.innerText = "Comunica con el controlador del UR5 mediante la capa ur_rtde (puerto 30004). Genera los movimientos en coordenadas de la máquina de estados y gestiona la activación del gripper de 4 servos por puerto serie (COM3 @ 115200).";
-        icon.innerText = "smart_toy";
-      }
-    }
+  <section class="page-head">
+    <h1 class="display">Arquitectura del sistema</h1>
+    <p class="lede">Tres subsistemas coordinados por un controlador central y una configuración compartida. La integración es el objetivo del desafío: no hay un programa de visión por un lado y una rutina del robot por otro — el robot consume lo que la visión produce.</p>
+  </section>
 
-    function selectPoint(pNum) {
-      const coords = {
-        1: { px: "P1 [159, 35] px", ur: "UR5: X: 0.100m | Y: 0.400m", targetX: "80px", targetY: "60px" },
-        2: { px: "P2 [977, 19] px", ur: "UR5: X: 0.500m | Y: 0.400m", targetX: "480px", targetY: "75px" },
-        3: { px: "P3 [91, 546] px", ur: "UR5: X: 0.500m | Y: 0.000m", targetX: "450px", targetY: "260px" },
-        4: { px: "P4 [1043, 535] px", ur: "UR5: X: 0.100m | Y: 0.000m", targetX: "110px", targetY: "245px" }
-      };
-      
-      const point = coords[pNum];
-      const target = document.getElementById('live-target-point');
-      target.style.left = point.targetX;
-      target.style.top = point.targetY;
-      target.querySelector('span:nth-child(2)').innerText = point.ur;
-    }
+  <section class="section--tight">
+    <h2 class="title">Módulos de software</h2>
+    <div class="mods">
+      <div class="mods__row"><span class="mods__name">vision/pipeline.py</span><p>Orquestador del sistema: coordina la adquisición de imágenes y entrega el diccionario de detección a los demás módulos.</p></div>
+      <div class="mods__row"><span class="mods__name">vision/visor.py</span><p>Adquisición de imágenes desde la cámara USB fija montada en cenital sobre la mesa.</p></div>
+      <div class="mods__row"><span class="mods__name">vision/detector.py</span><p>Segmentación HSV, centroide y categoría de cada pieza detectada.</p></div>
+      <div class="mods__row"><span class="mods__name">vision/homografia.py</span><p>Convierte píxeles del plano de la imagen a coordenadas del plano del UR5.</p></div>
+      <div class="mods__row"><span class="mods__name">core/robot_controller.py</span><p>Máquina de estados del ciclo: mueve el UR5 y acciona el gripper.</p></div>
+      <div class="mods__row"><span class="mods__name">core/dashboard_web.py</span><p>Servidor Flask para monitoreo y comando remoto de la celda.</p></div>
+      <div class="mods__row"><span class="mods__name">vision/config.json</span><p>Única fuente de parámetros compartida por visión, robot y gripper.</p></div>
+    </div>
+  </section>
 
-    function recalculateHomography() {
-      const btn = event.currentTarget;
-      btn.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-spin">refresh</span> Recomputando RANSAC...';
-      setTimeout(() => {
-        btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">check_circle</span> Recalibración guardada en config.json';
-        setTimeout(() => {
-          btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">sync</span> Recomputar Matriz';
-        }, 2000);
-      }, 500);
-    }
+  <section class="section">
+    <h2 class="title">Pipeline de visión, etapa por etapa</h2>
+    <p class="lede">Elegimos HSV clásico en vez de una red neuronal porque el problema es de color plano y controlado: es determinístico, no requiere dataset y corre en tiempo real en la PC del laboratorio. La consigna lo permite explícitamente.</p>
+    <ol class="steps">
+      <li>
+        <span class="stage">01</span>
+        <h3>Captura cenital</h3>
+        <p><code class="mono">cv2.VideoCapture</code> con resolución nativa de 1280×720 a 30 FPS, cámara fija desde la calibración.</p>
+      </li>
+      <li>
+        <span class="stage">02</span>
+        <h3>Recorte por ROI</h3>
+        <p>Se descarta todo lo que está fuera de la zona útil de trabajo. El centroide queda en coordenadas relativas al recorte — por eso la homografía se aplica después.</p>
+      </li>
+      <li>
+        <span class="stage">03</span>
+        <h3>Conversión a HSV</h3>
+        <p>Desacopla la cromaticidad de la iluminación: las sombras que proyecta el brazo sobre la mesa no engañan al detector.</p>
+      </li>
+      <li>
+        <span class="stage">04</span>
+        <h3>Máscaras por rangos</h3>
+        <p>Una máscara por categoría. Para el rojo se une los tramos H [0–15] y [165–180], por la continuidad circular del círculo cromático.</p>
+      </li>
+      <li>
+        <span class="stage">05</span>
+        <h3>Contornos y centroide</h3>
+        <p>Filtrado morfológico, descarte por área (500–50 000 px²) y confianza (0.7), y momentos espaciales para obtener el centro (cx, cy).</p>
+      </li>
+    </ol>
+  </section>
 
-    function copyConfigJson() {
-      const btn = document.getElementById('btn-copy-json');
-      navigator.clipboard.writeText(`{\n  "project": "UPrO UR5 Vision Cell",\n  "status": "calibrated"\n}`);
-      btn.innerHTML = '<span class="material-symbols-outlined text-[16px] text-tertiary">done</span> Copiado';
-      setTimeout(() => {
-        btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">content_copy</span> Copiar Parámetros';
-      }, 1500);
-    }
+  <section class="section--tight">
+    <div class="duo">
+      <div>
+        <h2 class="title">Homografía: de píxeles a metros</h2>
+        <p class="lede">Cuatro marcas sobre el video vinculan coordenadas de píxel con coordenadas de la base del UR5. La correspondencia es la que la consigna evalúa explícitamente; validamos el error apoyando piezas en posiciones no usadas para calibrar y comparando la coordenada reportada contra la real.</p>
+        <div class="spec">
+          <div class="spec__row"><span class="spec__k">P1</span><span class="spec__v">px (159, 35) → UR5 (0.1, 0.4) m</span></div>
+          <div class="spec__row"><span class="spec__k">P2</span><span class="spec__v">px (977, 19) → UR5 (0.5, 0.4) m</span></div>
+          <div class="spec__row"><span class="spec__k">P3</span><span class="spec__v">px (91, 546) → UR5 (0.5, 0.0) m</span></div>
+          <div class="spec__row"><span class="spec__k">P4</span><span class="spec__v">px (1043, 535) → UR5 (0.1, 0.0) m</span></div>
+          <div class="spec__row"><span class="spec__k">Zona de trabajo</span><span class="spec__v">X 0.05–0.55 m · Y −0.05–0.45 m</span></div>
+        </div>
+        <p class="lede" style="margin-top: var(--space-lg);">La visión rechaza cualquier coordenada fuera de la zona calibrada: ningún procesamiento de imagen puede generar movimientos fuera de los límites.</p>
+      </div>
+      <div class="codeblock">
+        <span class="codeblock__label">Cálculo de la matriz H (visión/homografia.py)</span>
+        <pre class="code"><code>pts_src = np.array(puntos_px)      # 4 marcas, en píxeles
+pts_dst = np.array(puntos_ur5)     # mismas marcas, en metros
 
-    function resetDefaults() {
-      alert("La calibración nominal se restaura desde vision/config.json mediante el asistente del dashboard.");
-    }
-  </script>
-</div></main><footer class="w-full bg-surface-container-lowest py-space-md border-t border-surface-container-high/40"><div class="w-full px-margin flex flex-col md:flex-row items-center justify-between gap-space-sm font-label-caps text-label-caps text-on-surface-variant"><span>UNIVERSIDAD PROVINCIAL DE OFICIOS · ROBÓTICA INDUSTRIAL &amp; VISIÓN POR COMPUTADORA</span><span>DEFENSA TÉCNICA: ALFREDO · CLAUDIO · LUCIO</span><span class="text-tertiary">SISTEMA DISCIPLINADO NOMINAL · 30 FPS</span></div></footer>
+H, _ = cv2.findHomography(pts_src, pts_dst)
 
-</body></html>
+pt_ur5 = cv2.perspectiveTransform(
+    pt_pixel, H
+)  # (u, v) del centroide → (X, Y) de la base</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 class="title">Configuración centralizada</h2>
+    <p class="lede">Toda la configuración vive en <strong>vision/config.json</strong>, compartida por visión, robot y gripper. Se edita desde el dashboard y persiste en disco.</p>
+    <div class="codeblock">
+      <span class="codeblock__label">vision/config.json — valores de la calibración vigente</span>
+      <pre class="code"><code>{
+  "camara": { "indice_camara": 0, "ancho": 1280, "alto": 720, "fps": 30,
+              "roi_desde_x": 0.05, "roi_hasta_x": 0.95,
+              "roi_desde_y": 0.19, "roi_hasta_y": 0.99 },
+  "segmentacion": {
+    "rojo_bajo1": [0, 120, 70],   "rojo_alto1": [15, 255, 255],
+    "rojo_bajo2": [165, 120, 70], "rojo_alto2": [180, 255, 255],
+    "azul_bajo": [100, 120, 70],  "azul_alto": [135, 255, 255],
+    "area_minima": 500, "area_maxima": 50000,
+    "kernel_tamano": 5, "confianza_minima": 0.7 },
+  "homografia": {
+    "puntos_px":  [[159.0, 35.0], [977.0, 19.0], [91.0, 546.0], [1043.0, 535.0]],
+    "puntos_ur5": [[0.1, 0.4], [0.5, 0.4], [0.5, 0.0], [0.1, 0.0]] },
+  "zona_trabajo_min_x": 0.05, "zona_trabajo_max_x": 0.55,
+  "zona_trabajo_min_y": -0.05, "zona_trabajo_max_y": 0.45,
+  "gripper_port": "COM3",
+  "z_seguro": 0.25, "z_pick": 0.12, "z_deposit": 0.12,
+  "destinos": { "A": { "x": 0.4, "y": 0.2 }, "B": { "x": 0.4, "y": -0.2 } }
+}</code></pre>
+    </div>
+    <p style="margin-top: var(--space-xl);"><a class="tlink" href="dashboard-hmi.html">Operar desde el dashboard →</a></p>
+  </section>
+
+</main>
+
+<footer class="colophon">
+  <div class="container">
+    <p>Universidad Provincial de Oficios — Robótica con Orientación IA · Desafío 2: celda robotizada de clasificación por visión artificial, UR5 + gripper de 4 servos. Alfredo Becerra · Claudio Flores · Lucio Vita. Villa Mercedes, San Luis — 2026.</p>
+    <p>Código y documentación: <a href="https://github.com/gaboxf/ur5e-pick-and-place">github.com/gaboxf/ur5e-pick-and-place</a> · Sitio estático en HTML + CSS · Tipografía: Space Grotesk, IBM Plex Sans, JetBrains Mono.</p>
+  </div>
+</footer>
+
+</body>
+</html>

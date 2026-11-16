@@ -1,615 +1,156 @@
-<!DOCTYPE html><html class="dark" lang="es"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_standard" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"secondary":"#4cd7f6","surface-container-highest":"#313540","surface-variant":"#313540","outline-variant":"#534434","surface-bright":"#353944","error-container":"#93000a","primary":"#ffc174","error":"#ffb4ab","on-primary-container":"#613b00","on-primary-fixed-variant":"#653e00","on-secondary-container":"#00424e","on-background":"#dfe2f1","tertiary-fixed":"#6ffbbe","inverse-on-surface":"#2c303b","surface-container-low":"#171b26","primary-fixed":"#ffddb8","primary-container":"#f59e0b","secondary-fixed":"#acedff","surface-container-high":"#262a35","on-tertiary-container":"#004e34","on-tertiary-fixed":"#002113","on-tertiary":"#003824","secondary-fixed-dim":"#4cd7f6","tertiary-container":"#30c88f","surface-container-lowest":"#0a0e18","surface":"#0f131d","on-secondary":"#003640","tertiary-fixed-dim":"#4edea3","on-primary":"#472a00","on-secondary-fixed":"#001f26","on-surface-variant":"#d8c3ad","on-secondary-fixed-variant":"#004e5c","tertiary":"#56e5a9","secondary-container":"#03b5d3","background":"#0f131d","surface-tint":"#ffb95f","on-error":"#690005","on-primary-fixed":"#2a1700","on-surface":"#dfe2f1","primary-fixed-dim":"#ffb95f","on-tertiary-fixed-variant":"#005236","surface-dim":"#0f131d","surface-container":"#1c1f2a","on-error-container":"#ffdad6","inverse-surface":"#dfe2f1","inverse-primary":"#855300","outline":"#a08e7a"},borderRadius:{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},spacing:{"space-md":"1rem","gutter-mobile":"0.75rem","margin-mobile":"1rem","gutter":"1.5rem","space-lg":"1.5rem","space-sm":"0.5rem","space-xl":"2.5rem","space-xs":"0.25rem","margin":"2rem"},fontFamily:{"headline-xl-mobile":["Inter"],"headline-md":["Inter"],"telemetry-data":["JetBrains Mono"],"headline-xl":["Inter"],"label-caps":["JetBrains Mono"],"headline-sm":["Inter"],"headline-lg":["Inter"],"code-md":["JetBrains Mono"],"body-sm":["Inter"],"body-lg":["Inter"],"code-lg":["JetBrains Mono"],"body-md":["Inter"],"headline-lg-mobile":["Inter"]},fontSize:{"headline-xl-mobile":["2rem",{"lineHeight":"2.5rem","letterSpacing":"-0.02em","fontWeight":"700"}],"headline-md":["1.5rem",{"lineHeight":"2rem","letterSpacing":"-0.015em","fontWeight":"600"}],"telemetry-data":["0.8125rem",{"lineHeight":"1rem","letterSpacing":"0.05em","fontWeight":"600"}],"headline-xl":["3rem",{"lineHeight":"3.5rem","letterSpacing":"-0.025em","fontWeight":"700"}],"label-caps":["0.6875rem",{"lineHeight":"0.875rem","letterSpacing":"0.08em","fontWeight":"600"}],"headline-sm":["1.25rem",{"lineHeight":"1.75rem","fontWeight":"600"}],"headline-lg":["2.25rem",{"lineHeight":"2.75rem","letterSpacing":"-0.02em","fontWeight":"600"}],"code-md":["0.875rem",{"lineHeight":"1.375rem","fontWeight":"400"}],"body-sm":["0.875rem",{"lineHeight":"1.25rem","fontWeight":"400"}],"body-lg":["1.125rem",{"lineHeight":"1.75rem","fontWeight":"400"}],"code-lg":["1rem",{"lineHeight":"1.5rem","fontWeight":"500"}],"body-md":["1rem",{"lineHeight":"1.5rem","fontWeight":"400"}],"headline-lg-mobile":["1.75rem",{"lineHeight":"2.25rem","letterSpacing":"-0.015em","fontWeight":"600"}]}}}}</script></head><body class="bg-background font-body-md text-body-md text-on-surface antialiased min-h-screen flex flex-col"><header class="fixed top-0 left-0 w-full z-50 bg-surface-container-lowest/90 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.4)]"><div class="h-20 w-full px-margin flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-lg"><div class="flex items-center gap-space-sm"><img src="https://lh3.googleusercontent.com/aida/ALJJyrDdBKBKasxBugh37v8qA_4UbVTnHUYo-_LvMZWhzseg-4ZoSnApcve38306II1VmuOcu5uWtcuMfI2U7_R45x1uk2p44sOnn87qcUfSdkUQ2DP3SS-S7U3DaRVJP8uozf3Qs1N6YO5c_nKHVI-n7aH5cqDqm7NJHyU-W3web0JyCZg2xSDurcTJegYcIEVKgtKzB6dbMTpTuvSLRoNlEnw68_uyLMDeoZi8qKzJtQMU" alt="Logo UPrO Industrial" class="h-10 w-10 object-contain rounded shrink-0 shadow-md"><div class="flex flex-col"><div class="flex items-center gap-space-xs"><span class="text-primary font-code-lg text-code-lg font-bold tracking-tight">UPrO</span><span class="text-on-surface font-headline-sm text-headline-sm font-semibold tracking-tight">Vision Cell</span></div><span class="text-on-surface-variant font-label-caps text-label-caps uppercase tracking-wider">Desafío 2 · Pick &amp; Place Guiado por Visión</span></div></div><div class="hidden xl:flex items-center gap-space-xs"><div class="flex items-center gap-space-xs bg-surface-container px-space-sm py-space-xs rounded border border-surface-container-highest"><span class="w-2 h-2 rounded-full bg-tertiary shadow-[0_0_8px_#56e5a9]"></span><span class="font-label-caps text-label-caps text-on-surface uppercase">CAM: OK (60 FPS)</span></div><div class="flex items-center gap-space-xs bg-surface-container px-space-sm py-space-xs rounded border border-surface-container-highest"><span class="w-2 h-2 rounded-full bg-tertiary shadow-[0_0_8px_#56e5a9]"></span><span class="font-label-caps text-label-caps text-on-surface uppercase">GRP: COM3 OK</span></div><div class="flex items-center gap-space-xs bg-surface-container px-space-sm py-space-xs rounded border border-surface-container-highest"><span class="w-2 h-2 rounded-full bg-tertiary shadow-[0_0_8px_#56e5a9]"></span><span class="font-label-caps text-label-caps text-on-surface uppercase">UR5: 127.0.0.1:30004 READY</span></div><div class="flex items-center gap-space-xs bg-surface-container px-space-sm py-space-xs rounded border border-surface-container-highest"><span class="w-2 h-2 rounded-full bg-primary-container shadow-[0_0_8px_#f59e0b]"></span><span class="font-label-caps text-label-caps text-primary uppercase">E-STOP: PENDANT ARMED</span></div></div></div><nav class="hidden lg:flex items-center gap-space-xs bg-surface-container-lowest p-space-xs rounded-lg" data-active-classes="bg-surface-container-high text-primary font-semibold"><a class="px-space-md py-space-xs rounded font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all" data-path="modo-presentacion" href="#">Modo Presentación (Slides)</a><a class="px-space-md py-space-xs rounded font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all" data-path="dashboard-hmi" href="#">Dashboard HMI (Control en Vivo)</a><a class="px-space-md py-space-xs rounded font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all" data-path="arquitectura-vision" href="#">Arquitectura &amp; Visión</a><a aria-current="page" class="px-space-md py-space-xs rounded transition-all bg-surface-container-high text-primary font-semibold" data-path="manual-operativo-seguridad" href="#">Manual Operativo &amp; Seguridad</a></nav><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs bg-surface-container-low px-space-md py-space-xs rounded border border-surface-container-high"><span class="material-symbols-outlined text-secondary text-[18px]">timer</span><span class="font-telemetry-data text-telemetry-data text-secondary">15:00 REMAINING</span></div><button class="w-9 h-9 flex items-center justify-center rounded bg-surface-container text-on-surface-variant hover:text-secondary hover:bg-surface-container-high transition-colors" title="Pantalla Completa" type="button"><span class="material-symbols-outlined text-[20px]">fullscreen</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="w-full pt-20 bg-background flex-1"><div class="flex flex-col w-full">
-<!-- Critical Safety Alert Banner -->
-<section class="w-full px-margin pt-space-lg pb-space-md">
-<div class="w-full bg-error-container/40 rounded-xl p-space-lg shadow-xl relative overflow-hidden backdrop-blur-md">
-<div class="absolute -right-10 -top-10 w-48 h-48 bg-error/10 rounded-full blur-3xl pointer-events-none"></div>
-<div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-space-md relative z-10">
-<div class="flex items-start gap-space-md">
-<div class="w-12 h-12 rounded-lg bg-error flex items-center justify-center shrink-0 shadow-lg text-on-error">
-<span class="material-symbols-outlined text-[30px]" style="font-variation-settings: 'FILL' 1;">warning</span>
-</div>
-<div class="flex flex-col">
-<div class="flex items-center gap-space-xs">
-<span class="font-label-caps text-label-caps uppercase text-error px-space-xs py-0.5 rounded bg-error/20">NORM-EN-ISO-13850 v2.0</span>
-<span class="text-on-surface-variant font-label-caps text-label-caps">AUDITORÍA SEGURIDAD REVISIÓN B</span>
-</div>
-<h1 class="font-headline-sm text-headline-sm text-on-surface mt-space-xs font-semibold tracking-tight">
-              SEGURIDAD CRÍTICA · CAMBIO DE ARQUITECTURA ELÉCTRICA
-            </h1>
-<p class="font-body-md text-body-md text-error mt-space-xs font-medium">
-              El microcontrolador Arduino <span class="underline underline-offset-4 decoration-2">NO posee pulsador físico de parada de emergencia</span> (ha sido desacoplado y descontinuado). La <strong class="text-on-surface uppercase tracking-wide">ÚNICA parada de emergencia válida y primaria</strong> es el Pulsador Tipo Hongo (E-Stop) del Teach Pendant UR5 certificado categoría 3 / PLd.
-            </p>
-</div>
-</div>
-<div class="shrink-0 flex items-center gap-space-xs bg-surface-container-lowest px-space-md py-space-sm rounded-lg shadow-inner">
-<a class="flex items-center gap-space-xs font-label-caps text-label-caps uppercase text-primary hover:brightness-110" href="index.html"><span class="material-symbols-outlined text-[18px]">arrow_back</span>Presentación</a>
-<span class="text-on-surface-variant font-label-caps text-label-caps">|</span>
-<div class="w-3 h-3 rounded-full bg-error animate-pulse"></div>
-<span class="font-telemetry-data text-telemetry-data text-error tracking-wider uppercase">CIRCUITO CAT-3 EN VIGOR</span>
-</div>
-</div>
-</div>
-</section>
-<!-- Split Grid: Architecture Diagram & 4-Step E-Stop Protocol -->
-<section class="w-full px-margin py-space-md">
-<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
-<!-- Column 1 (7 cols): Hardware Safety Topography & Signal Flows -->
-<div class="lg:col-span-7 flex flex-col gap-space-md">
-<div class="bg-surface-container rounded-xl p-space-lg shadow-md flex flex-col justify-between h-full">
-<div>
-<div class="flex items-center justify-between pb-space-sm">
-<div class="flex items-center gap-space-xs">
-<span class="material-symbols-outlined text-secondary text-[20px]">account_tree</span>
-<span class="font-label-caps text-label-caps uppercase text-secondary tracking-wider">// ARQUITECTURA_INTERCONEXION_HARDWARE</span>
-</div>
-<span class="font-label-caps text-label-caps text-on-surface-variant">BUS SEGURO vs BUS ACTUADOR</span>
-</div>
-<!-- Hardware Topology Diagram Canvas -->
-<div class="mt-space-md bg-surface-container-lowest rounded-lg p-space-md relative overflow-hidden">
-<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md items-center relative z-10">
-<!-- PC Master Controller -->
-<div class="bg-surface-container-high rounded p-space-sm shadow-md flex flex-col items-center text-center">
-<div class="w-10 h-10 rounded-full bg-surface-bright flex items-center justify-center text-secondary mb-space-xs">
-<span class="material-symbols-outlined text-[20px]">terminal</span>
-</div>
-<span class="font-code-md text-code-md text-on-surface font-semibold">PC Estación</span>
-<span class="font-label-caps text-label-caps text-on-surface-variant">OpenCV + RTDE Script</span>
-<div class="mt-space-sm w-full bg-surface-container-low rounded py-space-xs px-space-xs flex justify-between text-left">
-<span class="font-label-caps text-label-caps text-on-surface-variant">IP:</span>
-<span class="font-telemetry-data text-telemetry-data text-secondary">127.0.0.1</span>
-</div>
-</div>
-<!-- Bus Connections & Interlinks (Center Column) -->
-<div class="flex flex-col gap-space-sm items-center justify-center py-space-xs">
-<!-- Industrial Ethernet Link -->
-<div class="w-full bg-surface-container-low rounded p-space-xs flex flex-col items-center">
-<div class="flex items-center gap-space-xs text-secondary">
-<span class="font-label-caps text-label-caps uppercase font-bold">Ethernet TCP/IP</span>
-<span class="material-symbols-outlined text-[14px]">bolt</span>
-</div>
-<span class="font-telemetry-data text-telemetry-data text-on-surface-variant">Puerto 30004 · ur_rtde</span>
-</div>
-<!-- USB/COM Link -->
-<div class="w-full bg-surface-container-low rounded p-space-xs flex flex-col items-center">
-<div class="flex items-center gap-space-xs text-primary">
-<span class="font-label-caps text-label-caps uppercase font-bold">USB Serial (CH340)</span>
-<span class="material-symbols-outlined text-[14px]">cable</span>
-</div>
-<span class="font-telemetry-data text-telemetry-data text-on-surface-variant">COM3 · 115200 Baud</span>
-</div>
-</div>
-<!-- UR5 Control Box & Arduino Destination -->
-<div class="flex flex-col gap-space-sm">
-<!-- UR5 Controller Box -->
-<div class="bg-surface-container-high rounded p-space-sm shadow-md flex items-center gap-space-sm">
-<div class="w-8 h-8 rounded bg-surface-bright flex items-center justify-center text-primary shrink-0">
-<span class="material-symbols-outlined text-[18px]">developer_board</span>
-</div>
-<div class="flex flex-col overflow-hidden">
-<span class="font-code-md text-code-md text-on-surface font-semibold truncate">UR5 Control Box</span>
-<span class="font-label-caps text-label-caps text-tertiary">CB-Series Safety Core</span>
-</div>
-</div>
-<!-- Arduino UNO (Actuator Only) -->
-<div class="bg-surface-container-high rounded p-space-sm shadow-md flex items-center gap-space-sm">
-<div class="w-8 h-8 rounded bg-surface-bright flex items-center justify-center text-outline shrink-0">
-<span class="material-symbols-outlined text-[18px]">memory</span>
-</div>
-<div class="flex flex-col overflow-hidden">
-<div class="flex items-center gap-space-xs">
-<span class="font-code-md text-code-md text-on-surface font-semibold truncate">Arduino UNO</span>
-<span class="text-error font-label-caps text-label-caps">[SIN E-STOP]</span>
-</div>
-<span class="font-label-caps text-label-caps text-on-surface-variant truncate">Salida PWM Servo TPU</span>
-</div>
-</div>
-</div>
-</div>
-<!-- Teach Pendant Safety Loop Ingress -->
-<div class="mt-space-md pt-space-md bg-surface-container-high/60 rounded-lg p-space-sm flex flex-col md:flex-row items-center justify-between gap-space-sm">
-<div class="flex items-center gap-space-sm">
-<div class="w-9 h-9 rounded-full bg-error flex items-center justify-center text-on-error shrink-0 shadow-lg">
-<span class="material-symbols-outlined text-[20px]">radio_button_checked</span>
-</div>
-<div>
-<span class="font-code-md text-code-md text-on-surface font-semibold block">Teach Pendant UR5 (Polyscope)</span>
-<span class="font-body-sm text-body-sm text-on-surface-variant">Lazo de Seguridad Primario Hardware Directo a Contactores</span>
-</div>
-</div>
-<div class="flex items-center gap-space-xs text-error font-label-caps text-label-caps uppercase bg-surface-container-lowest px-space-sm py-space-xs rounded">
-<span class="w-2 h-2 rounded-full bg-error"></span>
-<span>Línea Físico-Mecánica Prioritaria</span>
-</div>
-</div>
-</div>
-</div>
-<!-- Bottom Telemetry Specifications -->
-<div class="grid grid-cols-3 gap-space-sm mt-space-md pt-space-sm">
-<div class="bg-surface-container-low rounded p-space-xs text-center">
-<span class="font-label-caps text-label-caps text-on-surface-variant uppercase block">Tiempo Corte E-Stop</span>
-<span class="font-telemetry-data text-telemetry-data text-tertiary">≤ 180 ms</span>
-</div>
-<div class="bg-surface-container-low rounded p-space-xs text-center">
-<span class="font-label-caps text-label-caps text-on-surface-variant uppercase block">Presión Gripper TPU</span>
-<span class="font-telemetry-data text-telemetry-data text-secondary">0.45 N·m</span>
-</div>
-<div class="bg-surface-container-low rounded p-space-xs text-center">
-<span class="font-label-caps text-label-caps text-on-surface-variant uppercase block">Límite TCP Seguridad</span>
-<span class="font-telemetry-data text-telemetry-data text-primary">250 mm/s</span>
-</div>
-</div>
-</div>
-</div>
-<!-- Column 2 (5 cols): Protocolo de Emergencia 4 Pasos -->
-<div class="lg:col-span-5 flex flex-col gap-space-md">
-<div class="bg-surface-container rounded-xl p-space-lg shadow-md flex flex-col justify-between h-full">
-<div>
-<div class="flex items-center justify-between pb-space-sm">
-<div class="flex items-center gap-space-xs">
-<span class="material-symbols-outlined text-primary text-[20px]">checklist</span>
-<span class="font-label-caps text-label-caps uppercase text-primary tracking-wider">// PROTOCOLO_OPERATIVO_EMERGENCIA</span>
-</div>
-<span class="font-label-caps text-label-caps text-error font-bold">OBLIGATORIO</span>
-</div>
-<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold mt-space-xs">
-              Procedimiento de Contención Inmediata
-            </h2>
-<p class="font-body-sm text-body-sm text-on-surface-variant mt-space-xs">
-              Secuencia obligatoria ante desalineación de trayectorias, fallas de visión o contacto no planificado.
-            </p>
-<!-- 4-Step Cards -->
-<div class="mt-space-md space-y-space-sm">
-<!-- Step 1 -->
-<div class="bg-surface-container-low p-space-sm rounded-lg flex items-start gap-space-sm">
-<span class="w-6 h-6 rounded-full bg-error text-on-error flex items-center justify-center font-telemetry-data text-telemetry-data shrink-0 font-bold">1</span>
-<div>
-<h3 class="font-code-md text-code-md text-on-surface font-semibold">Presionar E-Stop del Teach Pendant</h3>
-<p class="font-body-sm text-body-sm text-on-surface-variant">Accione con la palma el hongo rojo del pendant. Esto corta de inmediato la energía en las 6 articulaciones mecánicas.</p>
-</div>
-</div>
-<!-- Step 2 -->
-<div class="bg-surface-container-low p-space-sm rounded-lg flex items-start gap-space-sm">
-<span class="w-6 h-6 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-telemetry-data text-telemetry-data shrink-0 font-bold">2</span>
-<div>
-<h3 class="font-code-md text-code-md text-on-surface font-semibold">Desplazar Manualmente con Joystick / Freedrive</h3>
-<p class="font-body-sm text-body-sm text-on-surface-variant">Con el sistema en modo seguro, guíe la herramienta a una zona despejada evitando interferencias mecánicas con la célula.</p>
-</div>
-</div>
-<!-- Step 3 -->
-<div class="bg-surface-container-low p-space-sm rounded-lg flex items-start gap-space-sm">
-<span class="w-6 h-6 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center font-telemetry-data text-telemetry-data shrink-0 font-bold">3</span>
-<div>
-<h3 class="font-code-md text-code-md text-on-surface font-semibold">Verificación de Estados en Software</h3>
-<p class="font-body-sm text-body-sm text-on-surface-variant">Compruebe la telemetría en el Dashboard HMI; confirme desconexión limpia del socket RTDE y la liberación de memoria en el hilo de captura.</p>
-</div>
-</div>
-<!-- Step 4 (Warning / Prohibition) -->
-<div class="bg-error-container/30 p-space-sm rounded-lg flex items-start gap-space-sm">
-<span class="w-6 h-6 rounded-full bg-error text-on-error flex items-center justify-center font-telemetry-data text-telemetry-data shrink-0 font-bold">!</span>
-<div>
-<h3 class="font-code-md text-code-md text-error font-semibold">PROHIBIDO: Jamás buscar botón en el Arduino</h3>
-<p class="font-body-sm text-body-sm text-on-surface-variant">El Arduino sólo conmuta pulsos de servo TPU por pin D9. No contiene circuito de corte de alimentación de fuerza del brazo robot.</p>
-</div>
-</div>
-</div>
-</div>
-<div class="mt-space-md pt-space-xs flex items-center justify-between text-on-surface-variant font-label-caps text-label-caps">
-<span>NORMA: ISO 10218-1 / 10218-2</span>
-<span class="text-tertiary">PERSONAL HABILITADO UPrO</span>
-</div>
-</div>
-</div>
-</div>
-</section>
-<!-- Step-by-Step Installation & Deployment Engine -->
-<section class="w-full px-margin py-space-md">
-<div class="bg-surface-container rounded-xl p-space-lg shadow-md">
-<div class="flex flex-col lg:flex-row lg:items-center justify-between pb-space-md gap-space-sm">
-<div>
-<div class="flex items-center gap-space-xs">
-<span class="material-symbols-outlined text-secondary text-[20px]">terminal</span>
-<span class="font-label-caps text-label-caps uppercase text-secondary tracking-wider">// GUIA_DESPLIEGUE_Y_CONFIGURACION</span>
-</div>
-<h2 class="font-headline-md text-headline-md text-on-surface font-semibold mt-space-xs">
-            Puesta en Marcha del Entorno &amp; Controladores
-          </h2>
-<p class="font-body-sm text-body-sm text-on-surface-variant">
-            Protocolo de inicio para entornos Windows / Linux con URsim y cámara USB calibrada.
-          </p>
-</div>
-<div class="flex items-center gap-space-xs">
-<span class="px-space-sm py-space-xs rounded bg-surface-container-high text-primary font-telemetry-data text-telemetry-data">Python 3.10.12+</span>
-<span class="px-space-sm py-space-xs rounded bg-surface-container-high text-secondary font-telemetry-data text-telemetry-data">OpenCV 4.9.0</span>
-<span class="px-space-sm py-space-xs rounded bg-surface-container-high text-tertiary font-telemetry-data text-telemetry-data">URsim 3.15</span>
-</div>
-</div>
-<!-- Setup Grid: 4 Technical Stages -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-space-md mt-space-md">
-<!-- Stage 1: Virtualenv -->
-<div class="bg-surface-container-low rounded-lg p-space-md flex flex-col justify-between">
-<div>
-<div class="flex items-center justify-between">
-<span class="font-telemetry-data text-telemetry-data text-secondary uppercase">ETAPA 01</span>
-<span class="material-symbols-outlined text-secondary text-[18px]">folder_zip</span>
-</div>
-<h3 class="font-code-md text-code-md text-on-surface font-semibold mt-space-xs">Entorno Virtual Python</h3>
-<p class="font-body-sm text-body-sm text-on-surface-variant mt-space-xs">
-              Aislación limpia de paquetes para evitar conflictos de bibliotecas binarias C++.
-            </p>
-<div class="mt-space-sm bg-surface-container-lowest p-space-xs rounded font-telemetry-data text-telemetry-data text-on-surface space-y-1 overflow-x-auto">
-<div class="text-on-surface-variant"># Crear entorno</div>
-<div>python -m venv .venv</div>
-<div class="text-on-surface-variant"># Activar en Windows</div>
-<div class="text-tertiary">.\.venv\Scripts\Activate.ps1</div>
-</div>
-</div>
-<div class="mt-space-md flex items-center gap-space-xs text-on-surface-variant font-label-caps text-label-caps">
-<span class="material-symbols-outlined text-[14px]">check_circle</span>
-<span>Entorno encapsulado</span>
-</div>
-</div>
-<!-- Stage 2: Dependencies -->
-<div class="bg-surface-container-low rounded-lg p-space-md flex flex-col justify-between">
-<div>
-<div class="flex items-center justify-between">
-<span class="font-telemetry-data text-telemetry-data text-primary uppercase">ETAPA 02</span>
-<span class="material-symbols-outlined text-primary text-[18px]">download_for_offline</span>
-</div>
-<h3 class="font-code-md text-code-md text-on-surface font-semibold mt-space-xs">Instalación Pip</h3>
-<p class="font-body-sm text-body-sm text-on-surface-variant mt-space-xs">
-              Paquetes de visión, serial COM para garra TPU y driver RTDE del robot.
-            </p>
-<div class="mt-space-sm bg-surface-container-lowest p-space-xs rounded font-telemetry-data text-telemetry-data text-on-surface space-y-1 overflow-x-auto">
-<div class="text-on-surface-variant"># Módulos requeridos</div>
-<div>pip install opencv-contrib-python</div>
-<div>pip install pyserial numpy</div>
-<div class="text-primary">pip install ur-rtde</div>
-</div>
-</div>
-<div class="mt-space-md flex items-center gap-space-xs text-on-surface-variant font-label-caps text-label-caps">
-<span class="material-symbols-outlined text-[14px]">check_circle</span>
-<span>Dependencias compiladas</span>
-</div>
-</div>
-<!-- Stage 3: CH340 Driver & COM -->
-<div class="bg-surface-container-low rounded-lg p-space-md flex flex-col justify-between">
-<div>
-<div class="flex items-center justify-between">
-<span class="font-telemetry-data text-telemetry-data text-tertiary uppercase">ETAPA 03</span>
-<span class="material-symbols-outlined text-tertiary text-[18px]">usb</span>
-</div>
-<h3 class="font-code-md text-code-md text-on-surface font-semibold mt-space-xs">Driver CH340 / USB</h3>
-<p class="font-body-sm text-body-sm text-on-surface-variant mt-space-xs">
-              Reconocimiento de puerto serie para microcontrolador de la garra TPU.
-            </p>
-<div class="mt-space-sm bg-surface-container-lowest p-space-xs rounded font-telemetry-data text-telemetry-data text-on-surface space-y-1 overflow-x-auto">
-<div class="text-on-surface-variant"># Verificar COM en PowerShell</div>
-<div>[System.IO.Ports.SerialPort]::GetPortNames()</div>
-<div class="text-tertiary">Resultado: "COM3" / "/dev/ttyUSB0"</div>
-</div>
-</div>
-<div class="mt-space-md flex items-center gap-space-xs text-on-surface-variant font-label-caps text-label-caps">
-<span class="material-symbols-outlined text-[14px]">check_circle</span>
-<span>Baudrate 115200 N,8,1</span>
-</div>
-</div>
-<!-- Stage 4: URsim Socket -->
-<div class="bg-surface-container-low rounded-lg p-space-md flex flex-col justify-between">
-<div>
-<div class="flex items-center justify-between">
-<span class="font-telemetry-data text-telemetry-data text-secondary uppercase">ETAPA 04</span>
-<span class="material-symbols-outlined text-secondary text-[18px]">hub</span>
-</div>
-<h3 class="font-code-md text-code-md text-on-surface font-semibold mt-space-xs">Simulador URsim</h3>
-<p class="font-body-sm text-body-sm text-on-surface-variant mt-space-xs">
-              Emulación cinemática directa a través de loopback local en el puerto de control.
-            </p>
-<div class="mt-space-sm bg-surface-container-lowest p-space-xs rounded font-telemetry-data text-telemetry-data text-on-surface space-y-1 overflow-x-auto">
-<div class="text-on-surface-variant"># Probar socket URScript</div>
-<div>Test-NetConnection -Port 30004 `</div>
-<div class="text-secondary">-ComputerName 127.0.0.1</div>
-<div class="text-tertiary">TcpTestSucceeded: True</div>
-</div>
-</div>
-<div class="mt-space-md flex items-center gap-space-xs text-on-surface-variant font-label-caps text-label-caps">
-<span class="material-symbols-outlined text-[14px]">check_circle</span>
-<span>Conexión TCP verificada (TcpTestSucceeded: True)</span>
-</div>
-</div>
-</div>
-</div>
-</section>
-<!-- Interactive Live Demo Checklist (Docente / Evaluación Técnica) -->
-<section class="w-full px-margin py-space-md">
-<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
-<!-- Left Column: Interactive Check Matrix -->
-<div class="lg:col-span-8 flex flex-col gap-space-md">
-<div class="bg-surface-container rounded-xl p-space-lg shadow-md">
-<div class="flex flex-col sm:flex-row sm:items-center justify-between pb-space-sm gap-space-xs">
-<div class="flex items-center gap-space-xs">
-<span class="material-symbols-outlined text-tertiary text-[20px]">fact_check</span>
-<span class="font-label-caps text-label-caps uppercase text-tertiary tracking-wider">// CHECKLIST_DEMOSTRACION_EN_VIVO</span>
-</div>
-<div class="flex items-center gap-space-xs">
-<span class="font-telemetry-data text-telemetry-data text-tertiary" id="completed-count">5 / 5 VERIFICADOS</span>
-<span class="w-2 h-2 rounded-full bg-tertiary"></span>
-</div>
-</div>
-<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold mt-space-xs">
-            Lista de Inspección Pre-Defensa Técnica
-          </h2>
-<p class="font-body-sm text-body-sm text-on-surface-variant">
-            Complete cada punto con la mesa iluminada antes de la orden de marcha general.
-          </p>
-<!-- Interactive Items List -->
-<div class="mt-space-md space-y-space-sm" id="checklist-group">
-<!-- Item 1 -->
-<label class="flex items-start gap-space-sm bg-surface-container-low p-space-md rounded-lg cursor-pointer hover:bg-surface-container-high transition-colors">
-<input checked="" class="mt-1 w-4 h-4 rounded text-tertiary bg-surface-container-lowest focus:ring-0 cursor-pointer" onchange="updateChecklist()" type="checkbox">
-<div class="flex-1">
-<div class="flex items-center justify-between">
-<span class="font-code-md text-code-md text-on-surface font-semibold">1. Cámara fija con enfoque manual bloqueado</span>
-<span class="font-label-caps text-label-caps text-tertiary uppercase">1280×720 @ 30 FPS</span>
-</div>
-<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
-                  Cámara cenital fija sobre la mesa; sin autoenfoque activo ni movimientos desde la calibración.
-                </p>
-</div>
-</label>
-<!-- Item 2 -->
-<label class="flex items-start gap-space-sm bg-surface-container-low p-space-md rounded-lg cursor-pointer hover:bg-surface-container-high transition-colors">
-<input checked="" class="mt-1 w-4 h-4 rounded text-tertiary bg-surface-container-lowest focus:ring-0 cursor-pointer" onchange="updateChecklist()" type="checkbox">
-<div class="flex-1">
-<div class="flex items-center justify-between">
-<span class="font-code-md text-code-md text-on-surface font-semibold">2. Calibración ROI / HSV / Homografía lista</span>
-<span class="font-label-caps text-label-caps text-secondary uppercase">MATRIZ 3x3 CARGADA</span>
-</div>
-<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
-                  Calibrada bajo la luz definitiva del aula taller. Matriz H proyecta las coordenadas pixel [u, v] en milímetros reales [X, Y].
-                </p>
-</div>
-</label>
-<!-- Item 3 -->
-<label class="flex items-start gap-space-sm bg-surface-container-low p-space-md rounded-lg cursor-pointer hover:bg-surface-container-high transition-colors">
-<input checked="" class="mt-1 w-4 h-4 rounded text-tertiary bg-surface-container-lowest focus:ring-0 cursor-pointer" onchange="updateChecklist()" type="checkbox">
-<div class="flex-1">
-<div class="flex items-center justify-between">
-<span class="font-code-md text-code-md text-on-surface font-semibold">3. Piezas de Ensayos A y B dispuestas en bandeja</span>
-<span class="font-label-caps text-label-caps text-primary uppercase">AMBAS CATEGORÍAS</span>
-</div>
-<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
-                  Piezas de ambas categorías (A roja y B azul) disponibles, dentro de la zona de trabajo calibrada (X 0.05–0.55 · Y −0.05–0.45 m).
-                </p>
-</div>
-</label>
-<!-- Item 4 -->
-<label class="flex items-start gap-space-sm bg-surface-container-low p-space-md rounded-lg cursor-pointer hover:bg-surface-container-high transition-colors">
-<input checked="" class="mt-1 w-4 h-4 rounded text-tertiary bg-surface-container-lowest focus:ring-0 cursor-pointer" onchange="updateChecklist()" type="checkbox">
-<div class="flex-1">
-<div class="flex items-center justify-between">
-<span class="font-code-md text-code-md text-on-surface font-semibold">4. Testigo LED de Sub-sistemas en Verde</span>
-<span class="font-label-caps text-label-caps text-tertiary uppercase">COM3 + 30004 LINKED</span>
-</div>
-<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
-                  Confirmación de los tres indicadores activos en el shell: CAM: OK, GRP: COM3 OK, UR5: 127.0.0.1:30004 READY.
-                </p>
-</div>
-</label>
-<!-- Item 5 -->
-<label class="flex items-start gap-space-sm bg-surface-container-low p-space-md rounded-lg cursor-pointer hover:bg-surface-container-high transition-colors">
-<input checked="" class="mt-1 w-4 h-4 rounded text-tertiary bg-surface-container-lowest focus:ring-0 cursor-pointer" onchange="updateChecklist()" type="checkbox">
-<div class="flex-1">
-<div class="flex items-center justify-between">
-<span class="font-code-md text-code-md text-on-surface font-semibold">5. Video de respaldo grabado (Plan de Contingencia B)</span>
-<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">USB DRIVE LOCAL</span>
-</div>
-<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
-                  Grabación del funcionamiento completo disponible en memoria local (entregable 7) como plan B de la demo presencial.
-                </p>
-</div>
-</label>
-</div>
-<!-- Dynamic Verification Alert Box -->
-<div class="mt-space-md bg-tertiary/10 p-space-sm rounded-lg flex items-center justify-between" id="status-box">
-<div class="flex items-center gap-space-xs text-tertiary">
-<span class="material-symbols-outlined text-[18px]">verified</span>
-<span class="font-code-md text-code-md font-semibold">SISTEMA APTO PARA EJECUCIÓN FRENTE A COMISIÓN DOCENTE</span>
-</div>
-<span class="font-label-caps text-label-caps text-tertiary uppercase">CONDICIÓN NOMINAL</span>
-</div>
-</div>
-</div>
-<!-- Right Column: Visualizer & Emergency Stop Pendant Photo Representation -->
-<div class="lg:col-span-4 flex flex-col gap-space-md">
-<!-- Visual Component: The Pendant Hardware Interface -->
-<div class="bg-surface-container rounded-xl p-space-lg shadow-md flex flex-col justify-between h-full">
-<div>
-<div class="flex items-center gap-space-xs pb-space-sm">
-<span class="material-symbols-outlined text-error text-[20px]">emergency</span>
-<span class="font-label-caps text-label-caps uppercase text-error tracking-wider">// HARDWARE_ESTOP_TEACH_PENDANT</span>
-</div>
-<!-- Hardware Visual -->
-<div class="relative w-full h-52 rounded-lg bg-surface-container-lowest overflow-hidden shadow-inner flex items-center justify-center">
-<div class="bg-cover bg-center w-full h-full opacity-60" data-alt="Celda robotizada UR5 con cámara cenital y gripper de 4 servos." style="background-image: url('assets/foto-celda.jpg')"></div>
-<div class="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/30 to-transparent"></div>
-<!-- Crosshair HUD elements -->
-<div class="absolute top-2 left-2 font-telemetry-data text-label-caps text-secondary">// HARDWARE_VERIFIED</div>
-<div class="absolute bottom-2 left-2 flex items-center gap-space-xs">
-<span class="w-2.5 h-2.5 rounded-full bg-error animate-ping"></span>
-<span class="font-label-caps text-label-caps text-on-surface uppercase">SEÑAL FÍSICA DIRECTA</span>
-</div>
-</div>
-<div class="mt-space-md">
-<h3 class="font-code-md text-code-md text-on-surface font-semibold">Teach Pendant del UR5</h3>
-<p class="font-body-sm text-body-sm text-on-surface-variant mt-space-xs">
-                El Arduino del gripper NO tiene botón físico de parada. La única parada de emergencia válida es el E-Stop del Teach Pendant del UR5 (imagen: celda completa). En caso de anomalía, el operador apostado al lado de la celda tiene la exclusividad del comando E-Stop.
-              </p>
-</div>
-</div>
-<!-- Quick Action Buttons -->
-<div class="mt-space-md space-y-space-xs">
-<button class="w-full py-space-xs bg-error text-on-error rounded font-code-md text-code-md font-semibold hover:bg-error/90 transition-all flex items-center justify-center gap-space-xs shadow-md" type="button">
-<span class="material-symbols-outlined text-[18px]">e911_emergency</span>
-<span>TEST SIMULADO DE PARADA</span>
-</button>
-<div class="text-center font-label-caps text-label-caps text-on-surface-variant">
-              Tiempo de respuesta validado: 142 ms
-            </div>
-</div>
-</div>
-</div>
-</div>
-</section>
-<!-- Technical Support & Engineering Authors Section -->
-<section class="w-full px-margin py-space-md mb-space-xl">
-<div class="bg-surface-container rounded-xl p-space-lg shadow-md">
-<div class="flex flex-col md:flex-row md:items-center justify-between pb-space-md gap-space-xs">
-<div>
-<div class="flex items-center gap-space-xs">
-<span class="material-symbols-outlined text-secondary text-[20px]">engineering</span>
-<span class="font-label-caps text-label-caps uppercase text-secondary tracking-wider">// EQUIPO_DE_DESARROLLO_Y_SOPORTE_TECNICO</span>
-</div>
-<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold mt-space-xs">
-            Comisión Técnica · Universidad Provincial de Oficios (UPrO)
-          </h2>
-<p class="font-body-sm text-body-sm text-on-surface-variant">
-            Especialidad en Robótica Industrial, Visión Artificial y Automatización de Procesos.
-          </p>
-</div>
-<div class="flex items-center gap-space-xs">
-<span class="font-label-caps text-label-caps text-tertiary px-space-sm py-space-xs rounded bg-surface-container-high">DESAFÍO 2 · ACREDITACIÓN 2025</span>
-</div>
-</div>
-<!-- Authors Cards -->
-<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md mt-space-sm">
-<!-- Author 1: Alfredo Becerra -->
-<div class="bg-surface-container-low rounded-lg p-space-md flex flex-col justify-between">
-<div>
-<div class="flex items-center justify-between">
-<span class="w-10 h-10 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center font-code-md text-code-md font-bold">AB</span>
-<span class="font-telemetry-data text-telemetry-data text-secondary">DEV-01</span>
-</div>
-<h3 class="font-code-lg text-code-lg text-on-surface font-semibold mt-space-sm">Alfredo Becerra</h3>
-<span class="font-label-caps text-label-caps text-secondary uppercase block">Cinemática Inversa &amp; RTDE Scripting</span>
-<p class="font-body-sm text-body-sm text-on-surface-variant mt-space-xs">
-              Diseño de la matriz de interpolación articular, comunicación TCP con UR5 y compensación de singularidades de muñeca.
-            </p>
-</div>
-<div class="mt-space-md pt-space-xs space-y-1 bg-surface-container-lowest p-space-xs rounded font-telemetry-data text-telemetry-data text-on-surface-variant">
-<div class="flex items-center justify-between">
-<span>ROL:</span>
-<span class="text-on-surface">Arquitectura Robot</span>
-</div>
-<div class="flex items-center justify-between">
-<span>CONTACTO:</span>
-<span class="text-secondary">a.becerra@upro.edu.ar</span>
-</div>
-</div>
-</div>
-<!-- Author 2: Claudio Flores -->
-<div class="bg-surface-container-low rounded-lg p-space-md flex flex-col justify-between">
-<div>
-<div class="flex items-center justify-between">
-<span class="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-code-md text-code-md font-bold">CF</span>
-<span class="font-telemetry-data text-telemetry-data text-primary">DEV-02</span>
-</div>
-<h3 class="font-code-lg text-code-lg text-on-surface font-semibold mt-space-sm">Claudio Flores</h3>
-<span class="font-label-caps text-label-caps text-primary uppercase block">Pipeline OpenCV &amp; Calibración Óptica</span>
-<p class="font-body-sm text-body-sm text-on-surface-variant mt-space-xs">
-              Algoritmo de segmentación HSV adaptativa, detección de centroides de contorno y cálculo de homografía perspectiva plana.
-            </p>
-</div>
-<div class="mt-space-md pt-space-xs space-y-1 bg-surface-container-lowest p-space-xs rounded font-telemetry-data text-telemetry-data text-on-surface-variant">
-<div class="flex items-center justify-between">
-<span>ROL:</span>
-<span class="text-on-surface">Visión por Computadora</span>
-</div>
-<div class="flex items-center justify-between">
-<span>CONTACTO:</span>
-<span class="text-primary">c.flores@upro.edu.ar</span>
-</div>
-</div>
-</div>
-<!-- Author 3: Lucio Vita -->
-<div class="bg-surface-container-low rounded-lg p-space-md flex flex-col justify-between">
-<div>
-<div class="flex items-center justify-between">
-<span class="w-10 h-10 rounded-full bg-tertiary-container text-on-tertiary-container flex items-center justify-center font-code-md text-code-md font-bold">LV</span>
-<span class="font-telemetry-data text-telemetry-data text-tertiary">DEV-03</span>
-</div>
-<h3 class="font-code-lg text-code-lg text-on-surface font-semibold mt-space-sm">Lucio Vita</h3>
-<span class="font-label-caps text-label-caps text-tertiary uppercase block">Hardware End-Effector &amp; Dashboard HMI</span>
-<p class="font-body-sm text-body-sm text-on-surface-variant mt-space-xs">
-              Mecanizado e impresión TPU del efector final, integración serie con microcontrolador y diseño del HMI de telemetría.
-            </p>
-</div>
-<div class="mt-space-md pt-space-xs space-y-1 bg-surface-container-lowest p-space-xs rounded font-telemetry-data text-telemetry-data text-on-surface-variant">
-<div class="flex items-center justify-between">
-<span>ROL:</span>
-<span class="text-on-surface">Efector TPU / HMI</span>
-</div>
-<div class="flex items-center justify-between">
-<span>CONTACTO:</span>
-<span class="text-tertiary">l.vita@upro.edu.ar</span>
-</div>
-</div>
-</div>
-</div>
-<!-- Support Footer Note -->
-<div class="mt-space-md pt-space-sm flex flex-col md:flex-row items-center justify-between gap-space-xs text-on-surface-variant font-label-caps text-label-caps">
-<div class="flex items-center gap-space-xs">
-<span class="material-symbols-outlined text-[16px] text-tertiary">verified_user</span>
-<span>DOCUMENTO CERTIFICADO PARA DEFENSA DE TESINA TÉCNICA · VILLA MERCEDES, SAN LUIS</span>
-</div>
-<div class="font-telemetry-data text-telemetry-data text-on-surface-variant">
-          HASH REPO: 7F29B-NOMINAL-UR5-VISION
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Manual operativo — Celda UR5 · UPrO</title>
+<meta name="description" content="Manual operativo de la celda UR5 guiada por visión: seguridad, puesta en marcha, checklist de demostración y equipo. UPrO · Desafío 2.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="nav">
+  <a class="nav__mark" href="index.html"><img src="assets/logo-upro.jpg" alt="" width="28" height="28">UPrO · Celda UR5</a>
+  <nav aria-label="Principal">
+    <ul class="nav__list">
+      <li><a class="nav__link" href="index.html">Inicio</a></li>
+      <li><a class="nav__link" href="arquitectura.html">Arquitectura</a></li>
+      <li><a class="nav__link" href="dashboard-hmi.html">HMI</a></li>
+      <li><a class="nav__link" href="manual.html" aria-current="page">Manual</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main class="container">
+
+  <section class="page-head">
+    <h1 class="display">Manual operativo</h1>
+    <p class="lede">Cómo instalar, calibrar, operar y diagnosticar la celda. Está pensado para un operario que nunca vio el proyecto: si seguís los pasos en orden, la celda funciona.</p>
+  </section>
+
+  <section class="section--tight">
+    <h2 class="title">Seguridad: parada de emergencia</h2>
+    <div class="note">
+      <p class="note__title">Cambio de arquitectura — leé esto primero</p>
+      <p>El Arduino del gripper <strong>no tiene botón físico de parada de emergencia</strong>: fue desacoplado y descontinuado. La única parada de emergencia válida y primaria es el pulsador de hongo (E-Stop) del <strong>Teach Pendant del UR5</strong>, que corta la energía de las articulaciones por circuito cableado, sin depender de Python ni de la PC.</p>
+      <p>La interfaz web sirve para paradas programadas únicamente.</p>
+    </div>
+    <h3 style="margin-top: var(--space-xl);">Procedimiento ante una anomalía</h3>
+    <ol class="steps">
+      <li>
+        <span class="stage">01</span>
+        <h3>Presionar el E-Stop del Teach Pendant</h3>
+        <p>Acciona con la palma el pulsador de hongo. Esto corta de inmediato la energía en las articulaciones del brazo.</p>
+      </li>
+      <li>
+        <span class="stage">02</span>
+        <h3>Desplazar el robot con el joystick</h3>
+        <p>Con el sistema en modo seguro, guiá la herramienta a una zona despejada, lejos de interferencias mecánicas con la celda.</p>
+      </li>
+      <li>
+        <span class="stage">03</span>
+        <h3>Confirmar el estado por software</h3>
+        <p>Verificá la telemetría en el dashboard: desconexión limpia del socket RTDE y liberación del hilo de captura. La parada por software es solo para cortes programados, con reinicio explícito del ciclo.</p>
+      </li>
+      <li>
+        <span class="stage">04</span>
+        <h3>Nunca buscar un botón en el Arduino</h3>
+        <p>No existe. El Arduino solo conmuta los pulsos de los servos TPU; no contiene circuito de corte de alimentación de fuerza del brazo.</p>
+      </li>
+    </ol>
+  </section>
+
+  <section class="section">
+    <h2 class="title">Puesta en marcha</h2>
+    <p class="lede">Windows o Linux, con URsim como emulador o el UR5 real en la red. Python 3.10–3.12 de 64 bits con “Add Python to PATH”.</p>
+    <div class="setup">
+      <div class="setup__item">
+        <h3>1 · Entorno virtual</h3>
+        <p>Aísla los paquetes para evitar conflictos de bibliotecas binarias.</p>
+        <pre class="code"><code>py -3 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+pip install -r requirements.txt</code></pre>
+      </div>
+      <div class="setup__item">
+        <h3>2 · Arduino y puerto serie</h3>
+        <p>Conectá el Arduino por USB. Si no aparece en el Administrador de dispositivos, instalá el driver CH340. El firmware del gripper espera el puerto configurado en <span class="mono">gripper_port</span> a 115200 baudios.</p>
+        <pre class="code"><code># Verificar puertos disponibles
+[System.IO.Ports.SerialPort]::GetPortNames()
+# → "COM3"</code></pre>
+      </div>
+      <div class="setup__item">
+        <h3>3 · Robot: URsim o UR5 real</h3>
+        <p>El emulador URsim escucha en loopback; el robot real queda en la red. Toda trayectoria nueva se valida primero en el emulador.</p>
+        <pre class="code"><code># Probar el socket URScript
+Test-NetConnection -Port 30004 -ComputerName 127.0.0.1
+# TcpTestSucceeded: True</code></pre>
+      </div>
+      <div class="setup__item">
+        <h3>4 · Arrancar la celda</h3>
+        <p>Con el venv activado, lanzá el dashboard y abrí el navegador.</p>
+        <pre class="code"><code>.\.venv\Scripts\Activate.ps1
+python core/dashboard_web.py
+# → http://localhost:5000</code></pre>
+      </div>
+    </div>
+    <p class="lede" style="margin-top: var(--space-xl);">La calibración (ROI, HSV, homografía) se hace desde el propio dashboard y se guarda en <strong>vision/config.json</strong>, donde persiste entre sesiones.</p>
+  </section>
+
+  <section class="section--tight">
+    <h2 class="title">Checklist antes de la demo</h2>
+    <p class="lede">Completá cada punto con la mesa iluminada antes de la orden de marcha.</p>
+    <ul class="checklist">
+      <li><label><input type="checkbox" checked> <span><strong>Cámara fija, enfocada y sin moverse desde la calibración.</strong> <span>Sin autoenfoque activo; encuadre idéntico al de la calibración.</span></span></label></li>
+      <li><label><input type="checkbox" checked> <span><strong>ROI, homografía y HSV calibrados con la luz definitiva del aula.</strong> <span>La matriz H proyecta píxeles [u, v] a milímetros reales [X, Y].</span></span></label></li>
+      <li><label><input type="checkbox" checked> <span><strong>Piezas de ambas categorías disponibles.</strong> <span>A (roja) y B (azul), dentro de la zona de trabajo calibrada.</span></span></label></li>
+      <li><label><input type="checkbox" checked> <span><strong>Error de coordenada verificado con una pieza de prueba.</strong> <span>Apoyar una pieza en una posición no calibrada y comparar en el panel Detección.</span></span></label></li>
+      <li><label><input type="checkbox" checked> <span><strong>Dashboard abierto y LEDs verdes.</strong> <span>CÁM · GRP · UR5 en verde en el header del panel.</span></span></label></li>
+      <li><label><input type="checkbox"> <span><strong>Plan B: video de respaldo del funcionamiento completo.</strong> <span>Grabación de la evidencia audiovisual (entregable 7) en memoria local.</span></span></label></li>
+    </ul>
+  </section>
+
+  <section class="section">
+    <h2 class="title">Equipo</h2>
+    <ul class="rows">
+      <li>
+        <div>
+          <span class="rows__tag">Alfredo Becerra</span>
+          <h3>Cinemática y control del UR5</h3>
+          <p>Programación del brazo por ur_rtde, máquina de estados del ciclo y validación en URsim.</p>
         </div>
-</div>
-</div>
-</section>
-<!-- Inline Script for Checklist Interactivity -->
-<script>
-    function updateChecklist() {
-      const container = document.getElementById('checklist-group');
-      if (!container) return;
-      const checkboxes = container.querySelectorAll('input[type="checkbox"]');
-      const total = checkboxes.length;
-      let checked = 0;
-      checkboxes.forEach(cb => {
-        if (cb.checked) checked++;
-      });
+        <span class="rows__who">Bloques 1 y 4 de la defensa</span>
+      </li>
+      <li>
+        <div>
+          <span class="rows__tag">Claudio Flores</span>
+          <h3>Visión por computadora</h3>
+          <p>Pipeline OpenCV, segmentación HSV y calibración homográfica píxel → UR5.</p>
+        </div>
+        <span class="rows__who">Bloque 2 de la defensa</span>
+      </li>
+      <li>
+        <div>
+          <span class="rows__tag">Lucio Vita</span>
+          <h3>Efector final y dashboard</h3>
+          <p>Diseño e impresión del gripper de 4 servos en TPU, firmware del Arduino y HMI de supervisión.</p>
+        </div>
+        <span class="rows__who">Bloque 3 de la defensa</span>
+      </li>
+    </ul>
+  </section>
 
-      const countLabel = document.getElementById('completed-count');
-      const statusBox = document.getElementById('status-box');
-      
-      if (countLabel) {
-        countLabel.textContent = `${checked} / ${total} VERIFICADOS`;
-      }
+</main>
 
-      if (statusBox) {
-        if (checked === total) {
-          statusBox.className = "mt-space-md bg-tertiary/10 p-space-sm rounded-lg flex items-center justify-between";
-          statusBox.innerHTML = `
-            <div class="flex items-center gap-space-xs text-tertiary">
-              <span class="material-symbols-outlined text-[18px]">verified</span>
-              <span class="font-code-md text-code-md font-semibold">SISTEMA APTO PARA EJECUCIÓN FRENTE A COMISIÓN DOCENTE</span>
-            </div>
-            <span class="font-label-caps text-label-caps text-tertiary uppercase">CONDICIÓN NOMINAL</span>
-          `;
-        } else {
-          statusBox.className = "mt-space-md bg-primary-container/20 p-space-sm rounded-lg flex items-center justify-between";
-          statusBox.innerHTML = `
-            <div class="flex items-center gap-space-xs text-primary">
-              <span class="material-symbols-outlined text-[18px]">warning</span>
-              <span class="font-code-md text-code-md font-semibold">INSPECCIÓN INCOMPLETA (${total - checked} PENDIENTES) - NO INICIAR MARCHA</span>
-            </div>
-            <span class="font-label-caps text-label-caps text-primary uppercase">PRECAUCIÓN</span>
-          `;
-        }
-      }
-    }
-  </script>
-</div></main><footer class="w-full bg-surface-container-lowest py-space-md border-t border-surface-container-high/40"><div class="w-full px-margin flex flex-col md:flex-row items-center justify-between gap-space-sm font-label-caps text-label-caps text-on-surface-variant"><span>UNIVERSIDAD PROVINCIAL DE OFICIOS · ROBÓTICA INDUSTRIAL &amp; VISIÓN POR COMPUTADORA</span><span>DEFENSA TÉCNICA: ALFREDO · CLAUDIO · LUCIO</span><span class="text-tertiary">SISTEMA DISCIPLINADO NOMINAL · 30 FPS</span></div></footer>
+<footer class="colophon">
+  <div class="container">
+    <p>Universidad Provincial de Oficios — Robótica con Orientación IA · Desafío 2: celda robotizada de clasificación por visión artificial, UR5 + gripper de 4 servos. Alfredo Becerra · Claudio Flores · Lucio Vita. Villa Mercedes, San Luis — 2026.</p>
+    <p>Código y documentación: <a href="https://github.com/gaboxf/ur5e-pick-and-place">github.com/gaboxf/ur5e-pick-and-place</a> · Sitio estático en HTML + CSS · Tipografía: Space Grotesk, IBM Plex Sans, JetBrains Mono.</p>
+  </div>
+</footer>
 
-</body></html>
+</body>
+</html>
