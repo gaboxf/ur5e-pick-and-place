@@ -121,6 +121,7 @@
       .col-principal, .col-lateral, .info-paneles { display: contents; }
       .panel-estado     { order: 1; }
       .panel-control    { order: 2; }
+      .panel-mapa       { order: 2; }
       .panel-homografia { order: 3; }
       .panel-roi        { order: 4; }
       .panel-hsv        { order: 5; }
@@ -323,6 +324,21 @@
     .hsv-violeta { background: oklch(42% 0.12 300); border-color: oklch(70% 0.12 300); }
     .hsv-sel     { outline: 3px solid var(--color-warn); outline-offset: -1px; }
 
+    /* ---------------------------------------------------------- mapa robot */
+    .panel-mapa canvas {
+      width: 100%; height: auto; display: block;
+      background: oklch(13% 0.015 240);
+      border: 1px solid var(--color-rule);
+    }
+    .panel-mapa .roi-info { margin-top: var(--space-2xs); }
+    .panel-mapa .mapa-pie {
+      display: flex; flex-wrap: wrap; gap: var(--space-2xs) var(--space-sm);
+      margin-top: var(--space-2xs);
+      font-family: var(--font-mono); font-size: var(--text-xs);
+      color: var(--color-ink-2);
+    }
+    .panel-mapa .mapa-pie b { color: var(--color-ink); font-weight: 600; }
+
     /* ---------------------------------------------------------- producción */
     .stats { display: flex; gap: var(--space-xs); margin-top: var(--space-xs); }
     .stat {
@@ -521,6 +537,26 @@
           </select>
           <button class="cam-escanear" onclick="escanearCamaras()">Escanear</button>
           <button class="cam-usar" onclick="cambiarCamara()">Usar</button>
+        </div>
+      </div>
+
+      <div class="panel panel-mapa">
+        <h2>Mapa de trabajo (X · Y)</h2>
+        <canvas id="mapa-robot" width="640" height="430"
+                aria-label="Mapa cenital a escala del área de trabajo del UR5, con la trayectoria y la posición actual"></canvas>
+        <div class="mapa-pie">
+          <span>POS <b id="mapa-pos">—</b></span>
+          <span>VEL <b id="mapa-vel">—</b></span>
+          <span>DEST <b id="mapa-dist">—</b></span>
+        </div>
+        <div class="roi-btns" style="margin-top:10px">
+          <button class="roi-reset" style="grid-column:1/-1" onclick="cmd('limpiar_rastro')">Limpiar rastro</button>
+        </div>
+        <div class="roi-info">
+          <span style="color:var(--color-ink-2)">●</span> TCP actual ·
+          <span style="color:var(--color-ok)">✕</span> destino ·
+          <span style="color:#e88a4a">━</span> trayectoria.
+          Escala 1:1 en X e Y (metros reales del UR5).
         </div>
       </div>
 
@@ -911,6 +947,233 @@
       if (x < 0 || y < 0 || x >= frameTamano.ancho || y >= frameTamano.alto) return;
       homografia("punto", x + "," + y);
     }
+
+    // ------------------------------------------------- mapa de trabajo (X-Y)
+    const MAPA_W = 640, MAPA_H = 430, MAPA_MARGEN = 10, MAPA_ALTO = 320;
+    const COLOR_CAT = { A: "#ef4b3e", B: "#3f8cf0", C: "#4fc86a", D: "#c07de0" };
+    let mapaPedido = false;
+
+    function cargarMapa() {
+      if (mapaPedido) return;
+      mapaPedido = true;
+      fetch("/api/robot", { cache: "no-store" })
+        .then(r => r.json())
+        .then(d => { dibujarMapa(d); actualizarPieMapa(d); })
+        .catch(() => {})
+        .finally(() => { mapaPedido = false; });
+    }
+
+    function actualizarPieMapa(d) {
+      const r = d.robot || {};
+      const p = r.pos || [];
+      $("mapa-pos").textContent = p.length
+        ? p[0].toFixed(3) + ", " + p[1].toFixed(3) + ", " + p[2].toFixed(3) + " m"
+        : "—";
+      $("mapa-vel").textContent = r.velocidad != null
+        ? (Number(r.velocidad) * 1000).toFixed(0) + " mm/s" : "—";
+      $("mapa-dist").textContent = r.dist_destino != null
+        ? (Number(r.dist_destino) * 1000).toFixed(0) + " mm" : "—";
+    }
+
+    function dibujarMapa(d) {
+      const cv = $("mapa-robot");
+      if (!cv) return;
+      const ctx = cv.getContext("2d");
+      const celda = d.celda || {};
+      const zona = celda.zona;
+      if (!zona) return;
+      const robot = d.robot || {};
+      const det = d.deteccion || {};
+
+      ctx.clearRect(0, 0, MAPA_W, MAPA_H);
+      ctx.fillStyle = "#0e1115";
+      ctx.fillRect(0, 0, MAPA_W, MAPA_H);
+
+      const w = MAPA_W - 2 * MAPA_MARGEN;
+      const h = MAPA_ALTO;
+
+      // Transformación mundo -> píxel con la MISMA escala en X e Y,
+      // de modo que las distancias del mapa son proporcionales a las reales.
+      const cx = (zona.min_x + zona.max_x) / 2;
+      const cy = (zona.min_y + zona.max_y) / 2;
+      const spanX = Math.max((zona.max_x - zona.min_x) * 1.18, 0.02);
+      const spanY = Math.max((zona.max_y - zona.min_y) * 1.18, 0.02);
+      const esc = Math.min((w - 4) / spanX, (h - 4) / spanY);
+      const MX = MAPA_W / 2;
+      const MY = MAPA_MARGEN + h / 2;
+      const px = (x) => MX + (x - cx) * esc;
+      const py = (y) => MY - (y - cy) * esc;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(MAPA_MARGEN, MAPA_MARGEN, w, h);
+      ctx.clip();
+
+      // Retícula
+      const paso = [0.05, 0.1, 0.2, 0.5].find(p => p * esc >= 40) || 1;
+      ctx.font = "10px ui-monospace, monospace";
+      ctx.lineWidth = 1;
+      const x0w = cx - (w / 2) / esc, x1w = cx + (w / 2) / esc;
+      const y0w = cy - (h / 2) / esc, y1w = cy + (h / 2) / esc;
+      const rotulo = (v) => v.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+      for (let gx = Math.floor(x0w / paso) * paso; gx <= x1w; gx += paso) {
+        const X = px(gx);
+        ctx.strokeStyle = "#1c232b";
+        ctx.beginPath(); ctx.moveTo(X, MAPA_MARGEN); ctx.lineTo(X, MAPA_MARGEN + h); ctx.stroke();
+        if (X > MAPA_MARGEN + 24) {
+          ctx.fillStyle = "#5b6570";
+          ctx.fillText(rotulo(gx), X + 2, MAPA_MARGEN + h - 4);
+        }
+      }
+      for (let gy = Math.floor(y0w / paso) * paso; gy <= y1w; gy += paso) {
+        const Y = py(gy);
+        ctx.strokeStyle = "#1c232b";
+        ctx.beginPath(); ctx.moveTo(MAPA_MARGEN, Y); ctx.lineTo(MAPA_MARGEN + w, Y); ctx.stroke();
+        if (Y < MAPA_MARGEN + h - 26) {
+          ctx.fillStyle = "#5b6570";
+          ctx.fillText(rotulo(gy), MAPA_MARGEN + 3, Y - 3);
+        }
+      }
+
+      // Zona de trabajo autorizada
+      ctx.setLineDash([5, 4]);
+      ctx.strokeStyle = "rgba(120,220,225,0.55)";
+      ctx.strokeRect(px(zona.min_x), py(zona.max_y),
+                     (zona.max_x - zona.min_x) * esc,
+                     (zona.max_y - zona.min_y) * esc);
+      ctx.setLineDash([]);
+
+      // Trayectoria (de más vieja a más nueva, con brillo creciente)
+      const tray = robot.trayectoria || [];
+      for (let i = 1; i < tray.length; i++) {
+        const t = i / Math.max(1, tray.length - 1);
+        ctx.strokeStyle = "rgb(" + Math.round(70 + 30 * t) + "," +
+                          Math.round(110 + 70 * t) + "," +
+                          Math.round(160 + 90 * t) + ")";
+        ctx.lineWidth = i > tray.length - 12 ? 3 : 2;
+        ctx.beginPath();
+        ctx.moveTo(px(tray[i - 1][0]), py(tray[i - 1][1]));
+        ctx.lineTo(px(tray[i][0]), py(tray[i][1]));
+        ctx.stroke();
+      }
+
+      // Línea guía y destino
+      const destino = robot.destino;
+      if (robot.pos && destino) {
+        ctx.setLineDash([4, 5]);
+        ctx.strokeStyle = "rgba(110,205,95,0.45)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(px(robot.pos[0]), py(robot.pos[1]));
+        ctx.lineTo(px(destino[0]), py(destino[1]));
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      if (destino) {
+        const X = px(destino[0]), Y = py(destino[1]);
+        ctx.strokeStyle = "#6ecd5f";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(X - 6, Y - 6); ctx.lineTo(X + 6, Y + 6);
+        ctx.moveTo(X + 6, Y - 6); ctx.lineTo(X - 6, Y + 6);
+        ctx.stroke();
+      }
+
+      // Pieza detectada (coordenada de visión)
+      if (det.ok && det.x_ur5 != null) {
+        const X = px(det.x_ur5), Y = py(det.y_ur5);
+        ctx.fillStyle = COLOR_CAT[det.categoria] || "#eee";
+        ctx.fillRect(X - 5, Y - 5, 10, 10);
+        ctx.font = "11px ui-monospace, monospace";
+        ctx.fillText(det.categoria || "", X + 8, Y + 4);
+      }
+
+      // Posición actual del TCP
+      if (robot.pos) {
+        const X = px(robot.pos[0]), Y = py(robot.pos[1]);
+        ctx.strokeStyle = "rgba(255,255,255,0.35)";
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(X, Y, 9, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = "#fff";
+        ctx.beginPath(); ctx.arc(X, Y, 4.5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#c7d0d8";
+        ctx.font = "10px ui-monospace, monospace";
+        ctx.fillText("TCP", X + 11, Y - 7);
+      }
+
+      // Origen de coordenadas
+      ctx.strokeStyle = "rgba(150,146,140,0.6)";
+      ctx.beginPath();
+      ctx.moveTo(px(0) - 5, py(0)); ctx.lineTo(px(0) + 5, py(0));
+      ctx.moveTo(px(0), py(0) - 5); ctx.lineTo(px(0), py(0) + 5);
+      ctx.stroke();
+
+      ctx.restore();
+
+      // Borde del mapa
+      ctx.strokeStyle = "#2f3841";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(MAPA_MARGEN + 0.5, MAPA_MARGEN + 0.5, w - 1, h - 1);
+
+      // Chip de estado
+      const edad = robot.edad_s;
+      let chip = "SIN DATOS", col = "#8a8f96";
+      if (edad != null && edad <= 2) {
+        chip = robot.moviendose ? "MOVIENDO" : "QUIETO";
+        col = robot.moviendose ? "#f0c419" : "#6ecd5f";
+      } else if (edad != null) {
+        chip = "SIN TELEMETRÍA";
+        col = "#e2564a";
+      }
+      ctx.fillStyle = col;
+      ctx.font = "11px ui-monospace, monospace";
+      const tw = ctx.measureText(chip).width;
+      ctx.strokeStyle = col;
+      ctx.strokeRect(MAPA_MARGEN + w - tw - 16, MAPA_MARGEN + 8, tw + 10, 18);
+      ctx.fillText(chip, MAPA_MARGEN + w - tw - 11, MAPA_MARGEN + 21);
+
+      // Perfil de altura Z
+      dibujarAltura(ctx, celda.z || {}, robot.pos ? robot.pos[2] : null, w);
+    }
+
+    function dibujarAltura(ctx, z, zActual, w) {
+      const gy = MAPA_MARGEN + MAPA_ALTO + 26;
+      const zmax = Math.max(z.seguro || 0.25, z.pick || 0.12, zActual || 0, 0.05) * 1.18;
+      ctx.font = "10px ui-monospace, monospace";
+      ctx.fillStyle = "#8a8f96";
+      ctx.fillText("ALTURA Z", MAPA_MARGEN, gy - 8);
+      const txt = zActual == null ? "—" : (zActual * 1000).toFixed(0) + " mm";
+      ctx.fillStyle = "#e8e6e2";
+      ctx.fillText(txt, MAPA_W - MAPA_MARGEN - ctx.measureText(txt).width, gy - 8);
+
+      ctx.strokeStyle = "#2f3841";
+      ctx.strokeRect(MAPA_MARGEN, gy, w, 14);
+      if (zActual != null) {
+        ctx.fillStyle = "rgba(225,215,120,0.75)";
+        ctx.fillRect(MAPA_MARGEN + 1, gy + 1,
+                     Math.max(0, (w - 2) * Math.min(zActual / zmax, 1)), 12);
+      }
+
+      const marcas = [
+        [z.pick, "pick", "#e0a63a"],
+        [z.deposit, "dep", "#e0a63a"],
+        [z.seguro, "seg", "#78dce1"],
+      ];
+      for (const [zv, nombre, col] of marcas) {
+        if (zv == null || zv > zmax) continue;
+        const X = MAPA_MARGEN + w * (zv / zmax);
+        ctx.strokeStyle = col;
+        ctx.beginPath(); ctx.moveTo(X, gy - 4); ctx.lineTo(X, gy + 18); ctx.stroke();
+        ctx.fillStyle = col;
+        ctx.fillText(nombre,
+                     Math.min(Math.max(X - 8, MAPA_MARGEN), MAPA_W - MAPA_MARGEN - 24),
+                     gy + 28);
+      }
+    }
+
+    // El mapa se refresca más rápido que el SSE (0.5 s) para ver el trazo en vivo
+    setInterval(cargarMapa, 120);
+    cargarMapa();
 
     // Poblar el selector con la cámara activa al primer estado recibido
     let selInicializada = false;

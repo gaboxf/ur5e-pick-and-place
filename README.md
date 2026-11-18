@@ -16,6 +16,9 @@ vision/config.py + vision/config.json →  única fuente de parámetros comparti
 vision/roi_editor.py / hsv_editor.py / homografia_editor.py →  editores visuales
    de ROI, rangos HSV y calibración de la homografía (los consumen
    core/dashboard_web.py y core/dashboard.py; guardan en vision/config.json)
+core/robot_controller.py →  robot UR5 + gripper + rastreo de la pose del TCP
+core/robot_tracker.py    →  historial de poses (rastro) del efector
+core/robot_map.py        →  panel lateral X-Y a escala (dashboard de escritorio)
 ```
 
 > **Nota importante:** `vision/config.json` es la configuración real que se lee
@@ -149,6 +152,7 @@ Protecciones: la ROI nunca sale de la imagen ni queda menor al 10%.
 | `[i]` | Mostrar / ocultar el rectángulo amarillo |
 | Flechas ← → ↑ ↓ | Mover la ROI |
 | `[+]` / `[-]` | Agrandar / achicar |
+| `[t]` | Limpiar el rastro del robot en el mapa de trabajo |
 | `[p]` | Guardar ROI **y** HSV en `vision/config.json` |
 
 ### Procedimiento recomendado
@@ -278,6 +282,37 @@ puntos guardados (cruces cian + cuadrilátero) y los recién marcados
 
 ---
 
+## Monitoreo del movimiento del robot (mapa de trabajo)
+
+Ambos dashboards muestran, al lado del video, un **mapa cenital del área de
+trabajo** con la telemetría del TCP, para no tener que mirar al robot físico:
+
+| Elemento | Significado |
+|---|---|
+| Punto blanco (TCP) | Posición actual del efector |
+| Cruz verde | Destino del último movimiento (`mover_a`) |
+| Línea punteada verde | Camino restante hasta el destino |
+| Rastro naranja | Trayectoria recorrida (se aclara hacia el punto más reciente) |
+| Cuadrado de color + letra | Pieza detectada por visión (A rojo, B azul, C verde, D violeta) |
+| Rectángulo punteado cian | `zona_trabajo_*` (límites autorizados) |
+| Barra "ALTURA Z" | Altura actual con marcas de `z_pick`, `z_deposit` y `z_seguro` |
+| Chip de estado | MOVIENDO / QUIETO / SIN TELEMETRÍA |
+
+- La escala es **la misma en X e Y** (metros reales del UR5), así que las
+  distancias del mapa son proporcionales a las de la mesa.
+- La pose se muestrea a ~20 Hz en un **hilo aparte** (`core/robot_tracker.py`),
+  por lo que el rastro se dibuja también mientras el robot se mueve.
+- En el dashboard de escritorio el ciclo de pick & place corre en un hilo de
+  fondo para que el panel no se congele durante los `moveL`.
+- En el dashboard web el mapa se refresca a ~8 Hz desde `/api/robot`, más
+  rápido que el SSE de estado (0,5 s).
+- Para borrar el rastro: tecla `[t]` (escritorio) o botón **Limpiar rastro**
+  (web). El rastro también se purga solo pasados 30 s.
+- En **modo mock** el TCP simulado se interpola entre poses, así que el mapa
+  también muestra el movimiento sin robot conectado.
+
+---
+
 ## Parámetros clave (vision/config.json)
 
 | Parámetro | Qué ajustar | Editor visual |
@@ -303,5 +338,7 @@ puntos guardados (cruces cian + cuadrilátero) y los recién marcados
 - `vision/hsv_editor.py` — editor visual de rangos HSV con máscara en vivo
 - `vision/homografia_editor.py` — asistente de calibración de la homografía (clics)
 - `vision/config.py` / `vision/config.json` — configuración compartida
+- `core/robot_tracker.py` — rastreo de la pose del TCP (rastro para el mapa)
+- `core/robot_map.py` — mapa de trabajo X-Y a escala (panel del dashboard)
 - `README.md` — este archivo
 - Evidencia: capturas de pantalla de detecciones correctas/incorrectas y error de homografía

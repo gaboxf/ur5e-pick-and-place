@@ -7,6 +7,7 @@ Se aplica un recorte (ROI) para descartar el fondo y ganar velocidad.
 from __future__ import annotations
 
 import logging
+import threading
 from pathlib import Path
 
 import cv2
@@ -25,23 +26,28 @@ class VisorCamara:
         self.cap: cv2.VideoCapture | None = None
         self._es_imagen = False
         self._imagen_actual: np.ndarray | None = None
+        # Serializa el acceso al VideoCapture: el dashboard de escritorio y el
+        # web pueden leer la cámara desde hilos distintos (bucle de UI, ciclo
+        # de pick & place, bucle de captura del servidor Flask).
+        self._lock = threading.Lock()
 
     # -- Conexión -----------------------------------------------------------
     def conectar(self) -> bool:
         """Abre la cámara por índice utilizando DirectShow en Windows para evitar bloqueos."""
-        # Usar CAP_DSHOW para mayor estabilidad en Windows, con fallback a CAP_ANY
-        self.cap = cv2.VideoCapture(self.cfg.indice_camara, cv2.CAP_DSHOW)
-        if not self.cap.isOpened():
-            logger.warning("Fallo al abrir con DirectShow, intentando con backend por defecto...")
-            self.cap = cv2.VideoCapture(self.cfg.indice_camara)
-            
-        if not self.cap.isOpened():
-            logger.error("No se pudo abrir la cámara índice %s. Verifique que no esté en uso.", self.cfg.indice_camara)
-            return False
-            
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.cfg.ancho)
-        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.cfg.alto)
-        self.cap.set(cv2.CAP_PROP_FPS, self.cfg.fps)
+        with self._lock:
+            # Usar CAP_DSHOW para mayor estabilidad en Windows, con fallback a CAP_ANY
+            self.cap = cv2.VideoCapture(self.cfg.indice_camara, cv2.CAP_DSHOW)
+            if not self.cap.isOpened():
+                logger.warning("Fallo al abrir con DirectShow, intentando con backend por defecto...")
+                self.cap = cv2.VideoCapture(self.cfg.indice_camara)
+
+            if not self.cap.isOpened():
+                logger.error("No se pudo abrir la cámara índice %s. Verifique que no esté en uso.", self.cfg.indice_camara)
+                return False
+
+            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.cfg.ancho)
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.cfg.alto)
+            self.cap.set(cv2.CAP_PROP_FPS, self.cfg.fps)
         logger.info("Cámara conectada correctamente.")
         return True
 
@@ -83,18 +89,20 @@ class VisorCamara:
         return True
 
     def desconectar(self) -> None:
-        if self.cap is not None:
-            self.cap.release()
-            self.cap = None
+        with self._lock:
+            if self.cap is not None:
+                self.cap.release()
+                self.cap = None
 
     # -- Lectura ------------------------------------------------------------
     def leer(self) -> np.ndarray | None:
         """Devuelve el siguiente frame BGR, o None si no hay."""
         if self._es_imagen:
             return self._imagen_actual.copy() if self._imagen_actual is not None else None
-        if self.cap is None or not self.cap.isOpened():
-            return None
-        ok, frame = self.cap.read()
+        with self._lock:
+            if self.cap is None or not self.cap.isOpened():
+                return None
+            ok, frame = self.cap.read()
         return frame if ok else None
 
     def roi(self, frame: np.ndarray) -> np.ndarray:

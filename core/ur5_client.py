@@ -122,14 +122,24 @@ class UR5Client:
                 return False
         else:
             logger.debug("[SIMULACIÓN UR5] moveL: %s (tol=%.2f mm)", target_pose, tol * 1000)
-            # En simulación dormimos en tramos cortos para poder abortar.
-            fin = time.time() + float(os.getenv("MOCK_DELAY", 1.0))
-            while time.time() < fin:
+            # En simulación se interpola la pose para que el "mapa de trabajo"
+            # de los dashboards muestre una trayectoria realista y no un salto.
+            duracion = max(float(os.getenv("MOCK_DELAY", 1.0)), 0.05)
+            inicio = list(self._mock_pose[:3])
+            t0 = time.time()
+            while True:
                 if self._abort.is_set():
                     logger.warning("[SIMULACIÓN UR5] movimiento abortado.")
                     return False
+                t = min(1.0, (time.time() - t0) / duracion)
+                e = t * t * (3.0 - 2.0 * t)  # suavizado (ease in-out)
+                self._mock_pose[0] = inicio[0] + (x - inicio[0]) * e
+                self._mock_pose[1] = inicio[1] + (y - inicio[1]) * e
+                self._mock_pose[2] = inicio[2] + (z - inicio[2]) * e
+                if t >= 1.0:
+                    break
                 time.sleep(0.02)
-            # Actualizar pose simulada
+            # Pose final exacta
             self._mock_pose = [
                 x, y, z,
                 rx if rx is not None else self._mock_pose[3],

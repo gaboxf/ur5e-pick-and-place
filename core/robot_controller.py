@@ -2,6 +2,7 @@ import time
 import json
 import math
 import sys
+import threading
 from pathlib import Path
 
 # Ejecución directa (python core/robot_controller.py): agregar la raíz del
@@ -18,6 +19,7 @@ from vision.pipeline import PipelineVision
 
 from gripper.tools.gripper_client import GripperClient
 from core.ur5_client import UR5Client
+from core.robot_tracker import RastreadorMovimiento
 
 class RobotController:
     """Orquestador principal para el UR5.
@@ -34,6 +36,56 @@ class RobotController:
         
         # Integración con cliente UR5 real
         self.robot = UR5Client()
+
+        # Rastreo de la pose del TCP para el "mapa de trabajo" de los dashboards.
+        # Un hilo muestrea la pose a ~20 Hz, de modo que el rastro se dibuja
+        # también mientras el robot se mueve (aunque el hilo de UI esté ocupado).
+        self.tracker = RastreadorMovimiento()
+        self._rastreando = False
+        self._hilo_rastreo: threading.Thread | None = None
+
+    # ------------------------------------------------------------- rastreo
+    def iniciar_rastreo(self) -> None:
+        """Arranca el hilo que muestrea la pose del TCP."""
+        if self._hilo_rastreo and self._hilo_rastreo.is_alive():
+            return
+        self._rastreando = True
+        self._hilo_rastreo = threading.Thread(
+            target=self._bucle_rastreo, name="RastreoTCP", daemon=True
+        )
+        self._hilo_rastreo.start()
+
+    def detener_rastreo(self) -> None:
+        self._rastreando = False
+        hilo = self._hilo_rastreo
+        if hilo and hilo.is_alive() and hilo is not threading.current_thread():
+            hilo.join(timeout=1.0)
+
+    def _bucle_rastreo(self) -> None:
+        while self._rastreando:
+            try:
+                pose = self.robot.get_actual_tcp_pose()
+                if pose:
+                    self.tracker.actualizar(pose[0], pose[1], pose[2])
+            except Exception:
+                # Una lectura fallida no debe cortar el bucle ni la operación
+                logger.debug("Lectura de pose TCP fallida durante el rastreo.")
+            time.sleep(0.05)
+
+    def pose_actual(self) -> list[float] | None:
+        """Pose actual del TCP ([x, y, z, rx, ry, rz]) o None si no hay datos."""
+        try:
+            return self.robot.get_actual_tcp_pose()
+        except Exception:
+            return None
+
+    def datos_robot(self) -> dict:
+        """Snapshot del rastreador para los dashboards."""
+        return self.tracker.datos()
+
+    def limpiar_rastro(self) -> None:
+        self.tracker.limpiar()
+
         
     def conectar(self) -> bool:
         if not self.pipeline.conectar_camara():
@@ -42,9 +94,11 @@ class RobotController:
             return False
         if not self.robot.connect():
             return False
+        self.iniciar_rastreo()
         return True
 
     def desconectar(self):
+        self.detener_rastreo()
         self.robot.disconnect()
         self.pipeline.desconectar()
         self.gripper.close_connection()
@@ -54,9 +108,18 @@ class RobotController:
         Implementa el contrato 4.4 del plan de trabajo.
         Accepts optional 4th parameter r for future orientation support.
         """
+        # Registrar el destino antes de mover: el mapa lo dibuja como objetivo
+        self.tracker.fijar_destino(x, y, z)
+        if not (self._hilo_rastreo and self._hilo_rastreo.is_alive()):
+            self.iniciar_rastreo()
         # Construir pose completa [x, y, z, rx, ry, rz] con orientación por defecto
         # Siempre forzar orientación hacia abajo para evitar path sanity checks
-        return self.robot.move_l(x, y, z, rx, ry, rz)
+        ok = self.robot.move_l(x, y, z, rx, ry, rz)
+        # Muestra final para que la posición actual no dependa del hilo de rastreo
+        if ok:
+            self.tracker.actualizar(x, y, z)
+        return ok
+
 
     def detener(self):
         """Parada de seguridad: interrumpe el movimiento del robot en curso."""

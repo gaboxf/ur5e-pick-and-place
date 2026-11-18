@@ -12,6 +12,8 @@ from __future__ import annotations
 
 import json
 import queue
+import threading
+import time
 from pathlib import Path
 
 import cv2
@@ -26,6 +28,7 @@ if str(RAIZ_PROYECTO) not in sys.path:
 
 from core.logging_config import configurar_logging, get_logger
 from core.robot_controller import RobotController
+from core.robot_map import dibujar_panel_robot
 from vision.homografia_editor import EditorHomografia
 from vision.hsv_editor import EditorHSV
 from vision.roi_editor import EditorROI
@@ -94,6 +97,12 @@ class DashboardApp:
         # Parada de seguridad por software (tecla [e] / boton "detener").
         # No hay E-STOP fisico en el gripper: la parada certificada es la del UR5.
         self.parada_activa = False
+
+        # Ciclo de pick & place en hilo aparte: mantiene fluido el panel del
+        # mapa de trabajo mientras el robot se mueve (los moveL son bloqueantes).
+        self.ciclo_en_curso = False
+        self._ancho_video = 0
+        self._ultimo_frame = None
 
         # Cámara predeterminada (índice guardado en config.json)
         self.camara_predeterminada = int(self.cfg.get("camara", {}).get("indice_camara", 0))
@@ -287,16 +296,44 @@ class DashboardApp:
             logger.warning("Terminó la apertura por watchdog del gripper")
 
     def ejecutar_ciclo(self, categoria_filtro: str | None = None):
-        """Ejecuta un ciclo completo de Pick and Place con verificación en bucle cerrado."""
+        """Lanza un ciclo de pick & place en segundo plano.
+
+        Los ``moveL`` son bloqueantes; ejecutar el ciclo en un hilo aparte
+        mantiene fluido el panel del mapa de trabajo mientras el robot se mueve.
+        """
+        if self.ciclo_en_curso:
+            logger.debug("Ciclo ignorado: ya hay un ciclo en curso.")
+            return
         if self.parada_activa:
             logger.warning("Ciclo bloqueado: parada de seguridad activa.")
             return
         if not self.conectado_camara:
             return
 
+        self.ciclo_en_curso = True
+        threading.Thread(
+            target=self._ciclo_seguro,
+            args=(categoria_filtro,),
+            name="CicloPyP",
+            daemon=True,
+        ).start()
+
+    def _ciclo_seguro(self, categoria_filtro: str | None = None):
+        try:
+            self._ciclo_pick_place(categoria_filtro)
+        except Exception:
+            logger.exception("Error inesperado durante el ciclo de pick & place")
+            self.estado_actual = "ERROR_CICLO"
+        finally:
+            self.ciclo_en_curso = False
+
+    def _ciclo_pick_place(self, categoria_filtro: str | None = None):
+        """Ejecuta un ciclo completo de Pick and Place con verificación en bucle cerrado."""
         self.abortar_ciclo = False
         self.estado_actual = "DETECTANDO"
-        frame = self.pipeline.visor.leer()
+        # Usar el último frame capturado por el bucle de UI (copia para no
+        # compartir píxeles con el dibujado del HUD que corre en paralelo).
+        frame = self._ultimo_frame.copy() if self._ultimo_frame is not None else self.pipeline.visor.leer()
         if frame is None:
             return
 
@@ -340,7 +377,7 @@ class DashboardApp:
             return
         logger.debug("Cerrando gripper...")
         self.gripper.close()
-        cv2.waitKey(1000)
+        time.sleep(1.0)
 
         self.mover_ur5(x_ur5, y_ur5, z_seguro)
         if self.abortar_ciclo or self.parada_activa:
@@ -364,14 +401,14 @@ class DashboardApp:
 
         logger.debug("Abriendo gripper...")
         self.gripper.open()
-        cv2.waitKey(1000)
+        time.sleep(1.0)
 
         # Retirada a altura segura
         self.mover_ur5(dest["x"], dest["y"], z_seguro)
 
         # 3. Verificación en bucle cerrado (Closed-loop feedback)
         self.estado_actual = "VERIFICANDO"
-        cv2.waitKey(300)
+        time.sleep(0.3)
         logger.info("¡Verificación completada! Pieza categoría %s clasificada con éxito.", categoria)
         if self.voice:
             self.voice.hablar(f"Pieza categoría {categoria} clasificada con éxito.")
@@ -431,9 +468,12 @@ class DashboardApp:
 
         Las coordenadas llegan en píxeles de la imagen completa (OpenCV las
         escala si la ventana fue redimensionada); el editor las convierte a
-        coordenadas del recorte ROI.
+        coordenadas del recorte ROI. Los clics sobre el panel lateral de
+        instrumentos se ignoran.
         """
         if evento != cv2.EVENT_LBUTTONDOWN:
+            return
+        if self._ancho_video and x >= self._ancho_video:
             return
         ok, msg = self.editor_homografia.mover(
             "punto", f"{x},{y}"
@@ -447,13 +487,14 @@ class DashboardApp:
 
         ventana_nombre = "Megadesafio UPrO — Dashboard UR5e con Voz"
         cv2.namedWindow(ventana_nombre, cv2.WINDOW_NORMAL)
-        cv2.resizeWindow(ventana_nombre, 1280, 800)
 
         # Clics del mouse: solo se usan con el asistente de homografía activo
         cv2.setMouseCallback(ventana_nombre, self._on_mouse)
 
         logger.info("Iniciando bucle del Dashboard. Presione 'q' para salir.")
-        logger.info("Atajos: [SPACE] Ciclo | [v] Voz ON/OFF | [o] Abrir | [c] Cerrar | [a] Auto | [k] Seleccionar camara | [i] Ver ROI | [Flechas] Mover ROI | [+] [-] Tamaño ROI | [h] Mascara HSV | [x] Color | [1-0] Ajustar HSV (9/0 confianza) | [g] Calibrar homografia (clics) | [Backspace] deshacer punto | [Enter] aplicar | [Esc] cancelar | [p] Guardar config | [q] Salir")
+        logger.info("Atajos: [SPACE] Ciclo | [v] Voz ON/OFF | [o] Abrir | [c] Cerrar | [a] Auto | [k] Seleccionar camara | [i] Ver ROI | [Flechas] Mover ROI | [+] [-] Tamaño ROI | [h] Mascara HSV | [x] Color | [1-0] Ajustar HSV (9/0 confianza) | [g] Calibrar homografia (clics) | [Backspace] deshacer punto | [Enter] aplicar | [Esc] cancelar | [t] Limpiar rastro | [p] Guardar config | [q] Salir")
+
+        ventana_ajustada = False
 
         try:
             while True:
@@ -466,6 +507,7 @@ class DashboardApp:
                 if frame is None:
                     logger.error("No se pudo leer frame de la cámara.")
                     break
+                self._ultimo_frame = frame
 
                 # 2. Procesar visión en tiempo real para mostrar feedback visual
                 det = self.pipeline.procesar_frame(frame)
@@ -528,10 +570,25 @@ class DashboardApp:
                                 f"HSV {self.editor_hsv.texto()}  px:{self.editor_hsv.pixeles}  conf>={self.editor_hsv.cfg.confianza_minima:.2f}  [x] color [1-0] ajustar",
                                 (20, h - 24), cv2.FONT_HERSHEY_SIMPLEX, 0.45, color_txt, 1)
 
-                ayuda_txt = "Voz: 'clasificar', 'abrir/cerrar pinza', 'alto' | Teclas: [SPACE] Ciclo | [k] Camara | [i] ROI | [h] Mascara | [x] Color | [1-0] HSV (9/0 confianza) | [g] Homografia (clics) | [p] Guardar | [e] PARO | [r] Reset | [q] Salir"
+                ayuda_txt = "Voz: 'clasificar', 'abrir/cerrar pinza', 'alto' | Teclas: [SPACE] Ciclo | [k] Camara | [i] ROI | [h] Mascara | [x] Color | [1-0] HSV (9/0 confianza) | [g] Homografia (clics) | [t] Limpiar rastro | [p] Guardar | [e] PARO | [r] Reset | [q] Salir"
                 cv2.putText(frame_dibujado, ayuda_txt, (20, h - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (220, 220, 220), 1)
 
-                cv2.imshow(ventana_nombre, frame_dibujado)
+                # 4. Panel lateral con el mapa de trabajo del robot (X-Y a escala)
+                panel_robot = dibujar_panel_robot(
+                    h,
+                    self.robot_controller.datos_robot(),
+                    self.cfg,
+                    estado=self.estado_actual,
+                    det=det,
+                )
+                composicion = np.hstack([frame_dibujado, panel_robot])
+                self._ancho_video = w
+
+                if not ventana_ajustada:
+                    cv2.resizeWindow(ventana_nombre, composicion.shape[1], composicion.shape[0])
+                    ventana_ajustada = True
+
+                cv2.imshow(ventana_nombre, composicion)
 
                 # Manejo de teclado (10 ms de espera)
                 key = cv2.waitKey(10) & 0xFF
@@ -575,6 +632,9 @@ class DashboardApp:
                 elif key == ord('i'):
                     ok, msg = self.editor_roi.mover("mostrar")
                     logger.info("Editor ROI: %s", msg)
+                elif key == ord('t'):
+                    self.robot_controller.limpiar_rastro()
+                    logger.info("Rastro del robot borrado.")
                 elif key == ord('p'):
                     logger.info("Editor ROI: %s", self.editor_roi.aplicar(self.config_path))
                     logger.info("Editor HSV: %s", self.editor_hsv.aplicar(self.config_path))

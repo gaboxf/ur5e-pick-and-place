@@ -101,6 +101,22 @@ class WebDashboard:
         self.logs_recientes: collections.deque[dict] = collections.deque(maxlen=60)
         self.registrar_log("INFO", "Consola de eventos iniciada.")
 
+        # Parámetros de la celda que el cliente usa para dibujar el mapa de
+        # trabajo a escala (mismos límites que valida la visión).
+        self.celda_info = {
+            "zona": {
+                "min_x": float(self.cfg.get("zona_trabajo_min_x", 0.05)),
+                "max_x": float(self.cfg.get("zona_trabajo_max_x", 0.55)),
+                "min_y": float(self.cfg.get("zona_trabajo_min_y", -0.05)),
+                "max_y": float(self.cfg.get("zona_trabajo_max_y", 0.45)),
+            },
+            "z": {
+                "seguro": float(self.cfg.get("z_seguro", 0.25)),
+                "pick": float(self.cfg.get("z_pick", 0.12)),
+                "deposit": float(self.cfg.get("z_deposit", self.cfg.get("z_pick", 0.12))),
+            },
+        }
+
     def registrar_log(self, nivel: str, mensaje: str):
         """Registra un evento visible en la consola web."""
         hora = time.strftime("%H:%M:%S")
@@ -128,6 +144,12 @@ class WebDashboard:
         except Exception as e:
             logger.error("Robot: %s", e)
             self.robot_ok = False
+
+        # El rastreo de la pose alimenta el "mapa de trabajo" del dashboard
+        try:
+            self.controller.iniciar_rastreo()
+        except Exception:
+            logger.exception("No se pudo iniciar el rastreo de la pose del TCP")
 
         self.registrar_log(
             "OK" if self.camara_ok else "WARN",
@@ -401,6 +423,11 @@ class WebDashboard:
                 self.registrar_log("WARN", f"Comando '{accion}' rechazado: parada de seguridad activa.")
                 return False, "Parada de seguridad activa: reinicie la parada antes de operar."
 
+        if accion == "limpiar_rastro":
+            self.controller.limpiar_rastro()
+            self.registrar_log("INFO", "Rastro del robot borrado.")
+            return True, "Rastro del robot borrado."
+
         if accion == "abrir":
             self.registrar_log("INFO", "Comando manual: abrir gripper")
             self.controller.gripper.open()
@@ -606,6 +633,9 @@ class WebDashboard:
                 "roi": self.editor_roi.valores(),
                 "hsv": self.editor_hsv.estado(),
                 "homografia": self.editor_homografia.estado(),
+                # Sin la trayectoria completa: el mapa la pide a /api/robot
+                "robot": self.controller.tracker.datos(incluir_trayectoria=False),
+                "celda": self.celda_info,
                 "frame": {
                     "ancho": self.editor_homografia.tamano_frame[0],
                     "alto": self.editor_homografia.tamano_frame[1],
@@ -649,6 +679,29 @@ def video():
 @app.route("/api/state")
 def api_state():
     return jsonify(dashboard.estado_json())
+
+
+@app.route("/api/robot")
+def api_robot():
+    """Telemetría liviana del TCP para el mapa de trabajo en vivo.
+
+    Se consulta desde el navegador varias veces por segundo (SSE va a 0.5 s,
+    demasiado lento para ver el rastro mientras el robot se mueve).
+    """
+    datos = dashboard.controller.datos_robot()
+    det = dashboard.deteccion or {}
+    return jsonify({
+        "robot": datos,
+        "estado": dashboard.estado,
+        "parada": dashboard.parada_activa,
+        "deteccion": {
+            "ok": bool(det.get("ok")),
+            "categoria": det.get("categoria"),
+            "x_ur5": det.get("x_ur5"),
+            "y_ur5": det.get("y_ur5"),
+        },
+        "celda": dashboard.celda_info,
+    })
 
 
 @app.route("/stream")
