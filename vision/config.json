@@ -4,10 +4,10 @@
     "ancho": 1280,
     "alto": 720,
     "fps": 30,
-    "roi_desde_x": 0.02,
-    "roi_hasta_x": 0.98,
-    "roi_desde_y": 0.02,
-    "roi_hasta_y": 0.98
+    "roi_desde_x": 0.16,
+    "roi_hasta_x": 0.92,
+    "roi_desde_y": 0.1,
+    "roi_hasta_y": 0.86
   },
   "segmentacion": {
     "rojo_bajo1": [
@@ -48,20 +48,20 @@
   "homografia": {
     "puntos_px": [
       [
-        202.0,
-        619.0
+        11.0,
+        10.0
       ],
       [
-        1103.0,
-        599.0
+        1088.0,
+        13.0
       ],
       [
-        1018.0,
-        68.0
+        1082.0,
+        517.0
       ],
       [
-        221.0,
-        53.0
+        12.0,
+        519.0
       ]
     ],
     "puntos_ur5": [
@@ -87,7 +87,7 @@
   "zona_trabajo_max_x": 0.55,
   "zona_trabajo_min_y": -0.05,
   "zona_trabajo_max_y": 0.45,
-  "gripper_port": "COM3",
+  "gripper_port": "COM4",
   "z_seguro": 0.25,
   "z_pick": 0.12,
   "z_deposit": 0.12,

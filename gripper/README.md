@@ -150,14 +150,17 @@ tolera `\r`):
 |---|---|
 | `OPEN` | Arranca apertura suave; `DONE` al terminar. Si ya se mueve: redirige el movimiento a abierto y responde `BUSY` |
 | `CLOSE` | Arranca cierre suave; `DONE` al terminar. Si ya se mueve: `BUSY` (no se acepta un cierre a mitad de movimiento) |
+| `ZERO` | Cierra despacio hasta el **tope mecánico** (mordazas tocándose) y se queda ahí; `DONE` al asentar. Referencia común para alinear los cuernos. Solo con la boca vacía; se sale con `OPEN`/`STOP` (o el watchdog) |
 | `STOP` | Parada suave: redirige a **abierto** desde cualquier estado. `BUSY` si estaba en movimiento (luego llega `DONE`), `DONE` si ya estaba abierto |
 | `STATUS` | `READY` (quieto) / `BUSY` (moviéndose). Solo consulta; además mantiene vivo el watchdog |
 | `PING` | `PONG`. Latido del heartbeat de la PC. Token propio para que no se confunda con la respuesta a un `OPEN`/`CLOSE` en vuelo |
 | (comando desconocido) | `ERROR` |
 | (sin comandos válidos por >15 s) | **Watchdog interno: vuelve a `OPEN` solo.** Si la PC se muere mientras sujeta una pieza, no queda aplastándola. Emite `WATCHDOG_OPEN` al disparar y `WATCHDOG_DONE` al terminar |
 
-Movimiento suave: **1° cada 30 ms** (`PASO_MS`). Carrera de ~60° → ciclo
-completo de ~1.8 s (verificado con el hardware real).
+Movimiento suave: **10 µs de pulso cada 30 ms** (`PASO_US`/`PASO_MS`), unos
+~0.7 s de carrera completa. El `DONE` se emite recién después de
+`ASENTAMIENTO_MS` (250 ms) con el pulso final sostenido, para que los 4 servos
+estén quietos antes de que la PC siga con el ciclo.
 
 ### 3.1 El heartbeat (PING) es lo que impide soltar la pieza en el aire
 
@@ -315,48 +318,73 @@ corriente real.
 ### 4.3 Valores actuales en el sketch de producción
 
 ```cpp
-int abierto = 140;   // boca abierta  -> 1987 us (dentro del rango de fabrica)
-int cerrado = 110;   // cierre para pieza de 50 mm -> 1678 us (ok, sin calibrar)
+const int US_ABIERTO = 1900;   // boca abierta
+const int US_CERRADO = 1680;   // cierre para pieza de 50 mm
 ```
 
-Los dos valores están **dentro del rango de fábrica del MG996R (1000–2000 µs)**
-con cualquiera de las dos versiones de la librería:
+El sketch trabaja en **microsegundos** (`writeMicroseconds()`), no en grados: el
+mapeo de `write()` cambia con la versión de la librería Servo (1.3.0: 544–2400 µs;
+1.1.8: ángulo×10+544), así que "grados" no es portable y dos máquinas pueden
+generar pulsos distintos con el mismo número. En µs, el pulso es el mismo acá y
+en cualquier otra máquina.
 
-| Valor | Grados `Servo.write` | Pulso (Servo 1.3.0) | Pulso (Servo 1.1.8) | Margen | Estado |
-|---|---|---|---|---|---|
-| `abierto` | 140 | **1987 µs** | 1944 µs | 13 µs del tope (2000 µs) con 1.3.0 | **al límite**: verificar que no zumbe ni caliente con la boca abierta al máximo (Fase 4) |
-| `cerrado` | 110 | **1678 µs** | 1644 µs | 322 µs del tope | ok, **sin calibrar** con la pieza real |
+| Valor | Pulso | Margen al tope de fábrica (2000 µs) | Estado |
+|---|---|---|---|
+| `US_ABIERTO` | 1900 µs | 100 µs (≈10 %) | ok: ningún servo satura antes que otro (Fase 4) |
+| `US_CERRADO` | 1680 µs | 320 µs | ok, **sin calibrar** con la pieza real (Fase 3) |
 
 Historia de calibración:
-- `cerrado = 110` (valor inicial, sin calibrar con pieza real) — sigue igual.
+- `cerrado = 110` → 1678 µs → **`US_CERRADO = 1680`**: equivalente, sigue sin
+  calibrar con la pieza real.
 - `abierto = 170` → **fuera de rango de fábrica** (2296 µs con Servo 1.3.0,
-  2244 µs con 1.1.8): los 4 servos empujaban contra el tope mecánico,
-  zumbaban y consumían corriente de más.
-  **Corregido a `abierto = 140`**, dentro de rango en ambas versiones.
-- Pendiente: medir con el sketch de calibración la abertura real en ambos
-  extremos y ajustar si hace falta (y volver a chequear que los pulsos sigan
-  dentro de 1000–2000 µs).
+  2244 µs con 1.1.8): los 4 servos empujaban contra el tope mecánico, zumbaban
+  y consumían corriente de más.
+- `abierto = 140` → 1987 µs: dentro de rango, pero a **13 µs** del tope. Con la
+  tolerancia de potenciómetro de cada unidad (±10 %), algunos servos ya estaban
+  saturados y otros no: la boca abierta quedaba despareja.
+  **Corregido a `US_ABIERTO = 1900`.**
+- Pendiente: medir la abertura real con el sketch de calibración y ajustar
+  `US_CERRADO` con la pieza real.
 
 > Si al abrir al máximo los servos siguen empujando contra el tope mecánico,
 > el problema es el **montaje** (la punta TPU o el marco chocan), no el pulso:
-> bajar `abierto` solo oculta el síntoma.
+> bajar `US_ABIERTO` solo oculta el síntoma.
 
-> Si al abrir al máximo los servos siguen empujando contra el tope mecánico,
-> el problema es el **montaje** (la punta TPU o el marco chocan), no el pulso:
-> bajar `abierto` solo oculta el síntoma.
+### 4.4 "Los 4 servos van desparejos": qué puede y qué no puede el firmware
+
+Con los 4 naranjas en D3 **sale un solo pulso**: los cuatro reciben el mismo
+ancho en el mismo frame, así que el firmware no puede moverlos a distinta
+velocidad ni desincronizarlos. Si igual van desparejos, el reparto está en otro
+lado. En orden de frecuencia:
+
+| # | Causa | Cómo se nota | Qué hacer |
+|---|---|---|---|
+| A | **Cuernos desalineados** al montar | Aun quietos y con el mismo pulso, las mordazas no quedan simétricas | Comando `ZERO` (tope mecánico), aflojar los cuernos y volver a ajustarlos con las mordazas tocándose; después `OPEN` |
+| B | **Caída de tensión** (picos de 4 servos) | A mitad del movimiento uno se reinicia, pega un tirón o se queda atrás | Fuente externa 5–6 V ≥ 6 A, 1000 µF, tierra común (§2.2, filas E–H de §4.0) |
+| C | **Señal repartida a 4 entradas** | Arranques desparejos o temblor, peor con cables largos | Cada placa MG996R carga la línea (~13 mA): 4 juntas pueden pasar los 40 mA del pin. Buffear D3 (74HCT245) o acortar el puente (§4.0, fila G) |
+| D | **Pulso contra el tope de fábrica** | Al abrir al máximo, unas mordazas abren más que otras y zumban | Ya corregido: `US_ABIERTO = 1900` µs (§4.3) |
+| E | **Velocidad de respuesta distinta** con carga | Durante la carrera se ve una mordaza atrás de la otra; al final llegan las dos | Es transitorio: el `DONE` ahora espera `ASENTAMIENTO_MS` con el pulso final sostenido, así la PC no sigue con una mordaza en camino |
+
+El firmware cubre D y E; A–C son montaje/eléctricos. Si después de eso siguen
+desparejos, probar servo por servo con el sketch de calibración (`N <1..4>`)
+para ver cuál está fuera de rango.
 
 ## 5. Probar todo SIN robot y sin piezas
 
 1. `pip install pyserial`
 2. Conectar el UNO por USB y cerrar el Serial Monitor del Arduino IDE (así el
    puerto queda libre).
-3. `python gripper/tools/test_serial.py COM3` (Windows: COM3/COM4; Linux:
-   `/dev/ttyUSB0` o `/dev/ttyACM0`)
-4. Escribir `OPEN` + Enter → debe abrir y ver `DONE` (~instantáneo si ya estaba
-   abierto).
-5. Escribir `CLOSE` + Enter → moverse ~1.8 s y `DONE`.
-6. Escribir `STATUS` durante el movimiento → `BUSY`.
-7. Dejar 15 s sin escribir nada → debe volver a `OPEN` solo (watchdog), con el
+3. `python gripper/tools/probar_gripper.py COM3` (Windows: COM3/COM4; Linux:
+   `/dev/ttyUSB0` o `/dev/ttyACM0`). Trae heartbeat propio, `ZERO` y ciclo
+   automático; el `test_serial.py` de siempre sigue sirviendo igual.
+4. Pulsar `o` (OPEN) → debe abrir y ver `DONE` (0.25 s si ya estaba abierto:
+   es el asentamiento).
+5. Pulsar `c` (CLOSE) → moverse ~0.9 s y `DONE`.
+6. Pulsar `t` (STATUS) durante el movimiento → `BUSY`.
+7. Pulsar `z` (ZERO) con la boca vacía → cierra hasta que las mordazas se
+   tocan, se queda ahí y responde `DONE`. Es la referencia para alinear los
+   cuernos: aflojar los 4, dejar que toquen, ajustar y después `OPEN`.
+8. Dejar 15 s sin escribir nada → debe volver a `OPEN` solo (watchdog), con el
    aviso `WATCHDOG_OPEN` y luego `WATCHDOG_DONE`.
 
 > Ojo con el paso 7 si usás el probador: `test_serial.py` usa
@@ -395,9 +423,10 @@ print(ser.readline())      # b"READY\r\n"
 ```
 
 Si el puerto abre pero no responde `STATUS`: ¿firmware cargado a 115200? ¿es el
-sketch correcto? Para confirmar cuál está grabado, enviar `OPEN`/`CLOSE` y
-cronometrar el `DONE`: **~1.8 s = gripper_1signal** (PASO_MS=30); ~0.9 s
-correspondería a la variante vieja de 4 servos (PASO_MS=15).
+sketch correcto? Para confirmar cuál está grabado, enviar `PING`: **`PONG` =
+`gripper_1signal`** (la variante vieja de 4 servos no conoce `PING` ni `ZERO` y
+responde `ERROR`). El `CLOSE` completo del sketch actual tarda ~0.9 s (rampa de
+~0.66 s + `ASENTAMIENTO_MS`).
 
 ## 6. Logs del Arduino integrados a las corridas del proyecto
 
