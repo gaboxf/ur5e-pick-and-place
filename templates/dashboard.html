@@ -114,20 +114,22 @@
 
     .info-paneles {
       display: grid; gap: var(--space-sm);
-      grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
+      grid-template-columns: minmax(160px, 1fr) minmax(150px, 1fr) minmax(130px, 1fr) minmax(280px, 2.3fr);
     }
     @media (max-width: 900px) {
       main { grid-template-columns: 1fr; }
       .col-principal, .col-lateral, .info-paneles { display: contents; }
-      .panel-estado     { order: 1; }
+      .video-wrap       { order: 1; }
       .panel-control    { order: 2; }
-      .panel-mapa       { order: 2; }
-      .panel-homografia { order: 3; }
-      .panel-roi        { order: 4; }
-      .panel-hsv        { order: 5; }
-      .panel-deteccion  { order: 6; }
-      .panel-produccion { order: 7; }
-      .panel-logo       { order: 8; }
+      .panel-estado     { order: 3; }
+      .panel-deteccion  { order: 4; }
+      .panel-produccion { order: 5; }
+      .panel-mapa       { order: 6; }
+      .panel-logs       { order: 7; }
+      .panel-roi        { order: 8; }
+      .panel-homografia { order: 9; }
+      .panel-hsv        { order: 10; }
+      .panel-logo       { order: 11; }
     }
 
     /* -------------------------------------------------------------- video */
@@ -362,8 +364,6 @@
       text-transform: uppercase;
       letter-spacing: 0.12em;
     }
-    .panel-produccion { display: flex; flex-direction: column; }
-    .panel-produccion .stats { flex: 1; }
 
     /* ------------------------------------------------------------- consola logs */
     .panel-logs {
@@ -497,13 +497,30 @@
 
         <div class="panel panel-produccion">
           <h2>Producción</h2>
-          <div class="stats">
-            <div class="stat"><div class="n" id="s-ok">0</div><div class="l">OK</div></div>
-            <div class="stat"><div class="n" id="s-err">0</div><div class="l">Errores</div></div>
+          <div class="row"><span class="k">OK</span><span class="v ok" id="s-ok">0</span></div>
+          <div class="row"><span class="k">Errores</span><span class="v bad" id="s-err">0</span></div>
+          <div class="row"><span class="k">Cat A</span><span class="v" id="s-a">0</span></div>
+          <div class="row"><span class="k">Cat B</span><span class="v" id="s-b">0</span></div>
+          <div class="row"><span class="k">Total</span><span class="v" id="s-total">0</span></div>
+        </div>
+
+        <div class="panel panel-mapa">
+          <h2>Mapa de trabajo (X · Y)</h2>
+          <canvas id="mapa-robot" width="640" height="430"
+                  aria-label="Mapa cenital a escala del área de trabajo del UR5, con la trayectoria y la posición actual"></canvas>
+          <div class="mapa-pie">
+            <span>POS <b id="mapa-pos">—</b></span>
+            <span>VEL <b id="mapa-vel">—</b></span>
+            <span>DEST <b id="mapa-dist">—</b></span>
           </div>
-          <div class="stats">
-            <div class="stat"><div class="n" id="s-a">0</div><div class="l">Cat A</div></div>
-            <div class="stat"><div class="n" id="s-b">0</div><div class="l">Cat B</div></div>
+          <div class="roi-btns" style="margin-top:10px">
+            <button class="roi-reset" style="grid-column:1/-1" onclick="cmd('limpiar_rastro')">Limpiar rastro</button>
+          </div>
+          <div class="roi-info">
+            <span style="color:var(--color-ink-2)">●</span> TCP actual ·
+            <span style="color:var(--color-ok)">✕</span> destino ·
+            <span style="color:#e88a4a">━</span> trayectoria.
+            Escala 1:1 en X e Y (metros reales del UR5).
           </div>
         </div>
 
@@ -540,43 +557,6 @@
         </div>
       </div>
 
-      <div class="panel panel-mapa">
-        <h2>Mapa de trabajo (X · Y)</h2>
-        <canvas id="mapa-robot" width="640" height="430"
-                aria-label="Mapa cenital a escala del área de trabajo del UR5, con la trayectoria y la posición actual"></canvas>
-        <div class="mapa-pie">
-          <span>POS <b id="mapa-pos">—</b></span>
-          <span>VEL <b id="mapa-vel">—</b></span>
-          <span>DEST <b id="mapa-dist">—</b></span>
-        </div>
-        <div class="roi-btns" style="margin-top:10px">
-          <button class="roi-reset" style="grid-column:1/-1" onclick="cmd('limpiar_rastro')">Limpiar rastro</button>
-        </div>
-        <div class="roi-info">
-          <span style="color:var(--color-ink-2)">●</span> TCP actual ·
-          <span style="color:var(--color-ok)">✕</span> destino ·
-          <span style="color:#e88a4a">━</span> trayectoria.
-          Escala 1:1 en X e Y (metros reales del UR5).
-        </div>
-      </div>
-
-      <details class="panel panel-homografia" id="panel-homografia">
-        <summary><h2>Homografía (píxel → UR5)</h2><span class="chev" aria-hidden="true"></span></summary>
-        <div class="panel-body">
-          <div class="roi-btns">
-            <button class="roi-mostrar" onclick="homografia('iniciar')">Iniciar calibración</button>
-            <button class="roi-reset" onclick="homografia('deshacer')">Deshacer punto</button>
-            <button class="roi-reset" onclick="homografia('cancelar')">Cancelar</button>
-            <button class="roi-aplicar" onclick="homografia('aplicar')">Aplicar (guardar)</button>
-            <button class="roi-reset" onclick="homografia('reset')">Reset fábrica</button>
-          </div>
-          <div class="roi-info">Estado: <b id="hom-estado">—</b></div>
-          <div class="roi-info">Puntos_px (ROI-relativos): <span id="hom-puntos">—</span></div>
-          <div class="roi-info">Puntos_ur5 (m): <span id="hom-ur5">—</span></div>
-          <div class="roi-info">Con el modo de calibración activo, <b>hacé clic sobre el video</b> sobre cada marca física: 1 sup-izq → 2 sup-der → 3 inf-der → 4 inf-izq. Los clics se convierten automáticamente a coordenadas de la ROI. Si cambiás la ROI después, recalibrá.</div>
-        </div>
-      </details>
-
       <details class="panel panel-roi" id="panel-roi">
         <summary><h2>Ajustar ROI (zona de trabajo)</h2><span class="chev" aria-hidden="true"></span></summary>
         <div class="panel-body">
@@ -595,6 +575,23 @@
             <button class="roi-reset" onclick="roi('reset')">Reset</button>
           </div>
           <div class="roi-info">«Aplicar» guarda la ROI en <b>vision/config.json</b> para que quede fija al reiniciar.</div>
+        </div>
+      </details>
+
+      <details class="panel panel-homografia" id="panel-homografia">
+        <summary><h2>Homografía (píxel → UR5)</h2><span class="chev" aria-hidden="true"></span></summary>
+        <div class="panel-body">
+          <div class="roi-btns">
+            <button class="roi-mostrar" onclick="homografia('iniciar')">Iniciar calibración</button>
+            <button class="roi-reset" onclick="homografia('deshacer')">Deshacer punto</button>
+            <button class="roi-reset" onclick="homografia('cancelar')">Cancelar</button>
+            <button class="roi-aplicar" onclick="homografia('aplicar')">Aplicar (guardar)</button>
+            <button class="roi-reset" onclick="homografia('reset')">Reset fábrica</button>
+          </div>
+          <div class="roi-info">Estado: <b id="hom-estado">—</b></div>
+          <div class="roi-info">Puntos_px (ROI-relativos): <span id="hom-puntos">—</span></div>
+          <div class="roi-info">Puntos_ur5 (m): <span id="hom-ur5">—</span></div>
+          <div class="roi-info">Con el modo de calibración activo, <b>hacé clic sobre el video</b> sobre cada marca física: 1 sup-izq → 2 sup-der → 3 inf-der → 4 inf-izq. Los clics se convierten automáticamente a coordenadas de la ROI. Si cambiás la ROI después, recalibrá.</div>
         </div>
       </details>
 
@@ -717,10 +714,14 @@
       setText("d-motivo", det.motivo_fallo || "—");
 
       // Producción
-      $("s-ok").textContent = s.ciclos_ok ?? 0;
-      $("s-err").textContent = s.ciclos_error ?? 0;
+      const ok = s.ciclos_ok ?? 0;
+      const err = s.ciclos_error ?? 0;
+      $("s-ok").textContent = ok;
+      $("s-err").textContent = err;
       $("s-a").textContent = (s.por_categoria && s.por_categoria.A) || 0;
       $("s-b").textContent = (s.por_categoria && s.por_categoria.B) || 0;
+      const elTotal = $("s-total");
+      if (elTotal) elTotal.textContent = ok + err;
 
       // Uptime
       const u = s.uptime_s || 0;
