@@ -20,7 +20,7 @@ Abrí **PowerShell** en la carpeta del proyecto:
 
 ```powershell
 cd C:\UR5_Desafio
-py -3 -m venv .venv
+py -3.12 -m venv .venv    # o py -3.11 / py -3.10 (nunca 3.13+)
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 pip install -r requirements.txt

@@ -41,7 +41,7 @@ con control por voz e interfaz web de monitoreo.
 ### 1.2 Entorno virtual e instalación
 ```powershell
 cd C:\ruta\Desafio_Final
-py -3 -m venv .venv
+py -3.12 -m venv .venv    # o py -3.11 / py -3.10 (nunca 3.13+)
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 pip install -r requirements.txt

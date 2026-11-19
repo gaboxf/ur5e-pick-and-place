@@ -59,7 +59,7 @@ el sistema escala a más de dos clases sin cambiar código.
 2. En PowerShell, dentro de la carpeta del proyecto:
 
    ```powershell
-   py -3 -m venv .venv
+   py -3.12 -m venv .venv    # o py -3.11 / py -3.10 (nunca 3.13+)
    .\.venv\Scripts\Activate.ps1
    python -m pip install --upgrade pip
    pip install -r requirements.txt
