@@ -104,6 +104,13 @@ class DashboardApp:
         self._ancho_video = 0
         self._ultimo_frame = None
 
+        # Botón "HOME" dibujado sobre el video (coordenadas de imagen) y
+        # bandera para no lanzar dos movimientos a Home en paralelo.
+        self._boton_home: tuple[int, int, int, int] | None = None
+        self._home_en_curso = False
+        # Frames consecutivos sin imagen (para tolerar cortes breves de USB).
+        self._fallos_frame = 0
+
         # Cámara predeterminada (índice guardado en config.json)
         self.camara_predeterminada = int(self.cfg.get("camara", {}).get("indice_camara", 0))
 
@@ -116,7 +123,7 @@ class DashboardApp:
         logger.info("Conectando hardware desde el dashboard...")
         conectado_todo = self.robot_controller.conectar()
         # Verificar estados derivados
-        self.conectado_camara = self.pipeline.visor.conectado if hasattr(self.pipeline.visor, 'conectado') else True
+        self.conectado_camara = self.pipeline.visor.conectado
         self.conectado_gripper = not self.gripper.simulado
 
         if self.voice and self.activar_voz:
@@ -125,8 +132,17 @@ class DashboardApp:
         if conectado_todo:
             self.estado_actual = "LISTO"
             logger.info("¡Hardware y robot conectados correctamente!")
-            if self.voice:
-                self.voice.hablar("Sistema UR5 conectado y listo para operar.")
+            # Al arrancar, verificar que el robot esté en Home y corregirlo
+            # si quedó fuera de posición (por ejemplo, tras una parada).
+            if self.robot_controller.asegurar_home():
+                if self.voice:
+                    self.voice.hablar("Sistema UR5 conectado y listo para operar.")
+            else:
+                logger.warning("No se pudo asegurar la posición Home al iniciar.")
+                if self.voice:
+                    self.voice.hablar(
+                        "Atención: no se pudo llevar el robot a la posición Home."
+                    )
         else:
             self.estado_actual = "MODO_MOCK"
             logger.warning("Iniciando en MODO_MOCK / Simulación.")
@@ -140,6 +156,7 @@ class DashboardApp:
         self.pipeline.visor.cfg.indice_camara = self.camara_predeterminada
 
         # Persistir SOLO la clave de cámara para no perder el resto del config.json
+
         try:
             with open(self.config_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
@@ -262,7 +279,23 @@ class DashboardApp:
 
     def mover_ur5(self, x, y, z):
         """Envía comando de movimiento al UR5 real o simulado."""
-        return self.robot_controller.mover_a(x, y, z)
+        ok = self.robot_controller.mover_a(x, y, z)
+        if not ok:
+            motivo = self.robot_controller.ultimo_error or "el robot rechazó el movimiento"
+            logger.error(
+                "Movimiento a (%.3f, %.3f, %.3f) rechazado: %s", x, y, z, motivo
+            )
+        return ok
+
+    def _abortar_por_movimiento(self):
+        """Corta el ciclo cuando el robot rechaza un movimiento."""
+        motivo = self.robot_controller.ultimo_error or "movimiento rechazado"
+        self.estado_actual = "ERROR_CICLO"
+        logger.error("Ciclo abortado: %s", motivo)
+        if self.voice:
+            self.voice.hablar(
+                "Movimiento rechazado. Revisá la calibración de la cámara."
+            )
 
     def procesar_eventos_seguridad(self):
         """Atiende los eventos asíncronos de seguridad del firmware del gripper.
@@ -271,6 +304,7 @@ class DashboardApp:
         el unico evento posible es el watchdog: el firmware se abrio solo
         porque la PC dejo de mandar comandos validos.
         """
+
         try:
             evento = self.gripper.get_evento()
         except Exception:
@@ -319,6 +353,7 @@ class DashboardApp:
         ).start()
 
     def _ciclo_seguro(self, categoria_filtro: str | None = None):
+
         try:
             self._ciclo_pick_place(categoria_filtro)
         except Exception:
@@ -368,34 +403,38 @@ class DashboardApp:
         z_deposit = self.cfg.get("z_deposit", 0.050)
 
         # 1. Aproximación y Pick
-        self.mover_ur5(x_ur5, y_ur5, z_seguro)
+        if not self.mover_ur5(x_ur5, y_ur5, z_seguro):
+            self._abortar_por_movimiento()
+            return
         if self.abortar_ciclo or self.parada_activa:
             return
 
-        self.mover_ur5(x_ur5, y_ur5, z_pick)
+        if not self.mover_ur5(x_ur5, y_ur5, z_pick):
+            self._abortar_por_movimiento()
+            return
         if self.abortar_ciclo or self.parada_activa:
             return
         logger.debug("Cerrando gripper...")
         self.gripper.close()
         time.sleep(1.0)
 
-        self.mover_ur5(x_ur5, y_ur5, z_seguro)
+        if not self.mover_ur5(x_ur5, y_ur5, z_seguro):
+            self._abortar_por_movimiento()
+            return
         if self.abortar_ciclo or self.parada_activa:
             return
 
-        # 2. Place según categoría
-        destinos = self.cfg.get("destinos", {
-            "A": {"x": 0.40, "y": 0.20},
-            "B": {"x": 0.40, "y": -0.20},
-            "C": {"x": 0.20, "y": 0.0},
-            "D": {"x": 0.20, "y": -0.20}
-        })
-        dest = destinos.get(categoria, {"x": 0.4, "y": 0.0})
+        # 2. Place según categoría (coordenadas ya en base del robot)
+        dest = self.robot_controller.destino_para(categoria)
 
-        self.mover_ur5(dest["x"], dest["y"], z_seguro)
+        if not self.mover_ur5(dest["x"], dest["y"], z_seguro):
+            self._abortar_por_movimiento()
+            return
         if self.abortar_ciclo or self.parada_activa:
             return
-        self.mover_ur5(dest["x"], dest["y"], z_deposit)
+        if not self.mover_ur5(dest["x"], dest["y"], z_deposit):
+            self._abortar_por_movimiento()
+            return
         if self.abortar_ciclo or self.parada_activa:
             return
 
@@ -404,7 +443,9 @@ class DashboardApp:
         time.sleep(1.0)
 
         # Retirada a altura segura
-        self.mover_ur5(dest["x"], dest["y"], z_seguro)
+        if not self.mover_ur5(dest["x"], dest["y"], z_seguro):
+            self._abortar_por_movimiento()
+            return
 
         # 3. Verificación en bucle cerrado (Closed-loop feedback)
         self.estado_actual = "VERIFICANDO"
@@ -437,11 +478,26 @@ class DashboardApp:
                 elif cmd == ComandoVoz.CERRAR_GRIPPER:
                     self.gripper.close()
                 elif cmd == ComandoVoz.HOME:
-                    self.mover_ur5(0.30, 0.0, 0.25)
+                    if self.robot_controller.ir_a_home():
+                        logger.info("Robot movido a Home.")
+                        if self.voice:
+                            self.voice.hablar("Robot en posición Home.")
+                    else:
+                        motivo = (
+                            self.robot_controller.ultimo_error
+                            or "el robot rechazó el movimiento"
+                        )
+                        logger.error("No se pudo mover el robot a Home: %s", motivo)
+                        if self.voice:
+                            self.voice.hablar("No se pudo mover el robot a Home.")
                 elif cmd == ComandoVoz.DETENER:
                     self.abortar_ciclo = True
+                    self.parada_activa = True
+                    self.robot_controller.detener()
                     self.estado_actual = "PARADA_SEGURIDAD"
                     logger.warning("¡Parada de seguridad activada por voz!")
+                    if self.voice:
+                        self.voice.hablar("Parada de seguridad activada.")
                 elif cmd == ComandoVoz.ESTADO:
                     msg = f"Sistema en estado {self.estado_actual}. "
                     if self.ultima_deteccion.get("ok"):
@@ -452,19 +508,67 @@ class DashboardApp:
                         self.voice.hablar(msg)
                 elif cmd == ComandoVoz.CONSULTAR_COLOR:
                     det = self.ultima_deteccion
-                    if det.get("ok"):
-                        nombres_colores = {"A": "roja", "B": "azul", "C": "verde", "D": "violeta"}
-                        color = nombres_colores.get(det["categoria"], "desconocido")
-                        self.voice.hablar(f"La pieza detectada es de color {color}.")
-                    else:
-                        self.voice.hablar("No veo ninguna pieza para decirte de qué color es.")
+                    if self.voice:
+                        if det.get("ok"):
+                            nombres_colores = {"A": "roja", "B": "azul", "C": "verde", "D": "violeta"}
+                            color = nombres_colores.get(det["categoria"], "desconocido")
+                            self.voice.hablar(f"La pieza detectada es de color {color}.")
+                        else:
+                            self.voice.hablar("No veo ninguna pieza para decirte de qué color es.")
 
                 self.event_queue.task_done()
             except queue.Empty:
                 break
 
+    def ir_a_home(self) -> None:
+        """Mueve el robot a la pose Home (botón HOME del dashboard).
+
+        El movimiento se ejecuta en un hilo aparte para no congelar el video:
+        `moveL` es bloqueante hasta que el brazo llega o falla.
+        """
+        if self.parada_activa:
+            logger.warning("Home bloqueado: parada de seguridad activa.")
+            return
+        if self._home_en_curso:
+            logger.warning("Ya hay un movimiento a Home en curso.")
+            return
+        if self.estado_actual == "ROBOT_ACTUANDO":
+            logger.warning("Home bloqueado: hay un ciclo en ejecución.")
+            return
+        if not self.robot_controller.home_pose:
+            logger.error("Home no configurado: falta 'home_pose' en config.json.")
+            return
+
+        self._home_en_curso = True
+        self.estado_actual = "HOME"
+
+        def _trabajo():
+            ok = False
+            try:
+                ok = self.robot_controller.ir_a_home()
+                if ok:
+                    logger.info("Robot en Home (botón del dashboard).")
+                else:
+                    motivo = (
+                        self.robot_controller.ultimo_error
+                        or "el robot rechazó el movimiento"
+                    )
+                    logger.error("No se pudo mover el robot a Home: %s", motivo)
+                if self.voice:
+                    self.voice.hablar(
+                        "Robot en posición Home." if ok
+                        else "No se pudo mover el robot a Home."
+                    )
+            except Exception:
+                logger.exception("Error inesperado moviendo a Home")
+            finally:
+                self._home_en_curso = False
+                self.estado_actual = "LISTO" if ok else "ERROR_HOME"
+
+        threading.Thread(target=_trabajo, daemon=True).start()
+
     def _on_mouse(self, evento, x, y, flags, param):
-        """Clics sobre la ventana: registra puntos del asistente de homografía.
+        """Clics sobre la ventana: botón HOME y asistente de homografía.
 
         Las coordenadas llegan en píxeles de la imagen completa (OpenCV las
         escala si la ventana fue redimensionada); el editor las convierte a
@@ -474,6 +578,17 @@ class DashboardApp:
         if evento != cv2.EVENT_LBUTTONDOWN:
             return
         if self._ancho_video and x >= self._ancho_video:
+            return
+
+        # Botón HOME dibujado en la barra superior
+        if self._boton_home is not None:
+            bx1, by1, bx2, by2 = self._boton_home
+            if bx1 <= x <= bx2 and by1 <= y <= by2:
+                logger.info("Botón HOME presionado.")
+                self.ir_a_home()
+                return
+
+        if not self.editor_homografia.calibrando:
             return
         ok, msg = self.editor_homografia.mover(
             "punto", f"{x},{y}"
@@ -505,8 +620,23 @@ class DashboardApp:
 
                 frame = self.pipeline.visor.leer()
                 if frame is None:
-                    logger.error("No se pudo leer frame de la cámara.")
-                    break
+                    # Un frame perdido es normal (USB); solo se aborta si la
+                    # cámara deja de entregar imagen de forma sostenida.
+                    self._fallos_frame += 1
+                    if self._fallos_frame == 1 or self._fallos_frame % 25 == 0:
+                        logger.warning(
+                            "Sin imagen de la cámara (%d intentos).",
+                            self._fallos_frame,
+                        )
+                    if self._fallos_frame > 150:
+                        logger.error(
+                            "La cámara dejó de entregar imagen (~5 s). "
+                            "Revisá el cable/USB o si otra app la está usando."
+                        )
+                        break
+                    cv2.waitKey(20)
+                    continue
+                self._fallos_frame = 0
                 self._ultimo_frame = frame
 
                 # 2. Procesar visión en tiempo real para mostrar feedback visual
@@ -542,6 +672,24 @@ class DashboardApp:
                 txt_voz = f"Ultimo comando de voz: {self.ultimo_comando_voz}"
                 cv2.putText(frame_dibujado, txt_voz, (20, 72), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
 
+                # Botón HOME clickeable (barra superior derecha). Al presionarlo
+                # el robot va a la pose `home_pose` de vision/config.json.
+                bx1, by1, bx2, by2 = w - 150, 10, w - 20, 70
+                self._boton_home = (bx1, by1, bx2, by2)
+                color_btn = (110, 110, 110) if self._home_en_curso else (0, 140, 255)
+                cv2.rectangle(frame_dibujado, (bx1, by1), (bx2, by2), color_btn, -1)
+                cv2.rectangle(frame_dibujado, (bx1, by1), (bx2, by2), (255, 255, 255), 1)
+                txt_btn = "..." if self._home_en_curso else "HOME"
+                (tw_btn, th_btn), _ = cv2.getTextSize(
+                    txt_btn, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2
+                )
+                cv2.putText(
+                    frame_dibujado, txt_btn,
+                    (bx1 + (bx2 - bx1 - tw_btn) // 2,
+                     by1 + (by2 - by1 + th_btn) // 2),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2,
+                )
+
                 # Banner interactivo de "¿Qué quieres hacer?"
                 if self.estado_actual == "LISTO" and not det.get("ok"):
                     cv2.rectangle(frame_dibujado, (w // 4, h // 2 - 40), (3 * w // 4, h // 2 + 10), (0, 100, 0), -1)
@@ -570,7 +718,13 @@ class DashboardApp:
                                 f"HSV {self.editor_hsv.texto()}  px:{self.editor_hsv.pixeles}  conf>={self.editor_hsv.cfg.confianza_minima:.2f}  [x] color [1-0] ajustar",
                                 (20, h - 24), cv2.FONT_HERSHEY_SIMPLEX, 0.45, color_txt, 1)
 
-                ayuda_txt = "Voz: 'clasificar', 'abrir/cerrar pinza', 'alto' | Teclas: [SPACE] Ciclo | [k] Camara | [i] ROI | [h] Mascara | [x] Color | [1-0] HSV (9/0 confianza) | [g] Homografia (clics) | [t] Limpiar rastro | [p] Guardar | [e] PARO | [r] Reset | [q] Salir"
+                ayuda_txt = (
+                    "Voz: 'clasificar', 'abrir/cerrar pinza', 'alto' | "
+                    "Teclas: [SPACE] Ciclo | [a] Auto | [v] Voz | [o] Abrir | [c] Cerrar | "
+                    "[k] Camara | [i] ROI | [h] Mascara | [x] Color | [1-0] HSV (9/0 confianza) | "
+                    "[g] Homografia (clics) | [t] Limpiar rastro | [p] Guardar | [e] PARO | "
+                    "[r] Reset | [q] Salir | Click en HOME: ir a home_pose"
+                )
                 cv2.putText(frame_dibujado, ayuda_txt, (20, h - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (220, 220, 220), 1)
 
                 # 4. Panel lateral con el mapa de trabajo del robot (X-Y a escala)

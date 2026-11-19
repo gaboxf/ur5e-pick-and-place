@@ -164,6 +164,20 @@ class WebDashboard:
             f"Robot UR5: {'OK' if self.robot_ok else 'FALLO'} (Modo {self.controller.robot.mode.upper()})"
         )
 
+        # Al arrancar, verificar que el robot esté en Home y corregirlo si
+        # quedó fuera de posición (por ejemplo, tras una parada).
+        if self.robot_ok:
+            try:
+                home_ok = self.controller.asegurar_home()
+            except Exception as e:
+                logger.error("Home al iniciar: %s", e)
+                home_ok = False
+            self.registrar_log(
+                "OK" if home_ok else "WARN",
+                "Chequeo de Home OK." if home_ok
+                else "No se pudo verificar/mover el robot a Home.",
+            )
+
         logger.info(
             "Hardware -> cámara:%s gripper:%s robot:%s",
             self.camara_ok, self.gripper_ok, self.robot_ok,
@@ -346,7 +360,9 @@ class WebDashboard:
             if self.parada_activa:
                 # conserva el estado de emergencia fijado por el evento
                 pass
-            elif self.estado not in ("ROBOT_ACTUANDO", "VERIFICANDO"):
+            elif self.estado in ("INICIANDO", "LISTO", "ESPERANDO_PIEZA"):
+                # Solo se reevalúa en reposo: no se pueden sobrescribir estados
+                # de un ciclo en marcha (DETECTANDO, ROBOT_ACTUANDO, etc.).
                 self.estado = "LISTO" if det.get("ok") else "ESPERANDO_PIEZA"
 
         time.sleep(0.03)
@@ -403,6 +419,7 @@ class WebDashboard:
             # validos por mas de 15 s. La pieza ya no esta sujeta, asi que
             # el ciclo debe abortarse y el robot frenarse.
             self.abortar_ciclo = True
+            self.parada_activa = True
             self.estado = "APERTURA_WATCHDOG"
             self.controller.detener()
             logger.error(
@@ -444,11 +461,16 @@ class WebDashboard:
             )
         if accion == "home":
             self.registrar_log("INFO", "Comando manual: mover a Home")
-            self.controller.mover_a(0.30, 0.0, 0.25)
-            return True, "Movido a posición Home."
+            if self.controller.ir_a_home():
+                self.registrar_log("OK", "Robot en posición Home.")
+                return True, "Movido a posición Home."
+            motivo = self.controller.ultimo_error or "el robot rechazó el movimiento"
+            self.registrar_log("ERROR", f"No se pudo mover el robot a Home: {motivo}")
+            return False, f"No se pudo mover a Home: {motivo}"
         if accion == "detener":
             self.registrar_log("ERROR", "Comando: PARADA DE SEGURIDAD solicitada")
             self.abortar_ciclo = True
+            self.parada_activa = True
             self.controller.detener()
             self.estado = "PARADA_SEGURIDAD"
             return True, "Parada solicitada."
@@ -460,9 +482,12 @@ class WebDashboard:
             self.estado = "LISTO"
             return True, "Parada reiniciada."
         if accion == "ciclo":
-            if self.estado == "ROBOT_ACTUANDO":
+            if self.estado in ("ROBOT_ACTUANDO", "DETECTANDO", "VERIFICANDO"):
                 self.registrar_log("WARN", "Ya hay un ciclo en curso.")
                 return False, "Ya hay un ciclo en curso."
+            # Fijar el estado antes de lanzar el hilo, para que el _tick no lo
+            # sobreescriba con LISTO/ESPERANDO_PIEZA durante la detección.
+            self.estado = "DETECTANDO"
             threading.Thread(
                 target=self.ejecutar_ciclo, args=(categoria,), daemon=True
             ).start()
@@ -494,26 +519,20 @@ class WebDashboard:
         z_seguro = self.cfg.get("z_seguro", 0.200)
         z_pick = self.cfg.get("z_pick", 0.050)
         z_deposit = self.cfg.get("z_deposit", 0.050)
-        destinos = self.cfg.get("destinos", {
-            "A": {"x": 0.40, "y": 0.20},
-            "B": {"x": 0.40, "y": -0.20},
-        })
-        dest = destinos.get(categoria, {"x": 0.40, "y": 0.0})
+        dest = self.controller.destino_para(categoria)
 
         self.registrar_log("INFO", f"Iniciando ciclo: Pieza {categoria} en ({x*1000:.1f}, {y*1000:.1f}) mm")
 
         try:
             # 1. Aproximación segura sobre la pieza (Handshake RTDE)
             self.registrar_log("INFO", f"Aproximación sobre pieza (Z={z_seguro*1000:.0f} mm)...")
-            if not self.controller.mover_a(x, y, z_seguro):
-                raise RuntimeError("aproximación fallida")
+            self._mover(x, y, z_seguro, "aproximación fallida")
             if self._abortado():
                 raise RuntimeError("abortado por seguridad")
 
             # 2. Descenso para recogida (Handshake RTDE)
             self.registrar_log("INFO", f"Descendiendo a cota de pick (Z={z_pick*1000:.0f} mm)...")
-            if not self.controller.mover_a(x, y, z_pick):
-                raise RuntimeError("descenso a pick fallido")
+            self._mover(x, y, z_pick, "descenso a pick fallido")
 
             # 3. Cierre de pinza con validación de confirmación del firmware
             self.registrar_log("INFO", "Cerrando gripper (esperando confirmación DONE de Arduino)...")
@@ -523,8 +542,7 @@ class WebDashboard:
 
             # 4. Elevación inicial
             self.registrar_log("INFO", "Elevando a cota segura...")
-            if not self.controller.mover_a(x, y, z_seguro):
-                raise RuntimeError("elevación post-pick fallida")
+            self._mover(x, y, z_seguro, "elevación post-pick fallida")
             if self._abortado():
                 raise RuntimeError("abortado por seguridad")
 
@@ -539,7 +557,10 @@ class WebDashboard:
                 x_check, y_check = dest["x"], dest["y"]
 
             if not self.controller.mover_a(x_check, y_check, z_seguro):
-                raise RuntimeError("desplazamiento a verificación fallido")
+                raise RuntimeError(
+                    "desplazamiento a verificación fallido: "
+                    f"{self.controller.ultimo_error or 'el robot rechazó el movimiento'}"
+                )
             if self._abortado():
                 raise RuntimeError("abortado por seguridad")
 
@@ -560,7 +581,7 @@ class WebDashboard:
                             f"Fallo de agarre: la pieza sigue en mesa en ({det_verif['x_ur5']:.3f}, {det_verif['y_ur5']:.3f})"
                         )
                         self.controller.gripper.open()
-                        self.controller.mover_a(0.30, 0.0, z_seguro)
+                        self.controller.mover_a(*self.controller.punto_base(0.30, 0.0), z_seguro)
                         raise RuntimeError("Fallo de agarre: la pieza no fue recogida (verificado por visión)")
                     else:
                         self.registrar_log(
@@ -578,10 +599,8 @@ class WebDashboard:
 
             # 6. Transporte a la zona de clasificación
             self.registrar_log("INFO", f"Transportando a destino {categoria} ({dest['x']:.2f}, {dest['y']:.2f}) m...")
-            if not self.controller.mover_a(dest["x"], dest["y"], z_seguro):
-                raise RuntimeError("transporte a destino fallido")
-            if not self.controller.mover_a(dest["x"], dest["y"], z_deposit):
-                raise RuntimeError("descenso a destino fallido")
+            self._mover(dest["x"], dest["y"], z_seguro, "transporte a destino fallido")
+            self._mover(dest["x"], dest["y"], z_deposit, "descenso a destino fallido")
 
             # 7. Liberación y retirada segura
             self.registrar_log("INFO", "Abriendo gripper...")
@@ -589,7 +608,10 @@ class WebDashboard:
                 logger.warning("Apertura de gripper no reportó confirmación normal.")
 
             if not self.controller.mover_a(dest["x"], dest["y"], z_seguro):
-                raise RuntimeError("retirada post-depósito fallida")
+                raise RuntimeError(
+                    "retirada post-depósito fallida: "
+                    f"{self.controller.ultimo_error or 'el robot rechazó el movimiento'}"
+                )
 
             with self._lock:
                 self.ciclos_ok += 1
@@ -609,6 +631,15 @@ class WebDashboard:
 
     def _abortado(self) -> bool:
         return self.abortar_ciclo or self.parada_activa
+
+    def _mover(self, x, y, z, contexto: str) -> None:
+        """mover_a, pero con el motivo real del rechazo en el mensaje de error."""
+        if self.controller.mover_a(x, y, z):
+            return
+        raise RuntimeError(
+            f"{contexto}: "
+            f"{self.controller.ultimo_error or 'el robot rechazó el movimiento'}"
+        )
 
     # ------------------------------------------------------------- estado
     def estado_json(self) -> dict:
