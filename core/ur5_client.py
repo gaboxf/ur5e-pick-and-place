@@ -84,13 +84,24 @@ class UR5Client:
             self.connected = False
             return False
 
-    def get_actual_tcp_pose(self) -> list[float]:
-        """Devuelve la pose actual del TCP [x, y, z, rx, ry, rz] en metros y radianes."""
-        if self.mode == "real" and self.connected and self.rtde_r:
+    def get_actual_tcp_pose(self) -> list[float] | None:
+        """Pose actual del TCP [x, y, z, rx, ry, rz], o None si no hay lectura válida.
+
+        En modo REAL nunca se devuelve la pose simulada: si RTDE falla, eso
+        sería peor que no tener dato (una calibración guardó una vez la pose
+        mock [0.30, 0, 0.25] como si fuera el TCP y mandó el robot 94 cm al
+        lado contrario). Los llamadores deben chequear `if pose:`.
+        """
+        if self.mode == "real":
+            if not (self.connected and self.rtde_r):
+                logger.error("No hay conexión RTDE para leer la pose del TCP.")
+                return None
             try:
                 return self.rtde_r.getActualTCPPose()
             except Exception as e:
-                logger.error("Error leyendo pose TCP: %s", e)
+                logger.error("Error leyendo pose TCP por RTDE: %s", e)
+                return None
+        # Modos mock/sim: pose virtual para el mapa y las pruebas.
         return list(self._mock_pose)
 
     def is_steady(self, vel_umbral: float = 0.01) -> bool:

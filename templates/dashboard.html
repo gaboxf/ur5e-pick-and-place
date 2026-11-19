@@ -638,9 +638,13 @@
             <button class="roi-aplicar" style="grid-column:1/-1;padding:10px;font-size:0.85rem" onclick="calibrarRobot('home')">📍 Guardar Pose HOME Actual</button>
             <button class="roi-mover" onclick="calibrarRobot('z_pick')">📐 Fijar Z Pick (agarre)</button>
             <button class="roi-mover" onclick="calibrarRobot('z_seguro')">🛡️ Fijar Z Seguro</button>
-            <button class="roi-mover" style="grid-column:1/-1" onclick="calibrarRobot('offset_pick')">🎯 Corregir offset de pick (TCP sobre la pieza detectada)</button>
+            <button class="roi-mover" onclick="calibrarRobot('offset_pick_capturar')">1️⃣ Capturar pieza con cámara</button>
+            <button class="roi-mover" onclick="calibrarRobot('offset_pick_confirmar')">2️⃣ Confirmar TCP sobre la pieza</button>
             <button class="cat-A" onclick="calibrarRobot('destino_a')">📥 Destino Caja A (Rojo)</button>
             <button class="cat-B" onclick="calibrarRobot('destino_b')">📥 Destino Caja B (Azul)</button>
+          </div>
+          <div class="roi-info" style="margin-top:10px">
+            <b>Offset de pick (2 pasos):</b> 1️⃣ dejá la pieza apoyada con el brazo afuera y capturá la imagen; 2️⃣ llevá el TCP con freedrive hasta el centro real de esa pieza y confirmá. No se pueden hacer juntos: el brazo tapa la pieza en la cámara.
           </div>
           <div class="roi-info" style="margin-top:10px" id="calib-robot-info">Valores guardados: Home, Z Pick y Z Seguro se actualizan al instante.</div>
         </div>
@@ -925,9 +929,14 @@
         if (d.ok && d.config) {
           const info = $("calib-robot-info");
           if (info) {
+            const op = d.config.offset_pick || {};
+            const pendiente = op.pendiente
+              ? `<br><b>Paso 1 pendiente:</b> pieza ${op.categoria} en (${(op.x * 1000).toFixed(1)}, ${(op.y * 1000).toFixed(1)}) mm — llevar el TCP y confirmar`
+              : `<br>Paso 1: sin captura pendiente`;
             info.innerHTML = `<b>Última captura:</b> ${d.mensaje}<br>` +
               `Z Pick: <b>${(d.config.z_pick * 1000).toFixed(1)} mm</b> | Z Seguro: <b>${(d.config.z_seguro * 1000).toFixed(1)} mm</b><br>` +
-              `Offset pick: <b>X ${(d.config.pick_offset_x * 1000).toFixed(1)} mm · Y ${(d.config.pick_offset_y * 1000).toFixed(1)} mm</b>`;
+              `Offset pick guardado: <b>X ${(d.config.pick_offset_x * 1000).toFixed(1)} mm · Y ${(d.config.pick_offset_y * 1000).toFixed(1)} mm</b>` +
+              pendiente;
           }
         }
       } catch (e) {

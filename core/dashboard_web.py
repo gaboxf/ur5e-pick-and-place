@@ -523,7 +523,8 @@ class WebDashboard:
         self.estado = "ROBOT_ACTUANDO"
         x, y = det["x_ur5"], det["y_ur5"]
         # Centro real de agarre = centro detectado + offset de herramienta
-        # (pinzas vs TCP). Ver `calibrar_offset_pick_actual()`.
+        # (pinzas vs TCP). Ver `capturar_pieza_para_offset()` y
+        # `confirmar_offset_pick()` (calibración en dos pasos).
         x_pick, y_pick = self.controller.punto_pick(x, y)
         # Leer del config vivo del controlador: `self.cfg` es una foto tomada
         # al arrancar y no ve las cotas calibradas en caliente (antes el ciclo
@@ -542,6 +543,15 @@ class WebDashboard:
             )
 
         try:
+            if not self.controller.offset_pick_valido():
+                ox, oy = self.controller.offset_pick()
+                raise RuntimeError(
+                    f"Offset de pick inválido en config.json: "
+                    f"({ox * 1000:.0f}, {oy * 1000:.0f}) mm (máximo "
+                    f"{self.controller.pick_offset_max_m * 1000:.0f} mm). "
+                    "Ciclo abortado por seguridad."
+                )
+
             # 1. Aproximación segura sobre la pieza (Handshake RTDE)
             self.registrar_log("INFO", f"Aproximación sobre pieza (Z={z_seguro*1000:.0f} mm)...")
             self._mover(x_pick, y_pick, z_seguro, "aproximación fallida")
@@ -869,7 +879,8 @@ def api_calibrar_robot():
     - home: Captura la pose completa actual como nuevo Home
     - z_pick: Captura Z actual como cota de agarre
     - z_seguro: Captura Z actual como cota segura de tránsito
-    - offset_pick: Corrige X,Y del agarre con el TCP actual sobre la pieza detectada
+    - offset_pick_capturar: PASO 1, guarda la pieza detectada por la cámara (robot afuera)
+    - offset_pick_confirmar: PASO 2, lee el TCP ya sobre la pieza y guarda el offset
     - destino_a: Captura X,Y actual como destino de clasificación A
     - destino_b: Captura X,Y actual como destino de clasificación B
     """
@@ -886,8 +897,10 @@ def api_calibrar_robot():
         ok, msg = dashboard.controller.calibrar_z_seguro_actual()
         if ok:
             dashboard.celda_info["z"]["seguro"] = dashboard.controller.config["z_seguro"]
-    elif accion == "offset_pick":
-        ok, msg = dashboard.controller.calibrar_offset_pick_actual()
+    elif accion == "offset_pick_capturar":
+        ok, msg = dashboard.controller.capturar_pieza_para_offset()
+    elif accion == "offset_pick_confirmar":
+        ok, msg = dashboard.controller.confirmar_offset_pick()
     elif accion == "destino_a":
         ok, msg = dashboard.controller.calibrar_destino_actual("A")
     elif accion == "destino_b":
@@ -906,6 +919,7 @@ def api_calibrar_robot():
             "z_seguro": dashboard.controller.config.get("z_seguro"),
             "pick_offset_x": dashboard.controller.config.get("pick_offset_x"),
             "pick_offset_y": dashboard.controller.config.get("pick_offset_y"),
+            "offset_pick": dashboard.controller.estado_offset_pick(),
             "destinos": dashboard.controller.config.get("destinos"),
         }
     }), (200 if ok else 400)

@@ -397,6 +397,16 @@ class DashboardApp:
         # Hay pieza válida
         self.estado_actual = "ROBOT_ACTUANDO"
         x_ur5, y_ur5 = det["x_ur5"], det["y_ur5"]
+        if not self.robot_controller.offset_pick_valido():
+            ox, oy = self.robot_controller.offset_pick()
+            logger.error(
+                "Offset de pick inválido en config.json: (%.0f, %.0f) mm "
+                "(máximo %.0f mm). Ciclo abortado por seguridad.",
+                ox * 1000, oy * 1000,
+                self.robot_controller.pick_offset_max_m * 1000,
+            )
+            self._abortar_por_movimiento()
+            return
         # Centro real de agarre = centro detectado + offset de herramienta.
         x_pick, y_pick = self.robot_controller.punto_pick(x_ur5, y_ur5)
 
@@ -727,7 +737,7 @@ class DashboardApp:
                     "Voz: 'clasificar', 'abrir/cerrar pinza', 'alto' | "
                     "Teclas: [SPACE] Ciclo | [a] Auto | [v] Voz | [o] Abrir | [c] Cerrar | "
                     "[k] Camara | [i] ROI | [h] Mascara | [x] Color | [1-0] HSV (9/0 confianza) | "
-                    "[g] Homografia (clics) | [O] Offset pick | [t] Limpiar rastro | [p] Guardar | [e] PARO | "
+                    "[g] Homografia (clics) | [N] Capturar pieza | [M] Confirmar offset pick | [t] Limpiar rastro | [p] Guardar | [e] PARO | "
                     "[r] Reset | [q] Salir | Click en HOME: ir a home_pose"
                 )
                 cv2.putText(frame_dibujado, ayuda_txt, (20, h - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (220, 220, 220), 1)
@@ -803,9 +813,12 @@ class DashboardApp:
                 elif key == ord('S'):
                     ok, msg = self.robot_controller.calibrar_z_seguro_actual()
                     logger.info("Calibración Z Seguro: %s", msg)
-                elif key == ord('O'):
-                    ok, msg = self.robot_controller.calibrar_offset_pick_actual()
-                    logger.info("Calibración Offset Pick: %s", msg)
+                elif key == ord('N'):
+                    ok, msg = self.robot_controller.capturar_pieza_para_offset()
+                    logger.info("Offset pick - paso 1/2: %s", msg)
+                elif key == ord('M'):
+                    ok, msg = self.robot_controller.confirmar_offset_pick()
+                    logger.info("Offset pick - paso 2/2: %s", msg)
                 elif key == ord('p'):
                     logger.info("Editor ROI: %s", self.editor_roi.aplicar(self.config_path))
                     logger.info("Editor HSV: %s", self.editor_hsv.aplicar(self.config_path))

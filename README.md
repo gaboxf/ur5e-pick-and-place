@@ -172,7 +172,8 @@ Protecciones: la ROI nunca sale de la imagen ni queda menor al 10%.
 | `[h]` / `[x]` | Máscara HSV en vivo / cambiar el color editado |
 | `[1]`–`[0]` | Ajustar rangos HSV (9/0 = umbral de confianza) |
 | `[g]` | Iniciar / cancelar la calibración de homografía |
-| `[O]` (mayúscula) | Corregir el offset de pick: llevá el TCP al centro de la pieza detectada y se guarda `pick_offset_x/y` |
+| `[N]` | Offset de pick, paso 1: capturar la pieza con la cámara (robot afuera de la vista) |
+| `[M]` | Offset de pick, paso 2: con el TCP quieto sobre la pieza, leer la pose y guardar `pick_offset_x/y` |
 | `[t]` | Limpiar el rastro del robot |
 | `[p]` | Guardar la configuración |
 | `[q]` | Salir |
@@ -372,7 +373,8 @@ trabajo** con la telemetría del TCP, para no tener que mirar al robot físico:
 | `puntos_px` / `puntos_ur5` | Puntos de referencia para la homografía (px relativos a la ROI / metros UR5 relativos a Home). Si nunca se midieron con el robot, calibrar con `python tools/calibrar_homografia.py` | Asistente `calibrar_homografia.py` / panel "Homografía" + clics |
 | `zona_trabajo_*` | Límites de seguridad en metros (coords del UR5) | Manual |
 | `gripper_port`, `z_seguro`, `z_pick`, `z_deposit`, `destinos` | Parámetros del gripper y del ciclo pick & place (compartidos con el lado robot). `z_deposit` debe ser ≈ `z_pick` (el código nunca baja por debajo de `z_pick`) | Manual / config.json |
-| `pick_offset_x`, `pick_offset_y` | Corrección XY constante entre el centro detectado y el centro real de las pinzas (metros, coords. de base). Si el TCP queda siempre corrido el mismo tanto, calibrar con `[O]` o la acción `offset_pick` de `/api/calibrar_robot` | `[O]` / acción web `offset_pick` |
+| `pick_offset_x`, `pick_offset_y` | Corrección XY constante entre el centro detectado y el centro real de las pinzas (metros, coords. de base). Se calibra en dos pasos: `[N]` captura la pieza con la cámara y `[M]` lee el TCP ya sobre ella (web: `offset_pick_capturar` / `offset_pick_confirmar`) | `[N]` + `[M]` / botones web 1️⃣ y 2️⃣ |
+| `pick_offset_max_m` | Magnitud máxima permitida para el offset de pick (por defecto `0.15` m). Un valor mayor se considera calibración/lectura inválida y aborta el ciclo | Manual / config.json |
 | `home_pose`, `home_tol_m`, `home_tol_rad`, `home_al_iniciar` | Pose Home `[x, y, z, rx, ry, rz]`, tolerancias de verificación y si se corrige automáticamente al iniciar | Manual / config.json |
 | `usar_home_como_origen` | Si es `true`, `puntos_ur5`, `zona_trabajo_*` y `destinos` se miden como desplazamientos desde la XY de `home_pose` (Home = punto cero) | Manual / config.json |
 | `radio_minimo_base` | Distancia horizontal mínima (m) del TCP al eje de la base; por debajo se rechaza el movimiento para no chocar la columna | Manual / config.json |

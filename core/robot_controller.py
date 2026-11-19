@@ -62,9 +62,18 @@ class RobotController:
         # Distancia horizontal mínima a la base: por debajo, el TCP quedaría
         # sobre la propia columna del robot. Se rechaza el movimiento.
         self.radio_minimo_base = float(self.config.get("radio_minimo_base", 0.20))
+        # Corrección XY máxima aceptable para el offset de pick (m). Un agarre
+        # bien calibrado se corrige en milímetros o pocos centímetros; un valor
+        # mayor indica una lectura de pose inválida o una calibración equivocada.
+        self.pick_offset_max_m = float(self.config.get("pick_offset_max_m", 0.15))
         # Motivo del último movimiento rechazado/fallido, para mostrarlo en los
         # dashboards (antes solo quedaba en el log de Python).
         self.ultimo_error: str | None = None
+
+        # Calibración del offset de pick en DOS pasos: la cámara no puede ver
+        # la pieza mientras el brazo está encima, así que primero se guarda la
+        # detección (robot afuera) y después se lee el TCP (robot sobre ella).
+        self._offset_pick_pendiente: dict | None = None
 
     # ------------------------------------------------------------- rastreo
     def iniciar_rastreo(self) -> None:
@@ -120,12 +129,36 @@ class RobotController:
         el punto que cierra las pinzas es el centro del gripper, que puede estar
         desplazado respecto del TCP (largo de la herramienta, TCP configurado en
         la brida, parallax de la cámara, etc.). Ese desplazamiento constante se
-        mide con `calibrar_offset_pick_actual()` y se guarda en config.json como
+        mide en dos pasos con `capturar_pieza_para_offset()` y
+        `confirmar_offset_pick()`, y se guarda en config.json como
         `pick_offset_x` / `pick_offset_y` (metros, en coordenadas de base).
         """
-        off_x = float(self.config.get("pick_offset_x", 0.0))
-        off_y = float(self.config.get("pick_offset_y", 0.0))
+        off_x, off_y = self.offset_pick()
+        if not self.offset_pick_valido():
+            # Defensa final: si alguien escribió un offset imposible en el
+            # config, NO lo aplicamos. El centro detectado es seguro.
+            self.ultimo_error = (
+                f"Offset de pick inválido ({(off_x * 1000):.0f}, "
+                f"{(off_y * 1000):.0f}) mm: supera el máximo de "
+                f"{self.pick_offset_max_m * 1000:.0f} mm."
+            )
+            logger.error(self.ultimo_error)
+            return x, y
         return x + off_x, y + off_y
+
+    def offset_pick(self) -> tuple[float, float]:
+        """Devuelve el offset guardado en config.json (metros, coords. base)."""
+        try:
+            ox = float(self.config.get("pick_offset_x", 0.0) or 0.0)
+            oy = float(self.config.get("pick_offset_y", 0.0) or 0.0)
+        except (TypeError, ValueError):
+            return 0.0, 0.0
+        return ox, oy
+
+    def offset_pick_valido(self) -> bool:
+        """False si el offset guardado es físicamente imposible."""
+        ox, oy = self.offset_pick()
+        return math.hypot(ox, oy) <= self.pick_offset_max_m
 
     def z_deposito(self) -> float:
         """Cota de liberación: nunca por debajo de la altura de agarre.
@@ -187,6 +220,8 @@ class RobotController:
         if not self.home_pose:
             return None
         actual = self.robot.get_actual_tcp_pose()
+        if not actual:
+            return None
         return math.sqrt(
             (actual[0] - self.home_pose[0]) ** 2
             + (actual[1] - self.home_pose[1]) ** 2
@@ -200,6 +235,8 @@ class RobotController:
 
         tol = self.home_tol_m if tol_m is None else tol_m
         actual = self.robot.get_actual_tcp_pose()
+        if not actual:
+            return False
         dist = math.sqrt(
             sum((actual[i] - self.home_pose[i]) ** 2 for i in range(3))
         )
@@ -241,6 +278,12 @@ class RobotController:
             return True
 
         actual = self.robot.get_actual_tcp_pose()
+        if not actual:
+            self.ultimo_error = (
+                self.robot.ultimo_error or "No se pudo leer la pose TCP: no se puede ir a Home."
+            )
+            logger.error(self.ultimo_error)
+            return False
         if actual[2] < self.home_pose[2] - 0.001:
             logger.info(
                 "Elevando de Z=%.3f a Z=%.3f antes de desplazar a Home...",
@@ -356,39 +399,109 @@ class RobotController:
         logger.info(msg)
         return True, msg
 
-    def calibrar_offset_pick_actual(self) -> tuple[bool, str]:
-        """Mide el offset XY entre la pieza detectada y el TCP actual.
+    def estado_offset_pick(self) -> dict:
+        """Estado de la calibración en dos pasos (para los dashboards)."""
+        pend = self._offset_pick_pendiente
+        return {
+            "pendiente": pend is not None,
+            "x": pend["x"] if pend else None,
+            "y": pend["y"] if pend else None,
+            "categoria": pend.get("categoria", "") if pend else "",
+            "guardado_x": float(self.config.get("pick_offset_x", 0.0)),
+            "guardado_y": float(self.config.get("pick_offset_y", 0.0)),
+        }
 
-        Procedimiento (con una pieza apoyada en la mesa):
-          1. Dejar que el pipeline detecte esa pieza (panel Detección de visión).
-          2. Con el teach pendant / freedrive llevar el TCP hasta el centro
-             exacto de la pieza, a la altura de agarre, y sin moverlo.
-          3. Ejecutar esta calibración: guarda
-                pick_offset_x = TCP_x - x_ur5_detectado
-                pick_offset_y = TCP_y - y_ur5_detectado
-        En el dashboard web es el botón/acción `offset_pick`; en el de
-        escritorio la tecla [O].
+    def capturar_pieza_para_offset(self) -> tuple[bool, str]:
+        """PASO 1/2: guarda la posición detectada con el robot FUERA de la vista.
+
+        No se mueve el robot ni se lee su pose: solo se usa la cámara. La
+        coordenada queda pendiente en memoria hasta el paso 2.
         """
         det = self.pipeline.procesar_frame()
         if not det.get("ok"):
+            # Descartar cualquier captura vieja para no mezclar piezas.
+            self._offset_pick_pendiente = None
             return False, (
                 "No se pudo detectar la pieza: "
                 f"{det.get('motivo_fallo', 'sin detección')}"
             )
+
+        self._offset_pick_pendiente = {
+            "x": float(det["x_ur5"]),
+            "y": float(det["y_ur5"]),
+            "categoria": det.get("categoria", ""),
+        }
+        msg = (
+            f"Paso 1/2: pieza {self._offset_pick_pendiente['categoria']} capturada en "
+            f"({self._offset_pick_pendiente['x'] * 1000:.1f}, "
+            f"{self._offset_pick_pendiente['y'] * 1000:.1f}) mm. "
+            "Ahora llevá el TCP sobre esa pieza y confirmá (paso 2)."
+        )
+        logger.info(msg)
+        return True, msg
+
+    def confirmar_offset_pick(self) -> tuple[bool, str]:
+        """PASO 2/2: lee el TCP ya sobre la pieza y guarda el offset resultante.
+
+        Requiere una captura previa del paso 1. Guarda:
+            pick_offset_x = TCP_x - x_ur5_detectado
+            pick_offset_y = TCP_y - y_ur5_detectado
+        """
+        pend = self._offset_pick_pendiente
+        if pend is None:
+            return False, (
+                "Falta el paso 1: capturá primero la pieza con la cámara "
+                "(botón/acción 'offset_pick_capturar' o tecla [N])."
+            )
+        # El modo MOCK devuelve una pose simulada (0.300, 0.000, 0.250 m).
+        # Aceptarla como real fue lo que mandó el robot ~94 cm al lado contrario.
+        if self.robot.mode != "real" or not self.robot.connected:
+            return False, (
+                f"La calibración requiere robot REAL conectado (modo actual: "
+                f"{self.robot.mode}). En modo MOCK la pose es simulada y el "
+                "offset saldría erróneo."
+            )
+        if not self.robot.is_steady():
+            return False, (
+                "El robot se está moviendo: sujetá el brazo quieto sobre la "
+                "pieza y volvé a confirmar."
+            )
         pose = self.pose_actual()
         if not pose:
-            return False, "No se pudo leer la pose del robot."
+            return False, (
+                "No se pudo leer la pose del robot por RTDE. No se guarda nada; "
+                "revisá la conexión y volvé a confirmar."
+            )
 
-        x_det, y_det = float(det["x_ur5"]), float(det["y_ur5"])
-        off_x = round(float(pose[0]) - x_det, 4)
-        off_y = round(float(pose[1]) - y_det, 4)
+        off_x = round(float(pose[0]) - pend["x"], 4)
+        off_y = round(float(pose[1]) - pend["y"], 4)
+        dist = math.hypot(off_x, off_y)
+        z_pick = float(self.config.get("z_pick", 0.050))
+        if dist > self.pick_offset_max_m:
+            self._offset_pick_pendiente = None
+            return False, (
+                f"Offset calculado de {dist * 1000:.0f} mm supera el máximo "
+                f"permitido ({self.pick_offset_max_m * 1000:.0f} mm). "
+                f"Pieza en ({pend['x']:.3f}, {pend['y']:.3f}) m; TCP leído en "
+                f"({pose[0]:.3f}, {pose[1]:.3f}, {pose[2]:.3f}) m. Verificá que "
+                "el TCP esté realmente sobre la pieza y que RTDE devuelva la "
+                "pose real. Volvé a capturar (paso 1)."
+            )
+        if abs(float(pose[2]) - z_pick) > 0.10:
+            self._offset_pick_pendiente = None
+            return False, (
+                f"La Z del TCP ({float(pose[2]) * 1000:.0f} mm) no coincide con "
+                f"z_pick ({z_pick * 1000:.0f} mm): probablemente no estés midiendo "
+                "sobre la pieza. Volvé a capturar (paso 1)."
+            )
         self.config["pick_offset_x"] = off_x
         self.config["pick_offset_y"] = off_y
         self.guardar_config()
+        self._offset_pick_pendiente = None
 
         msg = (
             f"Offset de pick fijado en X={off_x * 1000:+.1f} mm, "
-            f"Y={off_y * 1000:+.1f} mm (pieza en {x_det:.3f}, {y_det:.3f} m; "
+            f"Y={off_y * 1000:+.1f} mm (pieza en {pend['x']:.3f}, {pend['y']:.3f} m; "
             f"TCP en {pose[0]:.3f}, {pose[1]:.3f} m)"
         )
         logger.info(msg)
@@ -526,6 +639,15 @@ class RobotController:
         categoria = deteccion["categoria"]
         x_ur5 = deteccion["x_ur5"]
         y_ur5 = deteccion["y_ur5"]
+        if not self.offset_pick_valido():
+            ox, oy = self.offset_pick()
+            self.ultimo_error = (
+                f"Offset de pick inválido en config.json: "
+                f"({ox * 1000:.0f}, {oy * 1000:.0f}) mm (máximo "
+                f"{self.pick_offset_max_m * 1000:.0f} mm). Ciclo abortado por seguridad."
+            )
+            logger.error(self.ultimo_error)
+            return False
         z_seguro = float(self.config.get("z_seguro", 0.200))
         z_pick = float(self.config.get("z_pick", 0.050))
         z_deposit = self.z_deposito()

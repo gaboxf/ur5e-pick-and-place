@@ -430,11 +430,16 @@ responde `ERROR`). El `CLOSE` completo del sketch actual tarda ~0.9 s (rampa de
 
 ## 6. Logs del Arduino integrados a las corridas del proyecto
 
-El `GripperClient` puede registrar **todo el tráfico serie** (comandos
-enviados y líneas recibidas, con timestamp del PC) bajo el logger
-`GripperSerial`. Se activa con `GRIPPER_LOG_SERIE=1` en `.env`; con
-`LOG_ARCHIVO=1` las líneas quedan dentro de `logs/corrida_FECHA_HORA.log`
-además de la consola.
+El `GripperClient` puede registrar el **tráfico serie** (comandos enviados y
+líneas recibidas, con timestamp del PC) bajo el logger `GripperSerial`. Se
+activa con `GRIPPER_LOG_SERIE=1` en `.env`; con `LOG_ARCHIVO=1` las líneas
+quedan dentro de `logs/corrida_FECHA_HORA.log` además de la consola.
+
+El heartbeat `PING`/`PONG` **no se registra**: se repite cada 1.5 s y solo
+inundaría el log. En su lugar, el logger `GripperClient` emite una línea INFO
+por cada **cambio de estado** real del gripper (p. ej. `UNKNOWN -> READY`,
+`READY -> BUSY -> READY`). Si el heartbeat falla, se avisa con DEBUG (PONG
+faltante) o ERROR (varios fallos seguidos).
 
 No hace falta (ni se puede) un lector externo: el puerto COM es excluyente y
 cada apertura resetea el UNO, así que las líneas solo se capturan desde el

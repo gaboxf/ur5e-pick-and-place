@@ -12,10 +12,13 @@ except ImportError:
 logger = logging.getLogger("GripperClient")
 
 # Logger dedicado al trafico serie crudo (Opcion A de logs del Arduino):
-# por aca pasa TODO lo que el Arduino emite y TODO lo que la PC le manda,
-# con timestamps del PC. Se activa con GRIPPER_LOG_SERIE=1 en .env. Como el
-# logger raiz engancha el handler de archivo de corrida, las lineas caen
-# automaticamente en logs/corrida_FECHA_HORA.log cuando LOG_ARCHIVO=1.
+# por aca pasa lo que el Arduino emite y lo que la PC le manda (comandos y
+# respuestas), con timestamps del PC. Se activa con GRIPPER_LOG_SERIE=1 en
+# .env. El heartbeat PING/PONG NO se registra aca: es ruido periodico (cada
+# 1.5 s) y no aporta diagnostico; los cambios de estado reales se loguean con
+# el logger "GripperClient". Como el logger raiz engancha el handler de
+# archivo de corrida, las lineas caen automaticamente en
+# logs/corrida_FECHA_HORA.log cuando LOG_ARCHIVO=1.
 logger_serie = logging.getLogger("GripperSerial")
 
 # Respuestas que el firmware puede devolver por linea.
@@ -134,6 +137,19 @@ class GripperClient:
         if self._log_serie_activo:
             logger_serie.info("[%s] %s", direccion, mensaje)
 
+    def _set_estado(self, nuevo: str) -> None:
+        """Actualiza el estado del gripper y lo registra SOLO si cambio.
+
+        El logger serie crudo muestra comandos/respuestas, pero el heartbeat
+        y los STATUS repetidos no deben inundar el log. Aca solo se emite una
+        linea INFO por transicion real (p. ej. READY -> BUSY -> READY).
+        """
+        if nuevo == self._gripper_state:
+            return
+        anterior = self._gripper_state
+        self._gripper_state = nuevo
+        logger.info("Estado del gripper: %s -> %s", anterior, nuevo)
+
     # ------------------------------------------------------------------ setup
     def connect(self):
         """Abre el puerto, espera el reset del Arduino y confirma con STATUS."""
@@ -149,7 +165,7 @@ class GripperClient:
                 self.port, e,
             )
             self.simulado = True
-            self._gripper_state = "READY"
+            self._set_estado("READY")
             return True  # permite probar cámara e interfaz sin Arduino
 
         # Arrancar el hilo lector ANTES del sleep del reset: asi el banner
@@ -164,7 +180,7 @@ class GripperClient:
 
         resp = self._enviar_comando("STATUS", timeout=self.timeout)
         if resp in ("READY", "BUSY"):
-            self._gripper_state = resp
+            self._set_estado(resp)
             logger.info("Gripper conectado en %s (%s)", self.port, resp)
             # Heartbeat activo: es lo que mantiene el watchdog del firmware
             # (15 s) alimentado durante los tramos largos del UR5, donde la
@@ -172,7 +188,7 @@ class GripperClient:
             # soltaria la pieza en pleno transporte.
             self._start_heartbeat()
         else:
-            self._gripper_state = "ERROR"
+            self._set_estado("ERROR")
             logger.error(
                 "El puerto %s abrió pero no respondió STATUS (respuesta: %s). "
                 "¿Firmware cargado a 115200 baudios?",
@@ -232,7 +248,9 @@ class GripperClient:
                 with self._write_lock:
                     ser.write(b"PING\n")
                 self._ultimo_ping = time.time()
-                self._log_serie("PC->Arduino", "PING (heartbeat)")
+                # El PING/PONG NO se loguea: se repite cada 1.5 s y solo
+                # inundaria el log serie. Su salud se vigila con los debug/error
+                # de abajo (PONG faltante / fallos consecutivos).
                 # Consume el PONG si llega. Se descarta primero lo que haya
                 # quedado de un ciclo anterior (un PONG tardio no debe
                 # hacer creer que este PING ya tiene respuesta).
@@ -242,8 +260,7 @@ class GripperClient:
                     except queue.Empty:
                         break
                 try:
-                    pong = self._pong_queue.get(timeout=_TIMEOUT_PONG)
-                    self._log_serie("PC<-Arduino", f"{pong} (heartbeat)")
+                    self._pong_queue.get(timeout=_TIMEOUT_PONG)
                 except queue.Empty:
                     logger.debug("Heartbeat: no llegó PONG a tiempo")
                 fallos_consecutivos = 0
@@ -293,16 +310,17 @@ class GripperClient:
                 continue
             self.ultima_respuesta = linea
 
+            # PONG va a su propia cola: es la respuesta del heartbeat y no
+            # debe mezclarse con las respuestas a comandos en vuelo. Tampoco
+            # se loguea (seria ruido periodico cada 1.5 s).
+            if linea == "PONG":
+                self._pong_queue.put(linea)
+                continue
+
             # Log de linea cruda ANTES de filtrar: asi el log guarda tambien
             # basura o respuestas desconocidas, util para diagnosticar baud
             # incorrecto, cable flojo o un firmware desactualizado.
             self._log_serie("PC<-Arduino", linea)
-
-            # PONG va a su propia cola: es la respuesta del heartbeat y no
-            # debe mezclarse con las respuestas a comandos en vuelo.
-            if linea == "PONG":
-                self._pong_queue.put(linea)
-                continue
 
             if linea in EVENTOS_ASINCRONICOS:
                 # Evento de seguridad: registrar y encolar para el dashboard.
@@ -368,9 +386,9 @@ class GripperClient:
                 resp = self._esperar_linea(timeout or self.timeout)
 
             if resp in ("READY", "BUSY", "ERROR"):
-                self._gripper_state = resp
+                self._set_estado(resp)
             elif resp == "DONE":
-                self._gripper_state = "READY"
+                self._set_estado("READY")
             return resp
         except Exception as e:
             logger.error("Error en puerto serial: %s", e)
