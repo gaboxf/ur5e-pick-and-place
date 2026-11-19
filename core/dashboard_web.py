@@ -516,9 +516,12 @@ class WebDashboard:
 
         self.estado = "ROBOT_ACTUANDO"
         x, y = det["x_ur5"], det["y_ur5"]
-        z_seguro = self.cfg.get("z_seguro", 0.200)
-        z_pick = self.cfg.get("z_pick", 0.050)
-        z_deposit = self.cfg.get("z_deposit", 0.050)
+        # Leer del config vivo del controlador: `self.cfg` es una foto tomada
+        # al arrancar y no ve las cotas calibradas en caliente (antes el ciclo
+        # seguía usando z_seguro=250 mm aunque se hubiera calibrado en 237 mm).
+        z_seguro = float(self.controller.config.get("z_seguro", 0.200))
+        z_pick = float(self.controller.config.get("z_pick", 0.050))
+        z_deposit = float(self.controller.config.get("z_deposit", 0.050))
         dest = self.controller.destino_para(categoria)
 
         self.registrar_log("INFO", f"Iniciando ciclo: Pieza {categoria} en ({x*1000:.1f}, {y*1000:.1f}) mm")

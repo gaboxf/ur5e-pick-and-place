@@ -17,6 +17,21 @@ from core.logging_config import get_logger
 
 logger = get_logger("UR5Controller")
 
+# Modos del robot (RTDE getRobotMode). Sirven para explicar por qué el robot
+# rechaza un movimiento en vez de mostrar un "no se pudo mover" sin motivo.
+_MODOS_ROBOT = {
+    -1: "sin controlador",
+    0: "desconectado",
+    1: "confirmar seguridad",
+    2: "arrancando",
+    3: "apagado",
+    4: "encendido",
+    5: "en reposo",
+    6: "freedrive/backdrive",
+    7: "ejecutando",
+    8: "actualizando firmware",
+}
+
 
 class UR5Client:
     def __init__(self):
@@ -90,6 +105,119 @@ class UR5Client:
                 return True
         return True
 
+    # ------------------------------------------------------- diagnósticos
+    def _estado_legible(self) -> str:
+        """Resumen del estado del robot para acompañar los mensajes de error.
+
+        Con ur_rtde se puede saber si el pendant está en Teach/Freedrive, si
+        hay un paro protector o de emergencia y en qué modo está el robot.
+        Antes, todo eso se resumía en "moveL cancelado o abortado", sin pistas.
+        """
+        if not (self.rtde_c and self.rtde_r):
+            return ""
+
+        partes: list[str] = []
+        try:
+            status = self.rtde_c.getRobotStatus()
+            if not status & 0x01:
+                partes.append("robot sin alimentación")
+            if status & 0x04:  # bit 2: botón Teach/Freedrive del pendant
+                partes.append("botón Teach/Freedrive del pendant activo")
+        except Exception:
+            pass  # el diagnóstico nunca debe tapar el error original
+
+        try:
+            modo = self.rtde_r.getRobotMode()
+            partes.append(f"modo {_MODOS_ROBOT.get(modo, modo)}")
+        except Exception:
+            pass
+
+        try:
+            if self.rtde_c.getFreedriveStatus() > 0:
+                partes.append("freedrive activo")
+        except Exception:
+            pass
+
+        try:
+            if self.rtde_r.isEmergencyStopped():
+                partes.append("PARO DE EMERGENCIA")
+            elif self.rtde_r.isProtectiveStopped():
+                partes.append("PARO PROTECTOR")
+        except Exception:
+            pass
+
+        return ", ".join(partes)
+
+    def _motivo_bloqueo(self) -> str | None:
+        """Devuelve por qué el robot no aceptaría un movimiento, o None.
+
+        Se consulta antes de llamar a moveL para no perder segundos en un
+        movimiento que el controlador va a rechazar igual: el caso típico es
+        haber quedado en Freedrive después de calibrar a mano con el pendant.
+        """
+        if not (self.rtde_c and self.rtde_r):
+            return None
+
+        try:
+            status = self.rtde_c.getRobotStatus()
+            if status & 0x04:  # bit 2: botón Teach/Freedrive del pendant
+                return ("el botón Teach/Freedrive del pendant está activo: "
+                        "salí de Freedrive antes de mover")
+        except Exception:
+            pass
+
+        try:
+            if self.rtde_r.isEmergencyStopped():
+                return "hay un paro de emergencia activo"
+            if self.rtde_r.isProtectiveStopped():
+                return ("hay un paro protector activo: liberalo/resetealo "
+                        "desde el pendant")
+        except Exception:
+            pass
+
+        try:
+            if self.rtde_c.getFreedriveStatus() > 0:
+                return "el robot está en Freedrive: salí de ese modo antes de mover"
+        except Exception:
+            pass
+
+        try:
+            modo = self.rtde_r.getRobotMode()
+            if modo in (0, 1, 2, 3, 4, 8):
+                return f"el robot está en modo {_MODOS_ROBOT.get(modo, modo)}"
+        except Exception:
+            pass
+
+        return None
+
+    def _explicar_rechazo(self, target_pose: list[float]) -> str:
+        """Arma un mensaje concreto cuando moveL devuelve False."""
+        motivos = ["el robot rechazó el moveL"]
+
+        estado = self._estado_legible()
+        if estado:
+            motivos.append(estado)
+
+        try:
+            if not self.rtde_c.isPoseWithinSafetyLimits(target_pose):
+                motivos.append(
+                    "la pose objetivo está fuera del alcance o de los límites "
+                    "de seguridad del robot (revisá home_pose / límites)"
+                )
+        except Exception:
+            pass
+
+        try:
+            if not self.rtde_c.getInverseKinematicsHasSolution(target_pose):
+                motivos.append(
+                    "no hay solución de cinemática inversa para esa pose "
+                    "(posición/orientación inalcanzable)"
+                )
+        except Exception:
+            pass
+
+        return "moveL rechazado: " + "; ".join(motivos) + "."
+
     def move_l(self, x, y, z, rx=None, ry=None, rz=None, tol_m: float | None = None) -> bool:
         """Mueve el UR5 a (x, y, z) en metros con handshake determinista.
 
@@ -118,11 +246,19 @@ class UR5Client:
                 self.ultimo_error = "Movimiento abortado antes de iniciar."
                 logger.warning(self.ultimo_error)
                 return False
+            bloqueo = self._motivo_bloqueo()
+            if bloqueo:
+                self.ultimo_error = f"El robot no puede moverse: {bloqueo}."
+                logger.error(self.ultimo_error)
+                return False
             try:
                 # moveL es bloqueante en ur_rtde; stop() puede interrumpirlo via stopJ.
                 res = self.rtde_c.moveL(target_pose, self.vel, self.acc)
                 if not res or self._abort.is_set():
-                    self.ultimo_error = "moveL cancelado o abortado durante la trayectoria."
+                    if self._abort.is_set():
+                        self.ultimo_error = "moveL cancelado por una parada de seguridad."
+                    else:
+                        self.ultimo_error = self._explicar_rechazo(target_pose)
                     logger.warning(self.ultimo_error)
                     return False
 

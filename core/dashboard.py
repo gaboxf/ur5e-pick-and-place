@@ -398,9 +398,12 @@ class DashboardApp:
         self.estado_actual = "ROBOT_ACTUANDO"
         x_ur5, y_ur5 = det["x_ur5"], det["y_ur5"]
 
-        z_seguro = self.cfg.get("z_seguro", 0.200)
-        z_pick = self.cfg.get("z_pick", 0.050)
-        z_deposit = self.cfg.get("z_deposit", 0.050)
+        # Usar el config vivo del controlador: `self.cfg` es el archivo leído
+        # al arrancar y no refleja las cotas calibradas durante la sesión.
+        config = self.robot_controller.config
+        z_seguro = float(config.get("z_seguro", 0.200))
+        z_pick = float(config.get("z_pick", 0.050))
+        z_deposit = float(config.get("z_deposit", 0.050))
 
         # 1. Aproximación y Pick
         if not self.mover_ur5(x_ur5, y_ur5, z_seguro):

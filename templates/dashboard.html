@@ -1086,14 +1086,20 @@
       // Trayectoria (de más vieja a más nueva, con brillo creciente)
       const tray = robot.trayectoria || [];
       for (let i = 1; i < tray.length; i++) {
+        const x1 = px(tray[i - 1][0]), y1 = py(tray[i - 1][1]);
+        const x2 = px(tray[i][0]), y2 = py(tray[i][1]);
+        // Con el robot quieto el rastreador acumula muestras casi coincidentes;
+        // dibujarlas deja un punto azul pegado al borde del TCP que parece otro
+        // marcador. Descartar tramos sub-píxel elimina ese artefacto.
+        if (Math.hypot(x2 - x1, y2 - y1) < 2) continue;
         const t = i / Math.max(1, tray.length - 1);
         ctx.strokeStyle = "rgb(" + Math.round(70 + 30 * t) + "," +
                           Math.round(110 + 70 * t) + "," +
                           Math.round(160 + 90 * t) + ")";
         ctx.lineWidth = i > tray.length - 12 ? 3 : 2;
         ctx.beginPath();
-        ctx.moveTo(px(tray[i - 1][0]), py(tray[i - 1][1]));
-        ctx.lineTo(px(tray[i][0]), py(tray[i][1]));
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
         ctx.stroke();
       }
 
@@ -1131,6 +1137,10 @@
       // Posición actual del TCP
       if (robot.pos) {
         const X = px(robot.pos[0]), Y = py(robot.pos[1]);
+        // Halo del color del fondo: tapa cualquier resto del rastro que pueda
+        // asomar bajo el marcador y lo mantiene visualmente separado.
+        ctx.fillStyle = "#0e1115";
+        ctx.beginPath(); ctx.arc(X, Y, 7, 0, Math.PI * 2); ctx.fill();
         ctx.strokeStyle = "rgba(255,255,255,0.35)";
         ctx.lineWidth = 1;
         ctx.beginPath(); ctx.arc(X, Y, 9, 0, Math.PI * 2); ctx.stroke();

@@ -272,15 +272,52 @@ class RobotController:
         pose = self.pose_actual()
         if not pose:
             return False, "No se pudo leer la pose del robot."
+        anterior = list(self.home_pose) if self.home_pose else None
         self.home_pose = [float(v) for v in pose]
         self.config["home_pose"] = self.home_pose
         self.guardar_config()
+
+        aviso = ""
         if self.config.get("usar_home_como_origen", False):
-            self.origen_x = self.home_pose[0]
-            self.origen_y = self.home_pose[1]
+            self._sincronizar_origen_pipeline()
+            # Los puntos_ur5 se guardan como offset desde Home: si Home se
+            # mueve, la homografía queda corrida y hay que volver a medirla.
+            if anterior is not None:
+                dx = self.home_pose[0] - anterior[0]
+                dy = self.home_pose[1] - anterior[1]
+                desplazamiento = math.hypot(dx, dy)
+                if desplazamiento > self.home_tol_m:
+                    logger.warning(
+                        "Home cambió %.0f mm: los puntos_ur5 son offsets desde "
+                        "Home, así que la homografía quedó desactualizada. "
+                        "Recalibrá con: python tools/calibrar_homografia.py",
+                        desplazamiento * 1000,
+                    )
+                    aviso = (" · Ojo: cambió el origen; recalibrá la homografía "
+                             "(puntos_ur5 se miden desde Home).")
+
         msg = f"Home fijado en X={self.home_pose[0]:.3f}, Y={self.home_pose[1]:.3f}, Z={self.home_pose[2]:.3f} m"
         logger.info(msg)
-        return True, msg
+        return True, msg + aviso
+
+    def _sincronizar_origen_pipeline(self) -> None:
+        """Mantiene el origen de visión igual al Home vigente.
+
+        `RobotController` y `TransformadorCoordenadas` guardan cada uno su
+        copia del origen. Si solo se actualizaba la del controlador (al
+        recalibrar Home en vivo), la visión seguía sumando el Home viejo y
+        las piezas se mapeaban decenas de centímetros corridas.
+        """
+        self.origen_x = float(self.home_pose[0])
+        self.origen_y = float(self.home_pose[1])
+        self.pipeline.cfg.origen_x = self.origen_x
+        self.pipeline.cfg.origen_y = self.origen_y
+        self.pipeline.transformador.origen_x = self.origen_x
+        self.pipeline.transformador.origen_y = self.origen_y
+        logger.info(
+            "Origen de trabajo sincronizado con Home: (%.3f, %.3f) m",
+            self.origen_x, self.origen_y,
+        )
 
     def calibrar_z_pick_actual(self) -> tuple[bool, str]:
         """Captura la altura Z actual del TCP y la establece como cota de agarre (z_pick)."""

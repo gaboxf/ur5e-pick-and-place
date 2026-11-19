@@ -4,10 +4,10 @@
     "ancho": 1280,
     "alto": 720,
     "fps": 30,
-    "roi_desde_x": 0.04,
-    "roi_hasta_x": 0.92,
-    "roi_desde_y": 0.06,
-    "roi_hasta_y": 0.94
+    "roi_desde_x": 0.02,
+    "roi_hasta_x": 0.98,
+    "roi_desde_y": 0.04,
+    "roi_hasta_y": 1.0
   },
   "segmentacion": {
     "rojo_bajo1": [
@@ -48,45 +48,45 @@
   "homografia": {
     "puntos_px": [
       [
-        30.0,
-        19.0
+        5.0,
+        12.0
       ],
       [
-        1095.0,
-        25.0
+        1224.0,
+        5.0
       ],
       [
-        1095.0,
-        605.0
+        1216.0,
+        679.0
       ],
       [
-        28.0,
-        603.0
+        3.0,
+        679.0
       ]
     ],
     "puntos_ur5": [
       [
-        0.1,
-        0.4
+        -0.023,
+        0.2165
       ],
       [
-        0.5,
-        0.4
+        -0.0378,
+        -0.1587
       ],
       [
-        0.5,
-        0.0
+        -0.2328,
+        -0.1447
       ],
       [
-        0.1,
-        0.0
+        -0.2141,
+        0.2123
       ]
     ]
   },
-  "zona_trabajo_min_x": 0.05,
-  "zona_trabajo_max_x": 0.55,
-  "zona_trabajo_min_y": -0.05,
-  "zona_trabajo_max_y": 0.45,
+  "zona_trabajo_min_x": -0.2528,
+  "zona_trabajo_max_x": -0.003,
+  "zona_trabajo_min_y": -0.1787,
+  "zona_trabajo_max_y": 0.2365,
   "gripper_port": "COM4",
   "z_seguro": 0.237,
   "z_pick": 0.0712,

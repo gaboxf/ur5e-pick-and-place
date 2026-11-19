@@ -150,8 +150,13 @@ def _mapa(
             int(80 + (245 - 80) * t),
         )
         grosor = 3 if i > n - 12 else 2
-        _linea_recortada(panel, rect, a_px(tray[i - 1][0], tray[i - 1][1]),
-                         a_px(tray[i][0], tray[i][1]), color, grosor)
+        q1 = a_px(tray[i - 1][0], tray[i - 1][1])
+        q2 = a_px(tray[i][0], tray[i][1])
+        # Muestras casi coincidentes (robot quieto) dibujan un punto azul
+        # pegado al borde del TCP que parece un segundo marcador.
+        if math.hypot(q2[0] - q1[0], q2[1] - q1[1]) < 2:
+            continue
+        _linea_recortada(panel, rect, q1, q2, color, grosor)
 
     pos = datos.get("pos")
     destino = datos.get("destino")
@@ -182,6 +187,8 @@ def _mapa(
     if pos:
         px = a_px(pos[0], pos[1])
         if _dentro(rect, px):
+            # Fondo opaco bajo el marcador: evita que el rastro asome en el borde.
+            cv2.circle(panel, px, 7, FONDO, -1, cv2.LINE_AA)
             _anillo(panel, px, 9, (120, 120, 120), 1)
             cv2.circle(panel, px, 5, (255, 255, 255), -1, cv2.LINE_AA)
             cv2.putText(panel, "TCP", (px[0] + 9, px[1] - 6),
