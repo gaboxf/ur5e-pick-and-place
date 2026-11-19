@@ -628,6 +628,23 @@
         </div>
       </details>
 
+      <details class="panel panel-calibracion" id="panel-calibracion">
+        <summary><h2>Calibración Robot (Freedrive)</h2><span class="chev" aria-hidden="true"></span></summary>
+        <div class="panel-body">
+          <div class="roi-info" style="margin-bottom:8px">
+            Con el robot en <b>Freedrive</b> (guiado manual con la mano), llevalo a la posición deseada y presioná un botón para capturar las coordenadas directamente en <b>config.json</b>:
+          </div>
+          <div class="roi-btns">
+            <button class="roi-aplicar" style="grid-column:1/-1;padding:10px;font-size:0.85rem" onclick="calibrarRobot('home')">📍 Guardar Pose HOME Actual</button>
+            <button class="roi-mover" onclick="calibrarRobot('z_pick')">📐 Fijar Z Pick (agarre)</button>
+            <button class="roi-mover" onclick="calibrarRobot('z_seguro')">🛡️ Fijar Z Seguro</button>
+            <button class="cat-A" onclick="calibrarRobot('destino_a')">📥 Destino Caja A (Rojo)</button>
+            <button class="cat-B" onclick="calibrarRobot('destino_b')">📥 Destino Caja B (Azul)</button>
+          </div>
+          <div class="roi-info" style="margin-top:10px" id="calib-robot-info">Valores guardados: Home, Z Pick y Z Seguro se actualizan al instante.</div>
+        </div>
+      </details>
+
       <div class="panel panel-logo">
         <img src="/logo-upro.jpg" alt="Logo UPrO">
         <div class="logo-txt">
@@ -891,6 +908,28 @@
         " · C " + (p.C ?? 0) + " · D " + (p.D ?? 0) + " px";
       if (h.confianza_minima != null) {
         $("hsv-conf").textContent = Number(h.confianza_minima).toFixed(2);
+      }
+    }
+
+    // ------------------------------------------- calibración física del robot
+    async function calibrarRobot(accion) {
+      try {
+        const r = await fetch("/api/calibrar_robot", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ accion }),
+        });
+        const d = await r.json();
+        toast(d.mensaje || accion);
+        if (d.ok && d.config) {
+          const info = $("calib-robot-info");
+          if (info) {
+            info.innerHTML = `<b>Última captura:</b> ${d.mensaje}<br>` +
+              `Z Pick: <b>${(d.config.z_pick * 1000).toFixed(1)} mm</b> | Z Seguro: <b>${(d.config.z_seguro * 1000).toFixed(1)} mm</b>`;
+          }
+        }
+      } catch (e) {
+        toast("Error de red: " + e);
       }
     }
 

@@ -30,6 +30,7 @@ class RobotController:
         _cfg = Path(config_path)
         if not _cfg.is_absolute():
             _cfg = RAIZ_PROYECTO / _cfg
+        self.config_path = _cfg
         self.pipeline = PipelineVision(str(_cfg))
         with open(_cfg, "r", encoding="utf-8") as f:
             self.config = json.load(f)
@@ -253,6 +254,76 @@ class RobotController:
             return False
         logger.info("Verificando posición Home al iniciar...")
         return self.ir_a_home()
+
+    # -------------------------------------------------- calibración en vivo
+    def guardar_config(self) -> bool:
+        """Persiste la configuración actualizada en config.json."""
+        try:
+            with open(self.config_path, "w", encoding="utf-8") as f:
+                json.dump(self.config, f, indent=2, ensure_ascii=False)
+            logger.info("Configuración guardada en %s", self.config_path)
+            return True
+        except Exception:
+            logger.exception("Error guardando %s", self.config_path)
+            return False
+
+    def calibrar_home_actual(self) -> tuple[bool, str]:
+        """Captura la pose actual del TCP y la establece como nuevo Home."""
+        pose = self.pose_actual()
+        if not pose:
+            return False, "No se pudo leer la pose del robot."
+        self.home_pose = [float(v) for v in pose]
+        self.config["home_pose"] = self.home_pose
+        self.guardar_config()
+        if self.config.get("usar_home_como_origen", False):
+            self.origen_x = self.home_pose[0]
+            self.origen_y = self.home_pose[1]
+        msg = f"Home fijado en X={self.home_pose[0]:.3f}, Y={self.home_pose[1]:.3f}, Z={self.home_pose[2]:.3f} m"
+        logger.info(msg)
+        return True, msg
+
+    def calibrar_z_pick_actual(self) -> tuple[bool, str]:
+        """Captura la altura Z actual del TCP y la establece como cota de agarre (z_pick)."""
+        pose = self.pose_actual()
+        if not pose:
+            return False, "No se pudo leer la pose del robot."
+        z = round(float(pose[2]), 4)
+        self.config["z_pick"] = z
+        self.guardar_config()
+        msg = f"Z Pick fijado en {z*1000:.1f} mm ({z:.4f} m)"
+        logger.info(msg)
+        return True, msg
+
+    def calibrar_z_seguro_actual(self) -> tuple[bool, str]:
+        """Captura la altura Z actual del TCP y la establece como cota segura (z_seguro)."""
+        pose = self.pose_actual()
+        if not pose:
+            return False, "No se pudo leer la pose del robot."
+        z = round(float(pose[2]), 4)
+        self.config["z_seguro"] = z
+        self.guardar_config()
+        msg = f"Z Seguro fijado en {z*1000:.1f} mm ({z:.4f} m)"
+        logger.info(msg)
+        return True, msg
+
+    def calibrar_destino_actual(self, categoria: str) -> tuple[bool, str]:
+        """Captura la posición X,Y actual del TCP como destino para la categoría dada (ej: 'A' o 'B')."""
+        pose = self.pose_actual()
+        if not pose:
+            return False, "No se pudo leer la pose del robot."
+        cat = categoria.upper()
+        x_base, y_base = float(pose[0]), float(pose[1])
+        if self.config.get("usar_home_como_origen", False) and self.home_pose:
+            x_rel = round(x_base - self.home_pose[0], 4)
+            y_rel = round(y_base - self.home_pose[1], 4)
+        else:
+            x_rel, y_rel = round(x_base, 4), round(y_base, 4)
+
+        self.config.setdefault("destinos", {})[cat] = {"x": x_rel, "y": y_rel}
+        self.guardar_config()
+        msg = f"Destino {cat} fijado en ({x_rel:.3f}, {y_rel:.3f}) m"
+        logger.info(msg)
+        return True, msg
 
     def conectar(self) -> bool:
         """Conecta cámara, gripper y robot.

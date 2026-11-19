@@ -843,6 +843,52 @@ def api_homografia():
         (200 if ok else 400)
 
 
+@app.route("/api/calibrar_robot", methods=["POST"])
+def api_calibrar_robot():
+    """Calibra parámetros físicos del robot en vivo capturando su TCP actual.
+
+    Acciones soportadas:
+    - home: Captura la pose completa actual como nuevo Home
+    - z_pick: Captura Z actual como cota de agarre
+    - z_seguro: Captura Z actual como cota segura de tránsito
+    - destino_a: Captura X,Y actual como destino de clasificación A
+    - destino_b: Captura X,Y actual como destino de clasificación B
+    """
+    data = request.get_json(silent=True) or {}
+    accion = (data.get("accion") or "").strip().lower()
+
+    if accion == "home":
+        ok, msg = dashboard.controller.calibrar_home_actual()
+    elif accion == "z_pick":
+        ok, msg = dashboard.controller.calibrar_z_pick_actual()
+        if ok:
+            dashboard.celda_info["z"]["pick"] = dashboard.controller.config["z_pick"]
+    elif accion == "z_seguro":
+        ok, msg = dashboard.controller.calibrar_z_seguro_actual()
+        if ok:
+            dashboard.celda_info["z"]["seguro"] = dashboard.controller.config["z_seguro"]
+    elif accion == "destino_a":
+        ok, msg = dashboard.controller.calibrar_destino_actual("A")
+    elif accion == "destino_b":
+        ok, msg = dashboard.controller.calibrar_destino_actual("B")
+    else:
+        return jsonify({"ok": False, "mensaje": f"Acción desconocida: '{accion}'"}), 400
+
+    nivel = "INFO" if ok else "WARN"
+    dashboard.registrar_log(nivel, f"Calibración robot: {msg}")
+    return jsonify({
+        "ok": ok,
+        "mensaje": msg,
+        "config": {
+            "home_pose": dashboard.controller.home_pose,
+            "z_pick": dashboard.controller.config.get("z_pick"),
+            "z_seguro": dashboard.controller.config.get("z_seguro"),
+            "destinos": dashboard.controller.config.get("destinos"),
+        }
+    }), (200 if ok else 400)
+
+
+
 if __name__ == "__main__":
     configurar_logging()
     dashboard.iniciar()

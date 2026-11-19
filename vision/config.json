@@ -4,10 +4,10 @@
     "ancho": 1280,
     "alto": 720,
     "fps": 30,
-    "roi_desde_x": 0.06,
-    "roi_hasta_x": 0.9,
-    "roi_desde_y": 0.06,
-    "roi_hasta_y": 0.9
+    "roi_desde_x": 0.1,
+    "roi_hasta_x": 0.94,
+    "roi_desde_y": 0.12,
+    "roi_hasta_y": 0.96
   },
   "segmentacion": {
     "rojo_bajo1": [
@@ -48,20 +48,20 @@
   "homografia": {
     "puntos_px": [
       [
-        50.0,
-        52.0
+        66.0,
+        60.0
       ],
       [
-        1028.0,
-        52.0
+        1013.0,
+        62.0
       ],
       [
-        1054.0,
-        508.0
+        1037.0,
+        497.0
       ],
       [
-        67.0,
-        512.0
+        87.0,
+        492.0
       ]
     ],
     "puntos_ur5": [

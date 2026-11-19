@@ -607,7 +607,7 @@ class DashboardApp:
         cv2.setMouseCallback(ventana_nombre, self._on_mouse)
 
         logger.info("Iniciando bucle del Dashboard. Presione 'q' para salir.")
-        logger.info("Atajos: [SPACE] Ciclo | [v] Voz ON/OFF | [o] Abrir | [c] Cerrar | [a] Auto | [k] Seleccionar camara | [i] Ver ROI | [Flechas] Mover ROI | [+] [-] Tamaño ROI | [h] Mascara HSV | [x] Color | [1-0] Ajustar HSV (9/0 confianza) | [g] Calibrar homografia (clics) | [Backspace] deshacer punto | [Enter] aplicar | [Esc] cancelar | [t] Limpiar rastro | [p] Guardar config | [q] Salir")
+        logger.info("Atajos: [SPACE] Ciclo | [v] Voz ON/OFF | [o] Abrir | [c] Cerrar | [a] Auto | [k] Camara | [i] Ver ROI | [Flechas] Mover ROI | [+] [-] Tamaño ROI | [h] Mascara HSV | [x] Color | [1-0] HSV | [g] Homografia | [Shift+H] Guardar Home | [Shift+Z] Guardar Z Pick | [Shift+S] Guardar Z Seguro | [t] Limpiar rastro | [p] Guardar config | [q] Salir")
 
         ventana_ajustada = False
 
@@ -789,6 +789,15 @@ class DashboardApp:
                 elif key == ord('t'):
                     self.robot_controller.limpiar_rastro()
                     logger.info("Rastro del robot borrado.")
+                elif key == ord('H'):
+                    ok, msg = self.robot_controller.calibrar_home_actual()
+                    logger.info("Calibración Home: %s", msg)
+                elif key == ord('Z'):
+                    ok, msg = self.robot_controller.calibrar_z_pick_actual()
+                    logger.info("Calibración Z Pick: %s", msg)
+                elif key == ord('S'):
+                    ok, msg = self.robot_controller.calibrar_z_seguro_actual()
+                    logger.info("Calibración Z Seguro: %s", msg)
                 elif key == ord('p'):
                     logger.info("Editor ROI: %s", self.editor_roi.aplicar(self.config_path))
                     logger.info("Editor HSV: %s", self.editor_hsv.aplicar(self.config_path))
