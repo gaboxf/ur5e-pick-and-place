@@ -397,22 +397,24 @@ class DashboardApp:
         # Hay pieza válida
         self.estado_actual = "ROBOT_ACTUANDO"
         x_ur5, y_ur5 = det["x_ur5"], det["y_ur5"]
+        # Centro real de agarre = centro detectado + offset de herramienta.
+        x_pick, y_pick = self.robot_controller.punto_pick(x_ur5, y_ur5)
 
         # Usar el config vivo del controlador: `self.cfg` es el archivo leído
         # al arrancar y no refleja las cotas calibradas durante la sesión.
         config = self.robot_controller.config
         z_seguro = float(config.get("z_seguro", 0.200))
         z_pick = float(config.get("z_pick", 0.050))
-        z_deposit = float(config.get("z_deposit", 0.050))
+        z_deposit = self.robot_controller.z_deposito()
 
         # 1. Aproximación y Pick
-        if not self.mover_ur5(x_ur5, y_ur5, z_seguro):
+        if not self.mover_ur5(x_pick, y_pick, z_seguro):
             self._abortar_por_movimiento()
             return
         if self.abortar_ciclo or self.parada_activa:
             return
 
-        if not self.mover_ur5(x_ur5, y_ur5, z_pick):
+        if not self.mover_ur5(x_pick, y_pick, z_pick):
             self._abortar_por_movimiento()
             return
         if self.abortar_ciclo or self.parada_activa:
@@ -421,7 +423,7 @@ class DashboardApp:
         self.gripper.close()
         time.sleep(1.0)
 
-        if not self.mover_ur5(x_ur5, y_ur5, z_seguro):
+        if not self.mover_ur5(x_pick, y_pick, z_seguro):
             self._abortar_por_movimiento()
             return
         if self.abortar_ciclo or self.parada_activa:
@@ -725,7 +727,7 @@ class DashboardApp:
                     "Voz: 'clasificar', 'abrir/cerrar pinza', 'alto' | "
                     "Teclas: [SPACE] Ciclo | [a] Auto | [v] Voz | [o] Abrir | [c] Cerrar | "
                     "[k] Camara | [i] ROI | [h] Mascara | [x] Color | [1-0] HSV (9/0 confianza) | "
-                    "[g] Homografia (clics) | [t] Limpiar rastro | [p] Guardar | [e] PARO | "
+                    "[g] Homografia (clics) | [O] Offset pick | [t] Limpiar rastro | [p] Guardar | [e] PARO | "
                     "[r] Reset | [q] Salir | Click en HOME: ir a home_pose"
                 )
                 cv2.putText(frame_dibujado, ayuda_txt, (20, h - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (220, 220, 220), 1)
@@ -801,6 +803,9 @@ class DashboardApp:
                 elif key == ord('S'):
                     ok, msg = self.robot_controller.calibrar_z_seguro_actual()
                     logger.info("Calibración Z Seguro: %s", msg)
+                elif key == ord('O'):
+                    ok, msg = self.robot_controller.calibrar_offset_pick_actual()
+                    logger.info("Calibración Offset Pick: %s", msg)
                 elif key == ord('p'):
                     logger.info("Editor ROI: %s", self.editor_roi.aplicar(self.config_path))
                     logger.info("Editor HSV: %s", self.editor_hsv.aplicar(self.config_path))

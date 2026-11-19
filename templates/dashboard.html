@@ -520,7 +520,7 @@
             <span style="color:var(--color-ink-2)">●</span> TCP actual ·
             <span style="color:var(--color-ok)">✕</span> destino ·
             <span style="color:#e88a4a">━</span> trayectoria.
-            Escala 1:1 en X e Y (metros reales del UR5).
+            Escala 1:1 en X e Y (metros reales del UR5) con encuadre automático.
           </div>
         </div>
 
@@ -638,6 +638,7 @@
             <button class="roi-aplicar" style="grid-column:1/-1;padding:10px;font-size:0.85rem" onclick="calibrarRobot('home')">📍 Guardar Pose HOME Actual</button>
             <button class="roi-mover" onclick="calibrarRobot('z_pick')">📐 Fijar Z Pick (agarre)</button>
             <button class="roi-mover" onclick="calibrarRobot('z_seguro')">🛡️ Fijar Z Seguro</button>
+            <button class="roi-mover" style="grid-column:1/-1" onclick="calibrarRobot('offset_pick')">🎯 Corregir offset de pick (TCP sobre la pieza detectada)</button>
             <button class="cat-A" onclick="calibrarRobot('destino_a')">📥 Destino Caja A (Rojo)</button>
             <button class="cat-B" onclick="calibrarRobot('destino_b')">📥 Destino Caja B (Azul)</button>
           </div>
@@ -925,7 +926,8 @@
           const info = $("calib-robot-info");
           if (info) {
             info.innerHTML = `<b>Última captura:</b> ${d.mensaje}<br>` +
-              `Z Pick: <b>${(d.config.z_pick * 1000).toFixed(1)} mm</b> | Z Seguro: <b>${(d.config.z_seguro * 1000).toFixed(1)} mm</b>`;
+              `Z Pick: <b>${(d.config.z_pick * 1000).toFixed(1)} mm</b> | Z Seguro: <b>${(d.config.z_seguro * 1000).toFixed(1)} mm</b><br>` +
+              `Offset pick: <b>X ${(d.config.pick_offset_x * 1000).toFixed(1)} mm · Y ${(d.config.pick_offset_y * 1000).toFixed(1)} mm</b>`;
           }
         }
       } catch (e) {
@@ -1034,10 +1036,27 @@
 
       // Transformación mundo -> píxel con la MISMA escala en X e Y,
       // de modo que las distancias del mapa son proporcionales a las reales.
-      const cx = (zona.min_x + zona.max_x) / 2;
-      const cy = (zona.min_y + zona.max_y) / 2;
-      const spanX = Math.max((zona.max_x - zona.min_x) * 1.18, 0.02);
-      const spanY = Math.max((zona.max_y - zona.min_y) * 1.18, 0.02);
+      // Auto-fit: la escala se calcula con TODOS los puntos relevantes (zona,
+      // TCP, destino y detección), no solo con la zona calibrada. Así ningún
+      // marcador queda recortado aunque esté fuera del área de trabajo. Se
+      // excluye el rastro porque se purga con el tiempo y haría saltar el zoom.
+      const xs = [zona.min_x, zona.max_x];
+      const ys = [zona.min_y, zona.max_y];
+      const incluir = (p) => {
+        if (!p || p.length < 2 || !isFinite(p[0]) || !isFinite(p[1])) return;
+        xs.push(Number(p[0]));
+        ys.push(Number(p[1]));
+      };
+      incluir(robot.pos);
+      incluir(robot.destino);
+      if (det.ok && det.x_ur5 != null) incluir([det.x_ur5, det.y_ur5]);
+
+      const minX = Math.min(...xs), maxX = Math.max(...xs);
+      const minY = Math.min(...ys), maxY = Math.max(...ys);
+      const cx = (minX + maxX) / 2;
+      const cy = (minY + maxY) / 2;
+      const spanX = Math.max((maxX - minX) * 1.15, 0.05);
+      const spanY = Math.max((maxY - minY) * 1.15, 0.05);
       const esc = Math.min((w - 4) / spanX, (h - 4) / spanY);
       const MX = MAPA_W / 2;
       const MY = MAPA_MARGEN + h / 2;

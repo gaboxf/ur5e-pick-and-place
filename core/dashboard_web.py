@@ -103,12 +103,18 @@ class WebDashboard:
 
         # Parámetros de la celda que el cliente usa para dibujar el mapa de
         # trabajo a escala (mismos límites que valida la visión).
+        # `zona_trabajo_*` se guarda en el sistema de trabajo (relativo a Home
+        # si usar_home_como_origen), pero el TCP y la detección se dibujan en
+        # coordenadas absolutas de base. Llevar la zona a base evita que el
+        # rectángulo aparezca desplazado exactamente el vector de Home.
+        ox = float(getattr(self.controller, "origen_x", 0.0))
+        oy = float(getattr(self.controller, "origen_y", 0.0))
         self.celda_info = {
             "zona": {
-                "min_x": float(self.cfg.get("zona_trabajo_min_x", 0.05)),
-                "max_x": float(self.cfg.get("zona_trabajo_max_x", 0.55)),
-                "min_y": float(self.cfg.get("zona_trabajo_min_y", -0.05)),
-                "max_y": float(self.cfg.get("zona_trabajo_max_y", 0.45)),
+                "min_x": float(self.cfg.get("zona_trabajo_min_x", 0.05)) + ox,
+                "max_x": float(self.cfg.get("zona_trabajo_max_x", 0.55)) + ox,
+                "min_y": float(self.cfg.get("zona_trabajo_min_y", -0.05)) + oy,
+                "max_y": float(self.cfg.get("zona_trabajo_max_y", 0.45)) + oy,
             },
             "z": {
                 "seguro": float(self.cfg.get("z_seguro", 0.25)),
@@ -516,26 +522,35 @@ class WebDashboard:
 
         self.estado = "ROBOT_ACTUANDO"
         x, y = det["x_ur5"], det["y_ur5"]
+        # Centro real de agarre = centro detectado + offset de herramienta
+        # (pinzas vs TCP). Ver `calibrar_offset_pick_actual()`.
+        x_pick, y_pick = self.controller.punto_pick(x, y)
         # Leer del config vivo del controlador: `self.cfg` es una foto tomada
         # al arrancar y no ve las cotas calibradas en caliente (antes el ciclo
         # seguía usando z_seguro=250 mm aunque se hubiera calibrado en 237 mm).
         z_seguro = float(self.controller.config.get("z_seguro", 0.200))
         z_pick = float(self.controller.config.get("z_pick", 0.050))
-        z_deposit = float(self.controller.config.get("z_deposit", 0.050))
+        z_deposit = self.controller.z_deposito()
         dest = self.controller.destino_para(categoria)
 
         self.registrar_log("INFO", f"Iniciando ciclo: Pieza {categoria} en ({x*1000:.1f}, {y*1000:.1f}) mm")
+        if (x_pick, y_pick) != (x, y):
+            self.registrar_log(
+                "INFO",
+                f"Offset de pick ({(x_pick-x)*1000:+.0f}, {(y_pick-y)*1000:+.0f}) mm: "
+                f"TCP de agarre en ({x_pick*1000:.1f}, {y_pick*1000:.1f}) mm",
+            )
 
         try:
             # 1. Aproximación segura sobre la pieza (Handshake RTDE)
             self.registrar_log("INFO", f"Aproximación sobre pieza (Z={z_seguro*1000:.0f} mm)...")
-            self._mover(x, y, z_seguro, "aproximación fallida")
+            self._mover(x_pick, y_pick, z_seguro, "aproximación fallida")
             if self._abortado():
                 raise RuntimeError("abortado por seguridad")
 
             # 2. Descenso para recogida (Handshake RTDE)
             self.registrar_log("INFO", f"Descendiendo a cota de pick (Z={z_pick*1000:.0f} mm)...")
-            self._mover(x, y, z_pick, "descenso a pick fallido")
+            self._mover(x_pick, y_pick, z_pick, "descenso a pick fallido")
 
             # 3. Cierre de pinza con validación de confirmación del firmware
             self.registrar_log("INFO", "Cerrando gripper (esperando confirmación DONE de Arduino)...")
@@ -545,17 +560,17 @@ class WebDashboard:
 
             # 4. Elevación inicial
             self.registrar_log("INFO", "Elevando a cota segura...")
-            self._mover(x, y, z_seguro, "elevación post-pick fallida")
+            self._mover(x_pick, y_pick, z_seguro, "elevación post-pick fallida")
             if self._abortado():
                 raise RuntimeError("abortado por seguridad")
 
             # 5. Confirmación visual de agarre (Closed-Loop Vision)
-            dx = dest["x"] - x
-            dy = dest["y"] - y
+            dx = dest["x"] - x_pick
+            dy = dest["y"] - y_pick
             dist_dest = math.hypot(dx, dy)
             if dist_dest > 0.08:
-                x_check = x + (dx / dist_dest) * 0.08
-                y_check = y + (dy / dist_dest) * 0.08
+                x_check = x_pick + (dx / dist_dest) * 0.08
+                y_check = y_pick + (dy / dist_dest) * 0.08
             else:
                 x_check, y_check = dest["x"], dest["y"]
 
@@ -854,6 +869,7 @@ def api_calibrar_robot():
     - home: Captura la pose completa actual como nuevo Home
     - z_pick: Captura Z actual como cota de agarre
     - z_seguro: Captura Z actual como cota segura de tránsito
+    - offset_pick: Corrige X,Y del agarre con el TCP actual sobre la pieza detectada
     - destino_a: Captura X,Y actual como destino de clasificación A
     - destino_b: Captura X,Y actual como destino de clasificación B
     """
@@ -870,6 +886,8 @@ def api_calibrar_robot():
         ok, msg = dashboard.controller.calibrar_z_seguro_actual()
         if ok:
             dashboard.celda_info["z"]["seguro"] = dashboard.controller.config["z_seguro"]
+    elif accion == "offset_pick":
+        ok, msg = dashboard.controller.calibrar_offset_pick_actual()
     elif accion == "destino_a":
         ok, msg = dashboard.controller.calibrar_destino_actual("A")
     elif accion == "destino_b":
@@ -886,6 +904,8 @@ def api_calibrar_robot():
             "home_pose": dashboard.controller.home_pose,
             "z_pick": dashboard.controller.config.get("z_pick"),
             "z_seguro": dashboard.controller.config.get("z_seguro"),
+            "pick_offset_x": dashboard.controller.config.get("pick_offset_x"),
+            "pick_offset_y": dashboard.controller.config.get("pick_offset_y"),
             "destinos": dashboard.controller.config.get("destinos"),
         }
     }), (200 if ok else 400)

@@ -113,6 +113,31 @@ class RobotController:
         """Convierte un punto del sistema de trabajo (Home) a base del robot."""
         return x + self.origen_x, y + self.origen_y
 
+    def punto_pick(self, x: float, y: float) -> tuple[float, float]:
+        """Aplica el offset entre el centro detectado y el centro real de agarre.
+
+        La homografía entrega el centro de la pieza en el plano calibrado, pero
+        el punto que cierra las pinzas es el centro del gripper, que puede estar
+        desplazado respecto del TCP (largo de la herramienta, TCP configurado en
+        la brida, parallax de la cámara, etc.). Ese desplazamiento constante se
+        mide con `calibrar_offset_pick_actual()` y se guarda en config.json como
+        `pick_offset_x` / `pick_offset_y` (metros, en coordenadas de base).
+        """
+        off_x = float(self.config.get("pick_offset_x", 0.0))
+        off_y = float(self.config.get("pick_offset_y", 0.0))
+        return x + off_x, y + off_y
+
+    def z_deposito(self) -> float:
+        """Cota de liberación: nunca por debajo de la altura de agarre.
+
+        La pieza se suelta apoyándola en la misma mesa de la que se levantó,
+        así que `z_deposit` debe ser ~= `z_pick` (unos milímetros arriba para
+        no arrastrarla). Si alguien recalibra `z_pick` más arriba, el valor
+        guardado de `z_deposit` quedaría por debajo y chocaría: se limita.
+        """
+        z_pick = float(self.config.get("z_pick", 0.050))
+        return max(float(self.config.get("z_deposit", z_pick)), z_pick)
+
     def destino_para(self, categoria: str) -> dict[str, float]:
         """Devuelve el destino de depósito de una categoría en base del robot.
 
@@ -331,6 +356,44 @@ class RobotController:
         logger.info(msg)
         return True, msg
 
+    def calibrar_offset_pick_actual(self) -> tuple[bool, str]:
+        """Mide el offset XY entre la pieza detectada y el TCP actual.
+
+        Procedimiento (con una pieza apoyada en la mesa):
+          1. Dejar que el pipeline detecte esa pieza (panel Detección de visión).
+          2. Con el teach pendant / freedrive llevar el TCP hasta el centro
+             exacto de la pieza, a la altura de agarre, y sin moverlo.
+          3. Ejecutar esta calibración: guarda
+                pick_offset_x = TCP_x - x_ur5_detectado
+                pick_offset_y = TCP_y - y_ur5_detectado
+        En el dashboard web es el botón/acción `offset_pick`; en el de
+        escritorio la tecla [O].
+        """
+        det = self.pipeline.procesar_frame()
+        if not det.get("ok"):
+            return False, (
+                "No se pudo detectar la pieza: "
+                f"{det.get('motivo_fallo', 'sin detección')}"
+            )
+        pose = self.pose_actual()
+        if not pose:
+            return False, "No se pudo leer la pose del robot."
+
+        x_det, y_det = float(det["x_ur5"]), float(det["y_ur5"])
+        off_x = round(float(pose[0]) - x_det, 4)
+        off_y = round(float(pose[1]) - y_det, 4)
+        self.config["pick_offset_x"] = off_x
+        self.config["pick_offset_y"] = off_y
+        self.guardar_config()
+
+        msg = (
+            f"Offset de pick fijado en X={off_x * 1000:+.1f} mm, "
+            f"Y={off_y * 1000:+.1f} mm (pieza en {x_det:.3f}, {y_det:.3f} m; "
+            f"TCP en {pose[0]:.3f}, {pose[1]:.3f} m)"
+        )
+        logger.info(msg)
+        return True, msg
+
     def calibrar_z_seguro_actual(self) -> tuple[bool, str]:
         """Captura la altura Z actual del TCP y la establece como cota segura (z_seguro)."""
         pose = self.pose_actual()
@@ -463,20 +526,27 @@ class RobotController:
         categoria = deteccion["categoria"]
         x_ur5 = deteccion["x_ur5"]
         y_ur5 = deteccion["y_ur5"]
-        z_seguro = self.config.get("z_seguro", 0.200)
-        z_pick = self.config.get("z_pick", 0.050)
-        z_deposit = self.config.get("z_deposit", 0.050)
+        z_seguro = float(self.config.get("z_seguro", 0.200))
+        z_pick = float(self.config.get("z_pick", 0.050))
+        z_deposit = self.z_deposito()
+        # Centro real de agarre = centro detectado + offset de herramienta.
+        x_pick, y_pick = self.punto_pick(x_ur5, y_ur5)
+        if (x_pick, y_pick) != (x_ur5, y_ur5):
+            logger.info(
+                "Offset de pick aplicado: (%.1f, %.1f) mm -> destino (%.3f, %.3f) m",
+                (x_pick - x_ur5) * 1000, (y_pick - y_ur5) * 1000, x_pick, y_pick,
+            )
 
         logger.info("Iniciando recogida de pieza categoría [%s] en (%.3f, %.3f)", categoria, x_ur5, y_ur5)
 
         # 2. Secuencia física del UR5 con handshake y confirmación de agarre
         # Acercamiento seguro sobre la pieza
-        if not self.mover_a(x_ur5, y_ur5, z_seguro):
+        if not self.mover_a(x_pick, y_pick, z_seguro):
             logger.error("Aproximación inicial fallida")
             return False
 
         # Descenso para recogida
-        if not self.mover_a(x_ur5, y_ur5, z_pick):
+        if not self.mover_a(x_pick, y_pick, z_pick):
             logger.error("Descenso a cota de pick fallido")
             return False
 
@@ -487,7 +557,7 @@ class RobotController:
             return False
 
         # Levantar a cota segura
-        if not self.mover_a(x_ur5, y_ur5, z_seguro):
+        if not self.mover_a(x_pick, y_pick, z_seguro):
             logger.error("Elevación post-pick fallida")
             return False
 
@@ -495,12 +565,12 @@ class RobotController:
         destino = self.destino_para(categoria)
 
         # Desplazamiento leve hacia el destino para despejar la vista cenital sobre la mesa
-        dx = destino["x"] - x_ur5
-        dy = destino["y"] - y_ur5
+        dx = destino["x"] - x_pick
+        dy = destino["y"] - y_pick
         dist_dest = math.hypot(dx, dy)
         if dist_dest > 0.08:
-            x_check = x_ur5 + (dx / dist_dest) * 0.08
-            y_check = y_ur5 + (dy / dist_dest) * 0.08
+            x_check = x_pick + (dx / dist_dest) * 0.08
+            y_check = y_pick + (dy / dist_dest) * 0.08
         else:
             x_check, y_check = destino["x"], destino["y"]
 

@@ -123,7 +123,7 @@ def _mapa(
     cv2.rectangle(panel, (x0, y0), (x0 + w, y0 + h), PANEL, -1)
     cv2.rectangle(panel, (x0, y0), (x0 + w, y0 + h), REGLA, 1)
 
-    esc, cx, cy = _escala(zona, w, h)
+    esc, cx, cy = _escala(_limites(zona, datos, det), w, h)
 
     def a_px(x: float, y: float) -> tuple[int, int]:
         return (
@@ -316,20 +316,57 @@ def _leyenda(panel, x0: int, y: int, w: int) -> None:
 
 # ----------------------------------------------------------------- utils
 def _zona_trabajo(cfg: dict) -> dict:
+    # Los límites se guardan relativos a Home cuando usar_home_como_origen está
+    # activo; el mapa dibuja el TCP en base, así que hay que sumar el origen.
+    ox = oy = 0.0
+    if bool(cfg.get("usar_home_como_origen", False)):
+        home = cfg.get("home_pose") or []
+        if len(home) >= 2:
+            try:
+                ox, oy = float(home[0]), float(home[1])
+            except (TypeError, ValueError):
+                pass
     return {
-        "min_x": float(cfg.get("zona_trabajo_min_x", 0.05)),
-        "max_x": float(cfg.get("zona_trabajo_max_x", 0.55)),
-        "min_y": float(cfg.get("zona_trabajo_min_y", -0.05)),
-        "max_y": float(cfg.get("zona_trabajo_max_y", 0.45)),
+        "min_x": float(cfg.get("zona_trabajo_min_x", 0.05)) + ox,
+        "max_x": float(cfg.get("zona_trabajo_max_x", 0.55)) + ox,
+        "min_y": float(cfg.get("zona_trabajo_min_y", -0.05)) + oy,
+        "max_y": float(cfg.get("zona_trabajo_max_y", 0.45)) + oy,
     }
 
 
-def _escala(zona: dict, w: int, h: int) -> tuple[float, float, float]:
+def _limites(zona: dict, datos: dict, det: dict) -> tuple[float, float, float, float]:
+    """Auto-fit: rectángulo que contiene la zona, el TCP, el destino y la detección.
+
+    El rastro se excluye a propósito: se purga con el tiempo y su extremo haría
+    cambiar el zoom de forma intempestiva.
+    """
+    xs = [zona["min_x"], zona["max_x"]]
+    ys = [zona["min_y"], zona["max_y"]]
+
+    def incluir(p) -> None:
+        if not p or len(p) < 2:
+            return
+        try:
+            xs.append(float(p[0]))
+            ys.append(float(p[1]))
+        except (TypeError, ValueError):
+            pass
+
+    incluir(datos.get("pos"))
+    incluir(datos.get("destino"))
+    if det.get("ok") and det.get("x_ur5") is not None:
+        incluir((det["x_ur5"], det["y_ur5"]))
+
+    return min(xs), max(xs), min(ys), max(ys)
+
+
+def _escala(limites: tuple[float, float, float, float], w: int, h: int) -> tuple[float, float, float]:
     """Metros por píxel (igual en X e Y) y centro del mundo visible."""
-    cx = (zona["min_x"] + zona["max_x"]) / 2.0
-    cy = (zona["min_y"] + zona["max_y"]) / 2.0
-    span_x = max((zona["max_x"] - zona["min_x"]) * 1.18, 0.02)
-    span_y = max((zona["max_y"] - zona["min_y"]) * 1.18, 0.02)
+    min_x, max_x, min_y, max_y = limites
+    cx = (min_x + max_x) / 2.0
+    cy = (min_y + max_y) / 2.0
+    span_x = max((max_x - min_x) * 1.15, 0.05)
+    span_y = max((max_y - min_y) * 1.15, 0.05)
     esc = min((w - 4) / span_x, (h - 4) / span_y)
     return esc, cx, cy
 

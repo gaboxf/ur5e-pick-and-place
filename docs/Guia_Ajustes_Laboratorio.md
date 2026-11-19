@@ -29,6 +29,15 @@ Si el robot no está posicionándose correctamente sobre la pieza o las zonas de
 - **Zona de Trabajo:** `zona_trabajo_min_x/y` y `max_x/y` define dónde permitimos que el sistema busque piezas (en el mismo sistema que `puntos_ur5`).
 - **Home como punto cero (`usar_home_como_origen`):** con `true`, los valores de `puntos_ur5`, `zona_trabajo_*` y `destinos` se interpretan como desplazamientos desde la XY de `home_pose`, no desde la base. El origen se toma automáticamente de `home_pose`, no hay que duplicarlo.
 - **Radio mínimo de la base (`radio_minimo_base`):** distancia horizontal mínima (m) a la que se permite el TCP. Por defecto `0.20`; si un destino queda más cerca del eje de la base, `mover_a()` rechaza el movimiento para no chocar contra la columna del robot.
+- **Offset de agarre (`pick_offset_x` / `pick_offset_y`):** corrige la diferencia constante entre el centro que ve la cámara y el centro real de las pinzas (en metros, coordenadas de base). Se suma a la coordenada detectada **solo en el pick**; los destinos no se tocan. Si el TCP queda siempre desplazado el mismo tanto y hacia el mismo lado (p. ej. 5 cm), calibrarlo así:
+    1. Apoyar una pieza y dejar que la visión la detecte (anotar `x_ur5`, `y_ur5`).
+    2. Con el pendant/freedrive llevar el TCP hasta el centro **real** de esa pieza, a la altura de agarre, y no moverlo.
+    3. Capturar el offset:
+       - Dashboard web: POST `/api/calibrar_robot` con `{"accion": "offset_pick"}` (o el botón *Corregir offset de pick* si está en el panel).
+       - Dashboard de escritorio: tecla **[O]**.
+       - Consola: `controller.calibrar_offset_pick_actual()`.
+    Guarda `pick_offset = TCP_medido − centro_detectado` en `vision/config.json`. Para volver a cero, poner ambos valores en `0.0`.
+    > Si el error **cambia con la posición de la pieza** (mayor en una esquina que en el centro), no es offset de herramienta: la homografía está mal. Recalibrá con `python tools/calibrar_homografia.py` y revisá que el TCP esté definido en la punta de la herramienta, no en la brida.
 
 > Verificación previa (no mueve el robot):
 > ```
@@ -43,7 +52,7 @@ Los parámetros de altura son críticos para no chocar la mesa o el gripper:
 
 - `z_seguro`: Altura de transporte (debe ser mayor a cualquier pieza).
 - `z_pick`: Altura exacta para cerrar el gripper sobre la pieza.
-- `z_deposit`: Altura para soltar la pieza.
+- `z_deposit`: Altura para soltar la pieza. Debe ser **casi igual a `z_pick`** (la pieza se apoya en la misma mesa: p. ej. `z_pick=0.0712` → `z_deposit=0.075`, ~4 mm de holura). El código nunca baja por debajo de `z_pick` aunque el config tenga un valor menor, para no chocar la mesa.
 - `home_pose`: Pose Home `[x, y, z, rx, ry, rz]` en metros y radianes (la misma que devuelve `getActualTCPPose()`).
 - `home_tol_m` / `home_tol_rad`: Tolerancia de posición (m) y orientación (rad) para considerar que el robot ya está en Home.
 - `home_al_iniciar`: Si es `true`, los dashboards verifican Home al arrancar y mueven el robot si está fuera de posición.
@@ -61,6 +70,8 @@ Si el sistema no entiende tus comandos o quieres agregar nuevos:
 ## 5. Troubleshooting (Lista de chequeo en el laboratorio)
 - **El robot no se mueve pero todo está conectado:** mirá la consola del dashboard. Si aparece `TCP a N mm de la base (mínimo 200 mm): destino rechazado`, la calibración de la homografía está mal: esa coordenada cae sobre la base. Recalibrá con `python tools/calibrar_homografia.py`. Si dice `modo real sin conexión activa`, revisá `UR5_IP`/cable. Si el ciclo aborta en `sin pieza con confianza >= 0.70`, es iluminación/HSV.
 - **El botón Home falla con `El robot no puede moverse: ...` o `moveL rechazado: ...`:** el mensaje indica la causa concreta (botón Teach/Freedrive del pendant activo, paro protector, modo de robot, pose fuera de alcance/límites de seguridad o sin IK). Si calibraste Home/z/destinos moviendo el brazo a mano, salí de **Freedrive** antes de pedir el movimiento.
+- **El TCP queda ~5 cm al costado de la pieza al agarrar:** si el desplazamiento es constante, calibrá `pick_offset_x` / `pick_offset_y` con la tecla [O] (escritorio) o la acción `offset_pick` del endpoint `/api/calibrar_robot` (ver §2). Si el error varía según dónde esté la pieza, recalibrá la homografía y verificá la definición del TCP en el controlador (debe estar en la punta del gripper, no en la brida).
+- **La pieza se suelta desde muy alto:** `z_deposit` estaba muy por encima de `z_pick`. Ajustalo a `z_pick` + unos milímetros (ver §3).
 - **Cambiaste Home y las piezas aparecen corridas:** `puntos_ur5` son offsets desde Home, así que al mover Home la homografía queda desactualizada. Volvé a medir las 4 esquinas con `python tools/calibrar_homografia.py` (y reiniciá el dashboard). El dashboard avisa con `Ojo: cambió el origen; recalibrá la homografía`.
 - **Solo puede haber un cliente RTDE de control:** si abrís dos dashboards (o un script) a la vez, el segundo falla con `One of the RTDE input registers are already in use!`. Cerrá el otro proceso. El script de calibración usa RTDE *receive* (solo lectura) y no tiene ese problema.
 - **Diagnóstico rápido de todo el hardware:** `python tools/diagnostico_hardware.py` (lista cámaras que realmente entregan imagen, puertos COM, respuesta STATUS del gripper y si el UR5 responde en RTDE). Cerrá el dashboard antes de correrlo.
