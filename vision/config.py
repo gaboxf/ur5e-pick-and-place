@@ -103,6 +103,29 @@ class ConfigVision:
     zona_trabajo_min_y: float = -0.05
     zona_trabajo_max_y: float = 0.45
 
+    # Origen del sistema de trabajo. Con `usar_home_como_origen = true` los
+    # valores de `puntos_ur5`, `zona_trabajo_*` y `destinos` se interpretan
+    # como desplazamientos (dx, dy) desde Home en vez de coordenadas absolutas
+    # de la base del robot. Así Home queda como "punto cero" del laboratorio.
+    usar_home_como_origen: bool = False
+    origen_x: float = 0.0
+    origen_y: float = 0.0
+
+    def fijar_origen_desde_home(self, home_pose) -> bool:
+        """Toma la XY de Home como origen del sistema de trabajo.
+
+        Devuelve True si home_pose es válida ([x, y, z, rx, ry, rz]); en caso
+        contrario deja el origen en la base (0, 0).
+        """
+        try:
+            self.origen_x = float(home_pose[0])
+            self.origen_y = float(home_pose[1])
+        except (TypeError, ValueError, IndexError, KeyError):
+            self.origen_x = 0.0
+            self.origen_y = 0.0
+            return False
+        return True
+
 
 def load_config(path: str | Path = "vision/config.json") -> ConfigVision:
     """Carga la configuración desde un archivo JSON, si existe.
@@ -113,11 +136,24 @@ def load_config(path: str | Path = "vision/config.json") -> ConfigVision:
         return ConfigVision()
     with open(p, "r") as f:
         data = json.load(f)
-    return ConfigVision(
+    cfg = ConfigVision(
         camara=ConfigCamara(**data.get("camara", {})),
         segmentacion=ConfigSegmentacion(**data.get("segmentacion", {})),
         homografia=ConfigHomografia(**data.get("homografia", {})),
     )
+    # Los límites de seguridad viven en el nivel raíz del JSON: se copian a
+    # mano porque ConfigVision agrupa cámaras/segmentación/homografía.
+    for clave in ("zona_trabajo_min_x", "zona_trabajo_max_x",
+                  "zona_trabajo_min_y", "zona_trabajo_max_y"):
+        if clave in data:
+            setattr(cfg, clave, float(data[clave]))
+    # Home como punto cero: el origen (dx, dy) sale de la misma home_pose que
+    # usan los dashboards, así no hay dos fuentes de verdad que se desincronicen.
+    if bool(data.get("usar_home_como_origen", False)):
+        cfg.usar_home_como_origen = cfg.fijar_origen_desde_home(
+            data.get("home_pose")
+        )
+    return cfg
 
 
 def save_config(cfg: ConfigVision, path: str | Path = "vision/config.json") -> None:

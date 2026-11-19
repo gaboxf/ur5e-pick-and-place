@@ -31,6 +31,9 @@ class UR5Client:
         self.rtde_c = None
         self.rtde_r = None
         self.connected = False
+        # Última causa de fallo, legible por los dashboards (para mostrarla en
+        # pantalla en vez de un "no se pudo mover" sin explicación).
+        self.ultimo_error: str | None = None
 
         # Bandera de aborto: la usan stop() y move_l() para cortar un movimiento.
         self._abort = threading.Event()
@@ -38,20 +41,33 @@ class UR5Client:
         self._mock_pose = [0.30, 0.0, 0.25, 3.14, 0.0, 0.0]
 
     def connect(self):
-        if self.mode == "real" and HAS_UR_RTDE:
-            try:
-                self.rtde_c = rtde_control.RTDEControlInterface(self.ip)
-                self.rtde_r = rtde_receive.RTDEReceiveInterface(self.ip)
-                self.connected = True
-                logger.info("Conectado al UR5 real en %s", self.ip)
-                return True
-            except Exception as e:
-                logger.error("Error conectando al UR5: %s", e)
-                return False
-        else:
+        if self.mode != "real":
             logger.info("Modo %s: Simulando conexión UR5.", self.mode)
             self.connected = True
+            self.ultimo_error = None
             return True
+
+        if not HAS_UR_RTDE:
+            self.ultimo_error = (
+                "Falta la librería ur_rtde (pip install ur-rtde) con "
+                "ROBOT_MODE=real."
+            )
+            logger.error(self.ultimo_error)
+            self.connected = False
+            return False
+
+        try:
+            self.rtde_c = rtde_control.RTDEControlInterface(self.ip)
+            self.rtde_r = rtde_receive.RTDEReceiveInterface(self.ip)
+            self.connected = True
+            self.ultimo_error = None
+            logger.info("Conectado al UR5 real en %s", self.ip)
+            return True
+        except Exception as e:
+            self.ultimo_error = f"No se pudo conectar al UR5 ({self.ip}): {e}"
+            logger.error(self.ultimo_error)
+            self.connected = False
+            return False
 
     def get_actual_tcp_pose(self) -> list[float]:
         """Devuelve la pose actual del TCP [x, y, z, rx, ry, rz] en metros y radianes."""
@@ -82,21 +98,32 @@ class UR5Client:
         Valida que el robot haya alcanzado la pose dentro de tol_m antes de retornar True.
         """
         self._abort.clear()
+        self.ultimo_error = None
         target_pose = [x, y, z, rx, ry, rz]
         tol = tol_m if tol_m is not None else self.tolerancia_pos
+
+        if self.mode == "real" and not (self.connected and self.rtde_c and self.rtde_r):
+            self.ultimo_error = (
+                "Modo real sin conexión activa al UR5: revisá UR5_IP en .env "
+                "y que el robot esté encendido."
+            )
+            logger.error(self.ultimo_error)
+            return False
 
         if self.mode == "real" and self.connected:
             if rx is None or ry is None or rz is None:
                 actual = self.rtde_r.getActualTCPPose()
                 target_pose = [x, y, z, actual[3], actual[4], actual[5]]
             if self._abort.is_set():
-                logger.warning("Movimiento abortado antes de iniciar.")
+                self.ultimo_error = "Movimiento abortado antes de iniciar."
+                logger.warning(self.ultimo_error)
                 return False
             try:
                 # moveL es bloqueante en ur_rtde; stop() puede interrumpirlo via stopJ.
                 res = self.rtde_c.moveL(target_pose, self.vel, self.acc)
                 if not res or self._abort.is_set():
-                    logger.warning("moveL cancelado o abortado durante trayectoria.")
+                    self.ultimo_error = "moveL cancelado o abortado durante la trayectoria."
+                    logger.warning(self.ultimo_error)
                     return False
 
                 # Handshake determinista por RTDE: verificar posición alcanzada
@@ -110,15 +137,17 @@ class UR5Client:
                 )
 
                 if dist_err > tol:
-                    logger.warning(
-                        "UR5 fuera de tolerancia: err=%.2f mm > tol=%.2f mm",
-                        dist_err * 1000, tol * 1000
+                    self.ultimo_error = (
+                        f"El robot no alcanzó el objetivo: error "
+                        f"{dist_err * 1000:.1f} mm (tolerancia {tol * 1000:.1f} mm)."
                     )
+                    logger.warning(self.ultimo_error)
                     return False
 
                 return True
             except Exception as e:
-                logger.warning("moveL interrumpido o con error: %s", e)
+                self.ultimo_error = f"moveL interrumpido o con error: {e}"
+                logger.warning(self.ultimo_error)
                 return False
         else:
             logger.debug("[SIMULACIÓN UR5] moveL: %s (tol=%.2f mm)", target_pose, tol * 1000)

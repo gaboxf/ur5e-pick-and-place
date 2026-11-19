@@ -23,7 +23,7 @@ vision/roi_editor.py / hsv_editor.py / homografia_editor.py →  editores visual
 > defaults "de fábrica" que se usan si `config.json` no existe. Los botones
 > **Aplicar** de los editores guardan en `vision/config.json`. Ese mismo
 > archivo también guarda parámetros del lado del robot y gripper
-> (`gripper_port`, `z_seguro`, `z_pick`, `z_deposit`, `destinos`).
+> (`gripper_port`, `z_seguro`, `z_pick`, `z_deposit`, `destinos`, `home_pose`).
 
 ---
 
@@ -233,6 +233,24 @@ ambos dashboards que evita editar números a mano.
 3. Cargar esas 4 coordenadas en `puntos_ur5` (vision/config.json) una sola
    vez: no cambian si la cámara o la ROI no se mueven.
 
+### Calibración medida con el robot (recomendada)
+
+`python tools/calibrar_homografia.py` automatiza los pasos 1-3 anteriores:
+abre la cámara, te pide tocar cada esquina con el TCP y hacer clic sobre la
+punta en la imagen, lee la pose real por RTDE (solo lectura: no mueve el
+robot), mide el error con un 5.º punto interior y guarda `puntos_px`,
+`puntos_ur5` (relativos a Home) y `zona_trabajo_*` con backup del config.
+
+Conviene cerrar los dashboards antes (la cámara la usa un solo proceso).
+Opciones: `--sin-guardar`, `--margen 0.03`, `--brillo 1.8`, `--manual`.
+
+Los `destinos` A/B también son valores de fábrica; se miden del mismo modo,
+tocando el centro de cada zona de depósito:
+
+```
+python tools/calibrar_homografia.py --destinos
+```
+
 ### Dashboard web (`core/dashboard_web.py` → http://localhost:5000)
 
 Panel **"Homografía (píxel → UR5)"**:
@@ -287,9 +305,12 @@ puntos guardados (cruces cian + cuadrilátero) y los recién marcados
 | `area_minima` / `area_maxima` | Filtrar ruido y agrupaciones de piezas | Botones "Área mín." / teclas [7]-[8] |
 | `confianza_minima` | Umbral de solidez del contorno: solo se aceptan y dibujan detecciones con confianza ≥ umbral (0..1) | Botones "+/− Confianza" / teclas [9]-[0] |
 | `roi_desde/hasta_x/y` | Recorte de la zona de trabajo (fracciones de la imagen) | Panel "Ajustar ROI" / teclas [i], flechas, [+] [-] |
-| `puntos_px` / `puntos_ur5` | Puntos de referencia para la homografía (px relativos a la ROI / metros UR5) | Panel "Homografía" / tecla [g] + clics |
+| `puntos_px` / `puntos_ur5` | Puntos de referencia para la homografía (px relativos a la ROI / metros UR5 relativos a Home). Si nunca se midieron con el robot, calibrar con `python tools/calibrar_homografia.py` | Asistente `calibrar_homografia.py` / panel "Homografía" + clics |
 | `zona_trabajo_*` | Límites de seguridad en metros (coords del UR5) | Manual |
 | `gripper_port`, `z_seguro`, `z_pick`, `z_deposit`, `destinos` | Parámetros del gripper y del ciclo pick & place (compartidos con el lado robot) | Manual / config.json |
+| `home_pose`, `home_tol_m`, `home_tol_rad`, `home_al_iniciar` | Pose Home `[x, y, z, rx, ry, rz]`, tolerancias de verificación y si se corrige automáticamente al iniciar | Manual / config.json |
+| `usar_home_como_origen` | Si es `true`, `puntos_ur5`, `zona_trabajo_*` y `destinos` se miden como desplazamientos desde la XY de `home_pose` (Home = punto cero) | Manual / config.json |
+| `radio_minimo_base` | Distancia horizontal mínima (m) del TCP al eje de la base; por debajo se rechaza el movimiento para no chocar la columna | Manual / config.json |
 
 ---
 
@@ -303,5 +324,8 @@ puntos guardados (cruces cian + cuadrilátero) y los recién marcados
 - `vision/hsv_editor.py` — editor visual de rangos HSV con máscara en vivo
 - `vision/homografia_editor.py` — asistente de calibración de la homografía (clics)
 - `vision/config.py` / `vision/config.json` — configuración compartida
+- `tools/calibrar_homografia.py` — calibración de la homografía midiendo con el robot
+- `tools/verificar_homografia.py` — verificación previa (no mueve el robot)
+- `tools/diagnostico_hardware.py` — diagnóstico de cámara, gripper y UR5
 - `README.md` — este archivo
 - Evidencia: capturas de pantalla de detecciones correctas/incorrectas y error de homografía

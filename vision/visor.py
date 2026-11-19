@@ -23,27 +23,79 @@ class VisorCamara:
     def __init__(self, cfg: ConfigCamara):
         self.cfg = cfg
         self.cap: cv2.VideoCapture | None = None
+        self.conectado = False
         self._es_imagen = False
         self._imagen_actual: np.ndarray | None = None
 
     # -- Conexión -----------------------------------------------------------
     def conectar(self) -> bool:
-        """Abre la cámara por índice utilizando DirectShow en Windows para evitar bloqueos."""
-        # Usar CAP_DSHOW para mayor estabilidad en Windows, con fallback a CAP_ANY
-        self.cap = cv2.VideoCapture(self.cfg.indice_camara, cv2.CAP_DSHOW)
-        if not self.cap.isOpened():
-            logger.warning("Fallo al abrir con DirectShow, intentando con backend por defecto...")
-            self.cap = cv2.VideoCapture(self.cfg.indice_camara)
-            
-        if not self.cap.isOpened():
-            logger.error("No se pudo abrir la cámara índice %s. Verifique que no esté en uso.", self.cfg.indice_camara)
+        """Abre la cámara configurada y confirma que entregue imagen real.
+
+        `isOpened()` no alcanza: en Windows hay cámaras que "abren" pero nunca
+        entregan un frame. Por eso se valida leyendo varios frames antes de
+        dar la conexión por buena.
+
+        IMPORTANTE: no se cambia de índice automáticamente. Otra cámara
+        invalida la calibración de la homografía; si la configurada no anda,
+        se informa y el operario elige con [k] (o "Escanear" en la web).
+        """
+        indice = int(self.cfg.indice_camara)
+        self._es_imagen = False
+        self._imagen_actual = None
+        return self._abrir_indice(indice)
+
+    def _abrir_indice(self, indice: int, intentos: int = 6) -> bool:
+        """Abre un índice y valida que entregue al menos un frame.
+
+        La primera apertura de algunas cámaras (webcam interna) puede tardar
+        decenas de segundos; por eso se reintenta la lectura varias veces.
+        """
+        self._liberar()
+        logger.info(
+            "Abriendo cámara %d... (la primera vez puede tardar unos segundos)",
+            indice,
+        )
+        # Usar CAP_DSHOW en Windows para mayor estabilidad; fallback a CAP_ANY
+        cap = cv2.VideoCapture(indice, cv2.CAP_DSHOW)
+        if not cap.isOpened():
+            logger.debug("Cámara %d: no abre con DirectShow, probando backend por defecto.", indice)
+            cap.release()
+            cap = cv2.VideoCapture(indice)
+        if not cap.isOpened():
+            cap.release()
+            logger.error(
+                "No se pudo abrir la cámara índice %d. Revisá que esté "
+                "conectada y que otra aplicación no la esté usando.",
+                indice,
+            )
             return False
-            
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.cfg.ancho)
-        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.cfg.alto)
-        self.cap.set(cv2.CAP_PROP_FPS, self.cfg.fps)
-        logger.info("Cámara conectada correctamente.")
-        return True
+
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.cfg.ancho)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.cfg.alto)
+        cap.set(cv2.CAP_PROP_FPS, self.cfg.fps)
+
+        for _ in range(max(1, intentos)):
+            ok, frame = cap.read()
+            if ok and frame is not None:
+                self.cap = cap
+                self.conectado = True
+                alto, ancho = frame.shape[:2]
+                logger.info("Cámara %d conectada (%dx%d).", indice, ancho, alto)
+                return True
+
+        cap.release()
+        logger.error(
+            "La cámara %d abrió pero no entregó imagen. Probá con [k] "
+            "(dashboard) o el botón 'Escanear' (web) para elegir otra.",
+            indice,
+        )
+        return False
+
+    def _liberar(self) -> None:
+        if self.cap is not None:
+            self.cap.release()
+            self.cap = None
+        self.conectado = False
 
     @staticmethod
     def abrir_disponibles(max_indice: int = 9) -> dict[int, cv2.VideoCapture]:
@@ -57,8 +109,14 @@ class VisorCamara:
         for i in range(max_indice + 1):
             cap = cv2.VideoCapture(i, cv2.CAP_DSHOW)
             ok = False
+            frame = None
             if cap.isOpened():
-                ok, frame = cap.read()
+                # Varios intentos: algunas cámaras tardan en entregar el
+                # primer frame (y en una sola lectura se perderían).
+                for _ in range(5):
+                    ok, frame = cap.read()
+                    if ok and frame is not None:
+                        break
                 ok = ok and frame is not None
             if ok:
                 encontrados[i] = cap
@@ -83,9 +141,8 @@ class VisorCamara:
         return True
 
     def desconectar(self) -> None:
-        if self.cap is not None:
-            self.cap.release()
-            self.cap = None
+        self._liberar()
+        self._es_imagen = False
 
     # -- Lectura ------------------------------------------------------------
     def leer(self) -> np.ndarray | None:
