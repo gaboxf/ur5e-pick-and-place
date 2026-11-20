@@ -22,7 +22,7 @@ Si el robot no está posicionándose correctamente sobre la pieza o las zonas de
       python tools/calibrar_homografia.py
       ```
       El asistente abre la cámara, te pide tocar cada esquina de la mesa con el TCP y hacer clic sobre la punta en la imagen; lee la pose real por RTDE (no mueve nada), calcula la homografía y, con un 5.º punto interior, informa el error en mm antes de guardar. También ajusta `zona_trabajo_*` al área medida (con 2 cm de margen) y deja backup del `config.json`.
-    - Los `destinos` A/B también son valores de fábrica. Se miden igual, tocando el centro de cada zona de depósito:
+    - Los `destinos` A/B también son valores de fábrica. Se miden igual, tocando el centro de cada zona de depósito. **Importante:** ningún destino debe caer dentro de `zona_trabajo_*` (si cae ahí, la pieza se suelta donde se recogió). Actualmente A está en `(-0.0145, -0.4379)` y B en `(-0.0145, -0.3379)` m relativos a Home, separados 100 mm y ambos fuera del área de pick:
       ```
       python tools/calibrar_homografia.py --destinos
       ```
@@ -58,6 +58,7 @@ Los parámetros de altura son críticos para no chocar la mesa o el gripper:
 - `home_pose`: Pose Home `[x, y, z, rx, ry, rz]` en metros y radianes (la misma que devuelve `getActualTCPPose()`).
 - `home_tol_m` / `home_tol_rad`: Tolerancia de posición (m) y orientación (rad) para considerar que el robot ya está en Home.
 - `home_al_iniciar`: Si es `true`, los dashboards verifican Home al arrancar y mueven el robot si está fuera de posición.
+- **Regreso a Home por ciclo:** al terminar cada pick & place (después de soltar y retirarse a `z_seguro`) el robot vuelve a `home_pose` en los tres ciclos (controlador, web y escritorio). Si el movimiento falla se registra un error, pero la pieza ya depositada se cuenta como ciclo OK.
 
 **Botón Home:** en el dashboard web (panel *Control*) y en el dashboard de escritorio (botón naranja **HOME** en la barra superior, se hace clic con el mouse) el robot se mueve a `home_pose`. En el de escritorio el movimiento corre en segundo plano para no congelar el video; se rechaza si hay parada activa o un ciclo en curso. También se puede pedir por voz ("home").
 

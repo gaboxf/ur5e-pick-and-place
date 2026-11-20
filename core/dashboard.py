@@ -461,6 +461,15 @@ class DashboardApp:
         if not self.mover_ur5(dest["x"], dest["y"], z_seguro):
             self._abortar_por_movimiento()
             return
+        if self.abortar_ciclo or self.parada_activa:
+            return
+
+        # Regreso a Home (pose segura para el próximo ciclo)
+        if not self.robot_controller.ir_a_home():
+            logger.error(
+                "No se pudo volver a Home al final del ciclo: %s",
+                self.robot_controller.ultimo_error,
+            )
 
         # 3. Verificación en bucle cerrado (Closed-loop feedback)
         self.estado_actual = "VERIFICANDO"

@@ -738,6 +738,12 @@ class RobotController:
             logger.error("Retirada post-depósito fallida")
             return False
 
+        # Regreso a Home: dejar el brazo en la pose segura para la próxima pieza.
+        if not self.ir_a_home():
+            logger.error(
+                "No se pudo volver a Home al final del ciclo: %s", self.ultimo_error
+            )
+
         logger.info("¡Ciclo de clasificación completado con éxito!")
         return True
 

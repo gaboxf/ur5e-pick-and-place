@@ -12,18 +12,18 @@
   "segmentacion": {
     "rojo_bajo1": [
       0,
-      120,
-      70
+      30,
+      0
     ],
     "rojo_alto1": [
-      15,
+      20,
       255,
       255
     ],
     "rojo_bajo2": [
-      165,
-      120,
-      70
+      147,
+      30,
+      0
     ],
     "rojo_alto2": [
       180,
@@ -43,7 +43,27 @@
     "area_minima": 500,
     "area_maxima": 50000,
     "kernel_tamano": 5,
-    "confianza_minima": 0.7
+    "confianza_minima": 0.65,
+    "verde_bajo": [
+      35,
+      50,
+      50
+    ],
+    "verde_alto": [
+      85,
+      255,
+      255
+    ],
+    "violeta_bajo": [
+      140,
+      50,
+      50
+    ],
+    "violeta_alto": [
+      160,
+      255,
+      255
+    ]
   },
   "homografia": {
     "puntos_px": [
@@ -91,7 +111,7 @@
   "z_seguro": 0.125,
   "z_pick": 0.0712,
   "z_deposit": 0.075,
-  "pick_offset_x": -0.042,
+  "pick_offset_x": -0.040,
   "pick_offset_y": -0.032,
   "pick_offset_max_m": 0.15,
   "usar_home_como_origen": true,
@@ -113,8 +133,8 @@
       "y": -0.4379
     },
     "B": {
-      "x": -0.0145,
-      "y": -0.1215
+      "x": -0.0980,
+      "y": -0.4379
     }
   }
 }

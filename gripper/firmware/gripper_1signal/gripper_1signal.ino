@@ -60,7 +60,7 @@ const int pinSenal = 3;
 // 900 y 750 estan fuera de ese rango nominal, pero son los valores probados
 // en este montaje sin carga y con carga liviana: no forzan el tope mecanico.
 // Si algun servo empieza a zumbar, volver hacia 1000 us (cerrado) / 1000+ us.
-const int US_ABIERTO = 900;
+const int US_ABIERTO = 1000;
 const int US_CERRADO = 750;
 
 // ------------------------------------------------------------ estado actual

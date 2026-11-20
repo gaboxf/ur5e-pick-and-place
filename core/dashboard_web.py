@@ -641,6 +641,15 @@ class WebDashboard:
                     f"{self.controller.ultimo_error or 'el robot rechazó el movimiento'}"
                 )
 
+            # 8. Regreso a Home (pose segura para el próximo ciclo)
+            if not self._abortado():
+                if not self.controller.ir_a_home():
+                    self.registrar_log(
+                        "ERROR",
+                        "No se pudo volver a Home: "
+                        f"{self.controller.ultimo_error or 'movimiento rechazado'}",
+                    )
+
             with self._lock:
                 self.ciclos_ok += 1
                 self.por_categoria[categoria] = self.por_categoria.get(categoria, 0) + 1
