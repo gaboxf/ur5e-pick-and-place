@@ -108,6 +108,7 @@ class GripperClient:
         self._hb_thread: threading.Thread | None = None
         self._hb_stop = threading.Event()
         self._ultimo_ping = 0.0
+        self._ultima_respuesta_valida: float | None = None
 
         # Serializa las escrituras al puerto: el heartbeat y los comandos
         # comparten el mismo cable y no pueden intercalarse bytes.
@@ -164,6 +165,7 @@ class GripperClient:
                 "No se pudo abrir el puerto %s (%s). Entrando en MODO SIMULACIÓN.",
                 self.port, e,
             )
+            self._ultima_respuesta_valida = None
             self.simulado = True
             self._set_estado("READY")
             return True  # permite probar cámara e interfaz sin Arduino
@@ -177,9 +179,11 @@ class GripperClient:
         time.sleep(2.0)  # el UNO se resetea al abrir el puerto (DTR)
         self.ser.reset_input_buffer()
         self.simulado = False
+        self._ultima_respuesta_valida = None
 
         resp = self._enviar_comando("STATUS", timeout=self.timeout)
         if resp in ("READY", "BUSY"):
+            self._ultima_respuesta_valida = time.monotonic()
             self._set_estado(resp)
             logger.info("Gripper conectado en %s (%s)", self.port, resp)
             # Heartbeat activo: es lo que mantiene el watchdog del firmware
@@ -314,6 +318,7 @@ class GripperClient:
             # debe mezclarse con las respuestas a comandos en vuelo. Tampoco
             # se loguea (seria ruido periodico cada 1.5 s).
             if linea == "PONG":
+                self._ultima_respuesta_valida = time.monotonic()
                 self._pong_queue.put(linea)
                 continue
 
@@ -363,7 +368,7 @@ class GripperClient:
             time.sleep(0.3)
             if comando == "STATUS":
                 return "READY"
-            if comando in ("OPEN", "CLOSE"):
+            if comando in ("OPEN", "CLOSE", "STOP"):
                 return "DONE"
             return "ERROR"
 
@@ -385,6 +390,8 @@ class GripperClient:
                     self.ser.write((comando + "\n").encode())
                 resp = self._esperar_linea(timeout or self.timeout)
 
+            if resp in ("READY", "BUSY", "DONE") and self._ultima_respuesta_valida is not None:
+                self._ultima_respuesta_valida = time.monotonic()
             if resp in ("READY", "BUSY", "ERROR"):
                 self._set_estado(resp)
             elif resp == "DONE":
@@ -484,6 +491,14 @@ class GripperClient:
         except queue.Empty:
             return None
         return self.interpretar_respuesta(bruto)
+
+    def conexion_disponible(self) -> bool:
+        """Confirma puerto abierto y respuesta reciente de un Arduino inicializado."""
+        ultima = self._ultima_respuesta_valida
+        return (
+            not self.simulado and self.ser is not None and self.ser.is_open
+            and ultima is not None and time.monotonic() - ultima < 4 * HEARTBEAT_S
+        )
 
     def get_estado_completo(self) -> dict:
         """Devuelve un estado legible para el dashboard."""

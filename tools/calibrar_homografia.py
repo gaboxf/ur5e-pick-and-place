@@ -243,7 +243,10 @@ def guardar(
     puntos_px: list[list[float]],
     puntos_ur5_base: list[list[float]],
     margen: float,
+    contexto: list | None = None,
 ) -> None:
+    from vision.config import ConfigCamara, actualizar_config
+
     data = _leer_config(ruta)
     origen_x, origen_y = _origen(data)
     puntos_ur5 = [
@@ -257,20 +260,19 @@ def guardar(
     )
     shutil.copy2(ruta, respaldo)
 
-    data.setdefault("homografia", {})
-    data["homografia"]["puntos_px"] = [
-        [round(float(x), 1), round(float(y), 1)] for x, y in puntos_px
-    ]
-    data["homografia"]["puntos_ur5"] = puntos_ur5
-    data.update(zona)
-
-    with open(ruta, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
-        f.write("\n")
+    if contexto is None:
+        cam = ConfigCamara(**data.get("camara", {}))
+        contexto = cam.contexto_homografia(cam.ancho, cam.alto)
+    hom = {
+        "puntos_px": [[round(float(x), 1), round(float(y), 1)] for x, y in puntos_px],
+        "puntos_ur5": puntos_ur5,
+        "contexto": contexto,
+    }
+    actualizar_config(ruta, {"homografia": hom, **zona})
 
     print(f"\nGuardado en {ruta}")
     print(f"  backup: {respaldo.name}")
-    print(f"  puntos_px  = {data['homografia']['puntos_px']}")
+    print(f"  puntos_px  = {hom['puntos_px']}")
     print(f"  puntos_ur5 = {puntos_ur5}   (relativos al origen)")
     print("  zona_trabajo = "
           f"x [{zona['zona_trabajo_min_x']}, {zona['zona_trabajo_max_x']}]  "
@@ -297,10 +299,9 @@ def guardar_destinos(
         f"{ruta.name}.bak-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
     )
     shutil.copy2(ruta, respaldo)
-    data["destinos"] = destinos
-    with open(ruta, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
-        f.write("\n")
+    from vision.config import actualizar_config
+
+    actualizar_config(ruta, {"destinos": destinos})
 
     print(f"\nGuardado en {ruta}")
     print(f"  backup: {respaldo.name}")
@@ -526,7 +527,11 @@ def main() -> int:
                 guardado = True
                 salir = True
                 continue
-            guardar(cfg_path, puntos_px[:4], puntos_base[:4], margen)
+            alto, ancho = frame.shape[:2]
+            guardar(
+                cfg_path, puntos_px[:4], puntos_base[:4], margen,
+                cam_cfg.contexto_homografia(ancho, alto),
+            )
             guardado = True
             salir = True
 

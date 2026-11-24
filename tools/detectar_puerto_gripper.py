@@ -26,7 +26,13 @@ except ImportError:
     print("Falta pyserial:  pip install pyserial")
     sys.exit(2)
 
-CONFIG_PATH = Path(__file__).resolve().parent.parent / "vision" / "config.json"
+RAIZ_PROYECTO = Path(__file__).resolve().parent.parent
+if str(RAIZ_PROYECTO) not in sys.path:
+    sys.path.insert(0, str(RAIZ_PROYECTO))
+
+from vision.config import actualizar_config
+
+CONFIG_PATH = RAIZ_PROYECTO / "vision" / "config.json"
 
 # VID de chips USB-serie usados por placas Arduino y clones.
 VIDS_CONOCIDOS = {
@@ -75,12 +81,7 @@ def detectar_puertos() -> list:
 
 def guardar_puerto(puerto: str, config_path: Path = CONFIG_PATH) -> None:
     """Escribe gripper_port preservando el resto de la configuración."""
-    with open(config_path, "r", encoding="utf-8") as f:
-        cfg = json.load(f)
-    cfg["gripper_port"] = puerto
-    with open(config_path, "w", encoding="utf-8") as f:
-        # Mismo estilo compacto que el archivo original.
-        json.dump(cfg, f, ensure_ascii=False)
+    actualizar_config(config_path, {"gripper_port": puerto})
 
 
 def main() -> int:

@@ -43,27 +43,7 @@
     "area_minima": 500,
     "area_maxima": 50000,
     "kernel_tamano": 5,
-    "confianza_minima": 0.65,
-    "verde_bajo": [
-      35,
-      50,
-      50
-    ],
-    "verde_alto": [
-      85,
-      255,
-      255
-    ],
-    "violeta_bajo": [
-      140,
-      50,
-      50
-    ],
-    "violeta_alto": [
-      160,
-      255,
-      255
-    ]
+    "confianza_minima": 0.65
   },
   "homografia": {
     "puntos_px": [

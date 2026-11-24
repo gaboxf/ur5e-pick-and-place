@@ -26,14 +26,14 @@ del recorte).
 
 from __future__ import annotations
 
-import json
+import math
 import logging
 from pathlib import Path
 
 import cv2
 import numpy as np
 
-from .config import ConfigHomografia
+from .config import ConfigHomografia, actualizar_config
 
 logger = logging.getLogger("EditorHomografia")
 
@@ -58,6 +58,7 @@ class EditorHomografia:
         self.cfg_cam = cfg_cam          # ConfigCamara, para el offset de la ROI
         self.transformador = transformador  # TransformadorCoordenadas (recalibrar)
         self.calibrando = False
+        self.contexto_marcado = None
         self.puntos: list[list[float]] = []  # ROI-relativos, en orden TL/TR/BR/BL
         # Tamaño real del último frame; los dashboards lo actualizan en cada
         # tick (la cámara puede no honrar el ancho/alto pedidos en la config)
@@ -75,11 +76,14 @@ class EditorHomografia:
         return (int(ancho * self.cfg_cam.roi_desde_x),
                 int(alto * self.cfg_cam.roi_desde_y))
 
+    def _contexto(self) -> list:
+        return self.cfg_cam.contexto_homografia(*self.tamano_frame)
+
     def _tamano_roi(self) -> tuple[int, int]:
-        """Tamaño (ancho, alto) del recorte ROI en píxeles."""
         ancho, alto = self.tamano_frame
-        return (int(ancho * (self.cfg_cam.roi_hasta_x - self.cfg_cam.roi_desde_x)),
-                int(alto * (self.cfg_cam.roi_hasta_y - self.cfg_cam.roi_desde_y)))
+        x1, y1 = self._offset_roi()
+        return (int(ancho * self.cfg_cam.roi_hasta_x) - x1,
+                int(alto * self.cfg_cam.roi_hasta_y) - y1)
 
     # -- Edición -------------------------------------------------------------
     def mover(self, accion: str, valor: str = "") -> tuple[bool, str]:
@@ -88,6 +92,7 @@ class EditorHomografia:
         valor = (valor or "").strip()
 
         if accion == "iniciar":
+            self.contexto_marcado = self._contexto()
             self.calibrando = True
             self.puntos = []
             return True, ("Calibración de homografía iniciada. Marcá los 4 "
@@ -108,6 +113,10 @@ class EditorHomografia:
                 x_full, y_full = (float(v) for v in valor.split(","))
             except ValueError:
                 return False, f"Coordenadas inválidas: {valor!r}"
+            if self.contexto_marcado != self._contexto():
+                return False, "Cambió la cámara o la ROI. Reiniciá el marcado."
+            if not (math.isfinite(x_full) and math.isfinite(y_full)):
+                return False, "Las coordenadas del punto deben ser finitas."
             x1, y1 = self._offset_roi()
             punto = [x_full - x1, y_full - y1]
             self.puntos.append(punto)
@@ -131,6 +140,7 @@ class EditorHomografia:
         if accion == "reset":
             base = ConfigHomografia()
             self.cfg.puntos_px = [list(p) for p in base.puntos_px]
+            self.cfg.contexto = []
             self._recalibrar()
             return True, "Puntos_px restaurados a los valores de fábrica."
 
@@ -143,6 +153,10 @@ class EditorHomografia:
             return (f"Error: se necesitan 4 puntos y hay {len(self.puntos)}. "
                     "Continuá marcando o cancelá.")
 
+        contexto = self._contexto()
+        if self.contexto_marcado != contexto:
+            return "Error: cambió la cámara o la ROI. Reiniciá el marcado."
+
         ancho_roi, alto_roi = self._tamano_roi()
         puntos_ajustados = []
         for i, (x, y) in enumerate(self.puntos):
@@ -154,29 +168,37 @@ class EditorHomografia:
                         f"del recorte ROI ({ancho_roi}x{alto_roi}).")
             puntos_ajustados.append([x_c, y_c])
 
-        self.puntos = puntos_ajustados
-        self.cfg.puntos_px = [list(p) for p in self.puntos]
-        self.calibrando = False
-        self.puntos = []
-
+        puntos = [[round(x, 1), round(y, 1)] for x, y in puntos_ajustados]
         try:
-            ruta = Path(config_path)
-            data = json.loads(ruta.read_text(encoding="utf-8"))
-            data.setdefault("homografia", {})["puntos_px"] = [
-                [round(x, 1), round(y, 1)] for x, y in self.cfg.puntos_px
-            ]
-            ruta.write_text(
-                json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
+            matriz, _ = cv2.findHomography(
+                np.asarray(puntos, dtype=np.float32),
+                np.asarray(self.cfg.puntos_ur5, dtype=np.float32),
+                cv2.RANSAC, 5.0,
             )
+            if matriz is None or not np.isfinite(matriz).all():
+                return "Error: los puntos no definen una homografía válida."
+            actualizar_config(config_path, {
+                "camara": {
+                    "indice_camara": self.cfg_cam.indice_camara,
+                    "roi_desde_x": self.cfg_cam.roi_desde_x,
+                    "roi_hasta_x": self.cfg_cam.roi_hasta_x,
+                    "roi_desde_y": self.cfg_cam.roi_desde_y,
+                    "roi_hasta_y": self.cfg_cam.roi_hasta_y,
+                },
+                "homografia": {"puntos_px": puntos, "contexto": contexto},
+            })
         except Exception:
             logger.exception("No se pudo guardar la homografía en %s", config_path)
             return "Error: no se pudo guardar la homografía."
 
-        if self._recalibrar():
-            logger.info("Homografía guardada y recalibrada: %s", self.cfg.puntos_px)
-            return ("Homografía calibrada y guardada. Verificá el error con una "
-                    "pieza en una posición no calibrada.")
-        return "Homografía guardada, pero no se pudo recalcular la matriz."
+        self.cfg.puntos_px = puntos
+        if self.transformador is not None:
+            self.transformador.matriz_h = matriz
+        self.cfg.contexto = contexto
+        self.calibrando = False
+        self.puntos = []
+        return ("Homografía calibrada y guardada. Verificá el error con una "
+                "pieza en una posición no calibrada.")
 
     def _recalibrar(self) -> bool:
         """Recalcula la matriz del transformador con los puntos actuales."""
@@ -212,14 +234,28 @@ class EditorHomografia:
             ancho, alto = frame.shape[1], frame.shape[0]
             proximo = (ORDEN_PUNTOS[len(self.puntos)]
                        if len(self.puntos) < 4 else "aplicar")
-            cv2.rectangle(frame, (0, alto - 130), (ancho, alto - 90), (40, 40, 40), -1)
-            cv2.putText(
-                frame,
+            texto = (
                 f"HOMOGRAFIA: punto {min(len(self.puntos) + 1, 4)}/4 -> "
                 f"{NOMBRES_LARGOS.get(proximo, proximo)}  "
-                f"[Backspace] deshacer  [Enter] aplicar  [Esc] cancelar",
-                (12, alto - 104),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.55, COLOR_HOM, 1,
+                "[Backspace] deshacer  [Enter] aplicar  [Esc] cancelar"
+            )
+            fuente = cv2.FONT_HERSHEY_SIMPLEX
+            escala = 0.55
+            (ancho_texto, alto_texto), base = cv2.getTextSize(texto, fuente, escala, 1)
+            if ancho_texto > ancho - 48:
+                escala *= max(1, ancho - 48) / ancho_texto
+                (ancho_texto, alto_texto), base = cv2.getTextSize(texto, fuente, escala, 1)
+
+            centro_y = alto - 110
+            x_texto = (ancho - ancho_texto) // 2
+            y_texto = centro_y + (alto_texto - base) // 2
+            # Los extremos redondos de la línea forman el fondo del aviso.
+            cv2.line(
+                frame, (x_texto, centro_y), (x_texto + ancho_texto, centro_y),
+                (40, 40, 40), 28, cv2.LINE_AA,
+            )
+            cv2.putText(
+                frame, texto, (x_texto, y_texto), fuente, escala, COLOR_HOM, 1, cv2.LINE_AA,
             )
         return frame
 

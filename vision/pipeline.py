@@ -39,7 +39,9 @@ class PipelineVision:
 
     def __init__(self, config_path: str | Path = "vision/config.json"):
         self.cfg = load_config(config_path)
-        self.visor = VisorCamara(self.cfg.camara)
+        cam = self.cfg.camara
+        self._contexto_inicial = cam.contexto_homografia(cam.ancho, cam.alto)
+        self.visor = VisorCamara(cam)
         self.detector = DetectorPiezas(self.cfg.segmentacion)
         self.transformador = TransformadorCoordenadas(
             self.cfg.homografia, self.cfg
@@ -55,13 +57,31 @@ class PipelineVision:
     def desconectar(self) -> None:
         self.visor.desconectar()
 
+    def calibracion_vigente(self, ancho: int, alto: int) -> bool:
+        """Comprueba que el frame corresponda a la calibración disponible."""
+        contexto = self.cfg.homografia.contexto
+        if contexto is None:
+            contexto = self._contexto_inicial
+        return (
+            self.transformador.matriz_h is not None
+            and contexto == self.cfg.camara.contexto_homografia(ancho, alto)
+        )
+
     # -- Ejecución ----------------------------------------------------------
     def procesar_frame(self, frame_bgr: np.ndarray | None = None) -> dict:
         """Procesa un frame (o toma uno nuevo de la cámara) y devuelve el dict de detección."""
         if frame_bgr is None:
             frame_bgr = self.visor.leer()
         if frame_bgr is None:
-            return {"ok": False, "motivo_fallo": "sin frame disponible"}
+            return {"ok": False, "estado_vision": "sin_frame", "motivo_fallo": "sin frame disponible"}
+
+        alto, ancho = frame_bgr.shape[:2]
+        if not self.calibracion_vigente(ancho, alto):
+            return {
+                "ok": False,
+                "estado_vision": "calibracion_pendiente",
+                "motivo_fallo": "Verificá la homografía para esta cámara, resolución y ROI.",
+            }
 
         # Recortar ROI para working faster
         roi = self.visor.roi(frame_bgr)
@@ -72,6 +92,7 @@ class PipelineVision:
         if not det.ok:
             return {
                 "ok": False,
+                "estado_vision": "sin_pieza",
                 "motivo_fallo": det.motivo_fallo,
             }
 
@@ -90,11 +111,13 @@ class PipelineVision:
                 "y_ur5": coord.y,
                 "conf": det.confianza,
                 "bbox": det.bbox,
+                "estado_vision": "localizacion_invalida",
                 "motivo_fallo": coord.motivo_fallo,
             }
 
         return {
             "ok": True,
+            "estado_vision": "pieza_detectada",
             "categoria": det.categoria,
             "x_px": det.centro_x_px,
             "y_px": det.centro_y_px,

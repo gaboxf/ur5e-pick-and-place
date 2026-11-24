@@ -29,6 +29,7 @@ if str(RAIZ_PROYECTO) not in sys.path:
 from core.logging_config import configurar_logging, get_logger
 from core.robot_controller import RobotController
 from core.robot_map import dibujar_panel_robot
+from vision.config import actualizar_config
 from vision.homografia_editor import EditorHomografia
 from vision.hsv_editor import EditorHSV
 from vision.roi_editor import EditorROI
@@ -41,8 +42,6 @@ logger = get_logger("Dashboard")
 COLOR_TEXTO_HUD = {
     "rojo": (80, 80, 255),
     "azul": (255, 120, 60),
-    "verde": (80, 220, 80),
-    "violeta": (230, 130, 220),
 }
 
 
@@ -102,7 +101,6 @@ class DashboardApp:
         # mapa de trabajo mientras el robot se mueve (los moveL son bloqueantes).
         self.ciclo_en_curso = False
         self._ancho_video = 0
-        self._ultimo_frame = None
 
         # Botón "HOME" dibujado sobre el video (coordenadas de imagen) y
         # bandera para no lanzar dos movimientos a Home en paralelo.
@@ -155,14 +153,10 @@ class DashboardApp:
         self.pipeline.cfg.camara.indice_camara = self.camara_predeterminada
         self.pipeline.visor.cfg.indice_camara = self.camara_predeterminada
 
-        # Persistir SOLO la clave de cámara para no perder el resto del config.json
-
         try:
-            with open(self.config_path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            data.setdefault("camara", {})["indice_camara"] = self.camara_predeterminada
-            with open(self.config_path, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2, ensure_ascii=False)
+            actualizar_config(
+                self.config_path, {"camara": {"indice_camara": self.camara_predeterminada}},
+            )
             logger.info("Cámara %d guardada como predeterminada en %s",
                         self.camara_predeterminada, self.config_path)
         except Exception:
@@ -366,16 +360,14 @@ class DashboardApp:
         """Ejecuta un ciclo completo de Pick and Place con verificación en bucle cerrado."""
         self.abortar_ciclo = False
         self.estado_actual = "DETECTANDO"
-        # Usar el último frame capturado por el bucle de UI (copia para no
-        # compartir píxeles con el dibujado del HUD que corre en paralelo).
-        frame = self._ultimo_frame.copy() if self._ultimo_frame is not None else self.pipeline.visor.leer()
-        if frame is None:
-            return
-
-        det = self.pipeline.procesar_frame(frame)
+        det = self.pipeline.procesar_frame()
         self.ultima_deteccion = det
 
         if not det.get("ok"):
+            if det.get("estado_vision") in ("calibracion_pendiente", "sin_frame"):
+                self.estado_actual = det["estado_vision"].upper()
+                logger.warning("Ciclo cancelado: %s", det["motivo_fallo"])
+                return
             if self.estado_actual != "ESPERANDO_PIEZA":
                 self.estado_actual = "ESPERANDO_PIEZA"
                 if self.voice:
@@ -392,6 +384,12 @@ class DashboardApp:
             self.estado_actual = "ESPERANDO_PIEZA"
             if self.voice:
                 self.voice.hablar(f"Se detectó pieza {categoria}, pero se esperaba {categoria_filtro}.")
+            return
+
+        dest = self.robot_controller.destino_para(categoria)
+        if dest is None:
+            logger.error("La categoría %s no tiene destino calibrado.", categoria)
+            self.estado_actual = "ERROR_CICLO"
             return
 
         # Hay pieza válida
@@ -440,7 +438,6 @@ class DashboardApp:
             return
 
         # 2. Place según categoría (coordenadas ya en base del robot)
-        dest = self.robot_controller.destino_para(categoria)
 
         if not self.mover_ur5(dest["x"], dest["y"], z_seguro):
             self._abortar_por_movimiento()
@@ -493,10 +490,6 @@ class DashboardApp:
                     self.ejecutar_ciclo(categoria_filtro="A")
                 elif cmd == ComandoVoz.CLASIFICAR_AZUL:
                     self.ejecutar_ciclo(categoria_filtro="B")
-                elif cmd == ComandoVoz.CLASIFICAR_VERDE:
-                    self.ejecutar_ciclo(categoria_filtro="C")
-                elif cmd == ComandoVoz.CLASIFICAR_VIOLETA:
-                    self.ejecutar_ciclo(categoria_filtro="D")
                 elif cmd == ComandoVoz.ABRIR_GRIPPER:
                     self.gripper.open()
                 elif cmd == ComandoVoz.CERRAR_GRIPPER:
@@ -534,7 +527,7 @@ class DashboardApp:
                     det = self.ultima_deteccion
                     if self.voice:
                         if det.get("ok"):
-                            nombres_colores = {"A": "roja", "B": "azul", "C": "verde", "D": "violeta"}
+                            nombres_colores = {"A": "roja", "B": "azul"}
                             color = nombres_colores.get(det["categoria"], "desconocido")
                             self.voice.hablar(f"La pieza detectada es de color {color}.")
                         else:
@@ -661,7 +654,6 @@ class DashboardApp:
                     cv2.waitKey(20)
                     continue
                 self._fallos_frame = 0
-                self._ultimo_frame = frame
 
                 # 2. Procesar visión en tiempo real para mostrar feedback visual
                 det = self.pipeline.procesar_frame(frame)
@@ -675,6 +667,16 @@ class DashboardApp:
                 # Puntos del asistente de homografía (solo en modo calibración)
                 self.editor_homografia.tamano_frame = (frame.shape[1], frame.shape[0])
                 frame_dibujado = self.editor_homografia.dibujar(frame_dibujado)
+
+                if det.get("estado_vision") == "calibracion_pendiente" and not (
+                    self.ciclo_en_curso or self.parada_activa
+                ):
+                    self.estado_actual = "CALIBRACION_PENDIENTE"
+                elif self.estado_actual in ("CALIBRACION_PENDIENTE", "SIN_FRAME") and (
+                    det.get("estado_vision") not in ("calibracion_pendiente", "sin_frame")
+                    and not self.parada_activa
+                ):
+                    self.estado_actual = "LISTO" if det.get("ok") else "ESPERANDO_PIEZA"
 
                 # Si estamos en modo automático continuo, ejecutar ciclo
                 if self.modo_automatico and self.estado_actual in ("LISTO", "ESPERANDO_PIEZA"):
@@ -895,7 +897,11 @@ class DashboardApp:
             logger.info("Dashboard finalizado de forma segura.")
 
 
-if __name__ == "__main__":
+def main() -> None:
     configurar_logging()
     app = DashboardApp(activar_voz=True)
     app.correr()
+
+
+if __name__ == "__main__":
+    main()

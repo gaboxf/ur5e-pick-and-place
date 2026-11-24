@@ -165,10 +165,14 @@ ROBOT_MODE=real
 
 ## 5. Dashboards (elegir UNO)
 
+Desde la raíz del proyecto, con el entorno virtual activo, ejecutá `python main.py`.
+El valor `DASHBOARD_DEFAULT` de `.env` elige el dashboard. El valor inicial es
+`web`. La opción `--dashboard` tiene prioridad para una sola ejecución.
+
 | Dashboard | Comando | Para qué |
 |---|---|---|
-| Escritorio | `python -m core.dashboard` | Uso local, ventana OpenCV + control por voz |
-| Web | `python -m core.dashboard_web` | Monitoreo/operación desde navegador o celular |
+| Escritorio | `python main.py --dashboard escritorio` | Uso local, ventana OpenCV + control por voz |
+| Web | `python main.py --dashboard web` | Monitoreo/operación desde navegador o celular |
 
 > **No ejecutar los dos a la vez**: comparten el puerto serial del gripper y se
 > pelean.
@@ -176,6 +180,18 @@ ROBOT_MODE=real
 ### Interfaz web
 - Misma PC: <http://localhost:5000>
 - Otra PC/celular de la red: `http://<IP-de-la-PC>:5000`
+
+El dashboard admite un controlador web por defecto. Para cambiar el cupo, ajustá
+`WEB_CONTROLADORES_MAX` en el archivo de entorno y reiniciá el servidor. Cada
+navegador puede elegir **Tomar control** cuando hay un cupo disponible. Los demás
+pueden consultar el video y el estado de la celda.
+
+**Dejar de controlar** libera el cupo de inmediato. Al cerrar o dejar la pestaña,
+el navegador intenta liberar el cupo con cinco segundos de margen para permitir
+una recarga. Si el navegador se cierra abruptamente o pierde conexión sin avisar,
+el cupo se conserva. Volvé a abrir el dashboard en el mismo navegador y usá
+**Tomar control**, o reiniciá el servidor para liberar los cupos.
+
 - Video MJPEG en vivo, estado por SSE (funciona sin internet), botones de
   control, contadores de producción y alertas de seguridad.
 

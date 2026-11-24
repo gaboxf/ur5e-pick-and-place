@@ -18,15 +18,19 @@ from __future__ import annotations
 import collections
 import json
 import math
+import os
+import re
+import secrets
 import queue
 import socket
 import threading
 import time
+from functools import wraps
 from pathlib import Path
 
 import cv2
 import numpy as np
-from flask import Flask, Response, jsonify, render_template, request, send_from_directory
+from flask import Flask, Response, jsonify, make_response, render_template, request, send_from_directory
 
 # Ejecución directa (python core/dashboard_web.py): agregar la raíz del
 # proyecto al path para poder importar el paquete "core".
@@ -39,6 +43,7 @@ if str(RAIZ_PROYECTO) not in sys.path:
 from core.logging_config import configurar_logging, get_logger
 
 from core.robot_controller import RobotController
+from vision.config import actualizar_config
 from vision.homografia_editor import EditorHomografia
 from vision.hsv_editor import EditorHSV
 from vision.roi_editor import EditorROI
@@ -46,8 +51,8 @@ from vision.visor import VisorCamara
 
 logger = get_logger("WebDashboard")
 
-NOMBRES_COLOR = {"A": "roja", "B": "azul", "C": "verde", "D": "violeta"}
-NOMBRES_CATEGORIA = {"A": "A (roja)", "B": "B (azul)", "C": "C (verde)", "D": "D (violeta)"}
+NOMBRES_COLOR = {"A": "roja", "B": "azul"}
+NOMBRES_CATEGORIA = {"A": "A (roja)", "B": "B (azul)"}
 
 
 class WebDashboard:
@@ -77,6 +82,8 @@ class WebDashboard:
         )
 
         self._lock = threading.Lock()
+        self._operacion = threading.Lock()
+        self._parada_lock = threading.Lock()
         self._cam_lock = threading.Lock()  # serializa escaneo / cambio de cámara
         self._running = False
         self._hilo_captura: threading.Thread | None = None
@@ -96,7 +103,7 @@ class WebDashboard:
         self.robot_ok = False
         self.ciclos_ok = 0
         self.ciclos_error = 0
-        self.por_categoria = {"A": 0, "B": 0, "C": 0, "D": 0}
+        self.por_categoria = {"A": 0, "B": 0}
         self._t_inicio = time.time()
         self.logs_recientes: collections.deque[dict] = collections.deque(maxlen=60)
         self.registrar_log("INFO", "Consola de eventos iniciada.")
@@ -139,8 +146,8 @@ class WebDashboard:
             self.camara_ok = False
 
         try:
-            self.gripper_ok = bool(self.controller.gripper.connect())
-            self.gripper_ok = not self.controller.gripper.simulado
+            self.controller.gripper.connect()
+            self.gripper_ok = self.controller.gripper.conexion_disponible()
         except Exception as e:
             logger.error("Gripper: %s", e)
             self.gripper_ok = False
@@ -163,7 +170,7 @@ class WebDashboard:
         )
         self.registrar_log(
             "OK" if self.gripper_ok else "WARN",
-            f"Gripper: {'OK (Arduino conectado)' if self.gripper_ok else 'SIMULADO'}"
+            f"Gripper: {'OK (Arduino conectado)' if self.gripper_ok else 'SIN CONEXIÓN FÍSICA'}"
         )
         self.registrar_log(
             "INFO",
@@ -246,11 +253,7 @@ class WebDashboard:
         """Guarda el índice elegido en config.json sin tocar el resto de claves."""
         try:
             ruta = Path(self.config_path)
-            data = json.loads(ruta.read_text(encoding="utf-8"))
-            data.setdefault("camara", {})["indice_camara"] = int(indice)
-            ruta.write_text(
-                json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
-            )
+            actualizar_config(ruta, {"camara": {"indice_camara": int(indice)}})
             logger.info("Cámara %d guardada como predeterminada en %s", indice, ruta)
         except Exception:
             logger.exception("No se pudo persistir la cámara en %s", self.config_path)
@@ -266,7 +269,8 @@ class WebDashboard:
         """Edita la ROI con el editor visual (mover, tamaño, mostrar, aplicar)."""
         accion = (accion or "").strip().lower()
         if accion == "aplicar":
-            return True, self.editor_roi.aplicar(self.config_path)
+            msg = self.editor_roi.aplicar(self.config_path)
+            return not msg.startswith("Error"), msg
         return self.editor_roi.mover(accion)
 
     # ------------------------------------------------------------- editor HSV
@@ -274,7 +278,8 @@ class WebDashboard:
         """Edita los rangos HSV con el editor visual."""
         accion = (accion or "").strip().lower()
         if accion == "aplicar":
-            return True, self.editor_hsv.aplicar(self.config_path)
+            msg = self.editor_hsv.aplicar(self.config_path)
+            return not msg.startswith("Error"), msg
         return self.editor_hsv.mover(accion, valor)
 
     def iniciar(self):
@@ -328,13 +333,16 @@ class WebDashboard:
         except Exception:
             frame = None
 
+        self.camara_ok = frame is not None
         if frame is None:
             frame = self._frame_placeholder("SIN CAMARA")
-
-        try:
-            det = self.controller.pipeline.procesar_frame(frame)
-        except Exception as e:
-            det = {"ok": False, "motivo_fallo": f"error vision: {e}"}
+            det = {"ok": False, "estado_vision": "sin_frame", "motivo_fallo": "Sin imagen de cámara."}
+        else:
+            self.editor_homografia.tamano_frame = (frame.shape[1], frame.shape[0])
+            try:
+                det = self.controller.pipeline.procesar_frame(frame)
+            except Exception as e:
+                det = {"ok": False, "estado_vision": "error", "motivo_fallo": f"Error de visión: {e}"}
 
         try:
             frame_dib = self.controller.pipeline.dibujar(frame, det)
@@ -348,13 +356,6 @@ class WebDashboard:
         # Puntos del asistente de homografía (solo en modo calibración)
         frame_dib = self.editor_homografia.dibujar(frame_dib)
 
-        frame_dib = self._dibujar_hud(frame_dib, det)
-
-        # Tamaño real del frame para los editores que convierten clics
-        # (la cámara puede no honrar el ancho/alto pedidos)
-        self.editor_homografia.tamano_frame = (frame_dib.shape[1],
-                                               frame_dib.shape[0])
-
         ok, buf = cv2.imencode(".jpg", frame_dib, [cv2.IMWRITE_JPEG_QUALITY, 80])
         if ok:
             with self._lock:
@@ -366,10 +367,15 @@ class WebDashboard:
             if self.parada_activa:
                 # conserva el estado de emergencia fijado por el evento
                 pass
-            elif self.estado in ("INICIANDO", "LISTO", "ESPERANDO_PIEZA"):
+            elif self.estado in ("INICIANDO", "LISTO", "ESPERANDO_PIEZA",
+                                 "CALIBRACION_PENDIENTE", "SIN_FRAME"):
                 # Solo se reevalúa en reposo: no se pueden sobrescribir estados
                 # de un ciclo en marcha (DETECTANDO, ROBOT_ACTUANDO, etc.).
-                self.estado = "LISTO" if det.get("ok") else "ESPERANDO_PIEZA"
+                estado_vision = det.get("estado_vision")
+                if estado_vision in ("calibracion_pendiente", "sin_frame"):
+                    self.estado = estado_vision.upper()
+                else:
+                    self.estado = "LISTO" if det.get("ok") else "ESPERANDO_PIEZA"
 
         time.sleep(0.03)
 
@@ -377,39 +383,6 @@ class WebDashboard:
         frame = np.full((480, 640, 3), 35, dtype=np.uint8)
         cv2.putText(frame, texto, (150, 250),
                     cv2.FONT_HERSHEY_SIMPLEX, 1.0, (200, 200, 200), 2)
-        return frame
-
-    def _dibujar_hud(self, frame: np.ndarray, det: dict) -> np.ndarray:
-        h, w = frame.shape[:2]
-        cv2.rectangle(frame, (0, 0), (w, 34), (40, 40, 40), -1)
-        color = (0, 0, 255) if self.parada_activa else (0, 255, 0)
-
-        # Texto izquierdo (estado)
-        txt_izq = f"{self.estado}"
-        cv2.putText(frame, txt_izq, (12, 24),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
-        (w_izq, _), _ = cv2.getTextSize(txt_izq, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
-
-        # Texto derecho: alineado al borde derecho y acotado al espacio libre
-        if det.get("ok"):
-            txt = f"{det['categoria']}  ({det['x_ur5'] * 1000:.1f}, {det['y_ur5'] * 1000:.1f}) mm"
-        else:
-            txt = f"buscando: {det.get('motivo_fallo', '')}"
-
-        fuente, escala, grosor = cv2.FONT_HERSHEY_SIMPLEX, 0.55, 1
-        margen = 12
-        max_w = w - margen * 2 - w_izq - 24  # deja hueco tras el estado
-        (tw, th), _ = cv2.getTextSize(txt, fuente, escala, grosor)
-        if tw > max_w:
-            while len(txt) > 3:
-                (tw, _), _ = cv2.getTextSize(txt + "...", fuente, escala, grosor)
-                if tw <= max_w:
-                    break
-                txt = txt[:-1]
-            txt = txt + "..."
-            (tw, th), _ = cv2.getTextSize(txt, fuente, escala, grosor)
-        cv2.putText(frame, txt, (w - margen - tw, 24),
-                    fuente, escala, (0, 255, 255), grosor)
         return frame
 
     def _procesar_evento(self, evento: str):
@@ -424,103 +397,191 @@ class WebDashboard:
             # El firmware se abrio solo: la PC dejo de mandar comandos
             # validos por mas de 15 s. La pieza ya no esta sujeta, asi que
             # el ciclo debe abortarse y el robot frenarse.
-            self.abortar_ciclo = True
-            self.parada_activa = True
-            self.estado = "APERTURA_WATCHDOG"
-            self.controller.detener()
+            parada_enviada = self._activar_parada("APERTURA_WATCHDOG")
             logger.error(
                 "El gripper se abrió solo por watchdog: la PC dejó de "
-                "comunicarse. La pieza se soltó; el robot fue frenado."
+                "comunicarse. La pieza se soltó. Parada del UR5: %s.",
+                "enviada" if parada_enviada else "sin confirmación"
             )
         elif evento == "apertura_watchdog_completada":
             logger.warning("Terminó la apertura por watchdog del gripper")
 
     # ------------------------------------------------------------ comandos
+    def disponibilidad_mandos(self) -> dict[str, str]:
+        """Devuelve el motivo de bloqueo por mando, o cadena vacía si está disponible."""
+        robot = self.controller.robot
+        gripper = self.controller.gripper
+        self.robot_ok = robot.conexion_disponible()
+        self.gripper_ok = gripper.conexion_disponible()
+        motivo_robot = "" if self.robot_ok else "Revisá la conexión con el UR5."
+        admite_simulado = robot.mode != "real" and gripper.simulado
+        motivo_gripper = "" if self.gripper_ok or admite_simulado else "Revisá la conexión con el gripper."
+        motivo_vision = "" if self.camara_ok else "Revisá la conexión con la cámara."
+        if self.editor_homografia.calibrando:
+            motivo_vision = "Terminá o cancelá la calibración antes de ejecutar."
+        elif self.deteccion.get("estado_vision") == "calibracion_pendiente":
+            motivo_vision = "Verificá la homografía para la cámara y la ROI actuales."
+        motivo_calibracion = motivo_robot
+        if robot.mode != "real":
+            motivo_calibracion = "La calibración física requiere el UR5 conectado en modo real."
+        return {
+            "home": motivo_robot,
+            "gripper": motivo_gripper,
+            "ciclo": " ".join(m for m in (motivo_robot, motivo_gripper, motivo_vision) if m),
+            "calibrar_robot": motivo_calibracion,
+        }
+
+    def _activar_parada(self, estado: str) -> bool:
+        with self._parada_lock:
+            with self._lock:
+                self.abortar_ciclo = True
+                self.parada_activa = True
+                self.estado = estado
+            return self.controller.detener(retener=True)
+
     def comando(self, accion: str, categoria: str | None = None) -> tuple[bool, str]:
         self.ultimo_comando = accion
         logger.info("Comando remoto: %s (cat=%s)", accion, categoria)
 
-        if accion in ("abrir", "cerrar", "home", "ciclo", "detener", "reset", "soltar"):
-            # El reset es la única acción permitida con la parada activa.
-            if self.parada_activa and accion != "reset":
-                self.registrar_log("WARN", f"Comando '{accion}' rechazado: parada de seguridad activa.")
-                return False, "Parada de seguridad activa: reinicie la parada antes de operar."
+        if accion == "detener":
+            self.registrar_log("ERROR", "Parada solicitada desde el dashboard.")
+            if self._activar_parada("PARADA_SEGURIDAD"):
+                return True, "Parada solicitada."
+            return False, "Parada local activa. No se pudo enviar al UR5. Revisá la conexión RTDE."
 
         if accion == "limpiar_rastro":
             self.controller.limpiar_rastro()
-            self.registrar_log("INFO", "Rastro del robot borrado.")
             return True, "Rastro del robot borrado."
 
-        if accion == "abrir":
-            self.registrar_log("INFO", "Comando manual: abrir gripper")
-            self.controller.gripper.open()
-            return True, "Gripper abierto."
-        if accion == "cerrar":
-            self.registrar_log("INFO", "Comando manual: cerrar gripper")
-            self.controller.gripper.close()
-            return True, "Gripper cerrado."
-        if accion == "soltar":
-            self.registrar_log("WARN", "Comando: soltar pieza (apertura suave)")
-            ok = self.controller.gripper.stop()
-            return (True, "Pieza soltada (gripper abierto).") if ok else (
-                False, "No se pudo soltar la pieza."
-            )
-        if accion == "home":
-            self.registrar_log("INFO", "Comando manual: mover a Home")
-            if self.controller.ir_a_home():
-                self.registrar_log("OK", "Robot en posición Home.")
-                return True, "Movido a posición Home."
-            motivo = self.controller.ultimo_error or "el robot rechazó el movimiento"
-            self.registrar_log("ERROR", f"No se pudo mover el robot a Home: {motivo}")
-            return False, f"No se pudo mover a Home: {motivo}"
-        if accion == "detener":
-            self.registrar_log("ERROR", "Comando: PARADA DE SEGURIDAD solicitada")
-            self.abortar_ciclo = True
-            self.parada_activa = True
-            self.controller.detener()
-            self.estado = "PARADA_SEGURIDAD"
-            return True, "Parada solicitada."
-        if accion == "reset":
-            self.registrar_log("OK", "Parada de seguridad reiniciada")
-            self.parada_activa = False
-            self.abortar_ciclo = False
-            self.ultimo_evento = None
-            self.estado = "LISTO"
-            return True, "Parada reiniciada."
-        if accion == "ciclo":
-            if self.estado in ("ROBOT_ACTUANDO", "DETECTANDO", "VERIFICANDO"):
-                self.registrar_log("WARN", "Ya hay un ciclo en curso.")
-                return False, "Ya hay un ciclo en curso."
-            # Fijar el estado antes de lanzar el hilo, para que el _tick no lo
-            # sobreescriba con LISTO/ESPERANDO_PIEZA durante la detección.
-            self.estado = "DETECTANDO"
-            threading.Thread(
-                target=self.ejecutar_ciclo, args=(categoria,), daemon=True
-            ).start()
-            return True, "Ciclo iniciado."
+        if accion not in ("abrir", "cerrar", "home", "ciclo", "reset", "soltar"):
+            return False, f"Acción desconocida: {accion}"
 
-        return False, f"Acción desconocida: {accion}"
+        if not self._operacion.acquire(blocking=False):
+            return False, "Esperá a que termine la operación en curso."
+
+        hilo_iniciado = False
+        try:
+            if accion == "reset":
+                if not self._parada_lock.acquire(blocking=False):
+                    return False, "Esperá a que termine la parada."
+                try:
+                    with self._lock:
+                        self.controller.robot.reiniciar_parada()
+                        self.parada_activa = False
+                        self.abortar_ciclo = False
+                        self.ultimo_evento = None
+                        self.estado = "LISTO"
+                finally:
+                    self._parada_lock.release()
+                self.registrar_log("OK", "Parada reiniciada.")
+                return True, "Parada reiniciada."
+
+            if self._abortado():
+                return False, "Parada activa. Reiniciá la parada antes de operar."
+
+            tipo = accion if accion in ("home", "ciclo") else "gripper"
+            motivo = self.disponibilidad_mandos()[tipo]
+            if motivo:
+                return False, motivo
+
+            if accion == "ciclo":
+                if categoria not in (None, "A", "B"):
+                    return False, "Solo están habilitadas las categorías A y B."
+                with self._lock:
+                    if self._abortado():
+                        return False, "Parada activa."
+                    self.estado = "DETECTANDO"
+                hilo = threading.Thread(
+                    target=self._ciclo_en_segundo_plano, args=(categoria,), daemon=True
+                )
+                try:
+                    hilo.start()
+                except RuntimeError:
+                    with self._lock:
+                        if not self._abortado():
+                            self.estado = "ERROR_CICLO"
+                    logger.exception("No se pudo iniciar el hilo del ciclo")
+                    return False, "No se pudo iniciar el ciclo."
+                hilo_iniciado = True
+                return True, "Ciclo iniciado."
+
+            if accion == "home":
+                ok = self.controller.ir_a_home()
+                motivo = self.controller.ultimo_error or "movimiento rechazado"
+                if not ok:
+                    return False, f"No se pudo ir a Home: {motivo}"
+                return True, ("Robot simulado en Home." if self.controller.robot.mode != "real"
+                              else "Robot en Home.")
+
+            metodo, mensaje = {
+                "abrir": (self.controller.gripper.open, "Gripper abierto."),
+                "cerrar": (self.controller.gripper.close, "Gripper cerrado."),
+                "soltar": (self.controller.gripper.stop, "Apertura del gripper confirmada."),
+            }[accion]
+            if self._abortado():
+                return False, "Parada activa."
+            if not metodo():
+                return False, "El gripper no confirmó el comando. Revisá su conexión."
+            if self.controller.gripper.simulado:
+                return True, "Comando simulado. " + mensaje
+            return True, mensaje
+        finally:
+            if not hilo_iniciado:
+                self._operacion.release()
+
+    def _ciclo_en_segundo_plano(self, categoria: str | None) -> None:
+        try:
+            self._ejecutar_ciclo(categoria)
+        except Exception:
+            logger.exception("Error inesperado durante el ciclo")
+            self._registrar_fallo_ciclo("Error inesperado durante el ciclo. Consultá el registro.")
+        finally:
+            self._operacion.release()
 
     def ejecutar_ciclo(self, categoria_filtro: str | None = None) -> bool:
-        if self.parada_activa:
+        """Ejecuta un ciclo síncrono con la misma exclusión que el dashboard."""
+        if not self._operacion.acquire(blocking=False):
+            return False
+        try:
+            return self._ejecutar_ciclo(categoria_filtro)
+        finally:
+            self._operacion.release()
+
+    def _ejecutar_ciclo(self, categoria_filtro: str | None = None) -> bool:
+        if self._abortado():
+            return False
+        motivo = self.disponibilidad_mandos()["ciclo"]
+        if motivo:
+            self._registrar_fallo_ciclo(motivo)
             return False
 
-        self.abortar_ciclo = False
-        self.estado = "DETECTANDO"
+        with self._lock:
+            if self._abortado():
+                return False
+            self.estado = "DETECTANDO"
         det = self.controller.pipeline.procesar_frame()
 
         if not det.get("ok"):
-            self.estado = "ESPERANDO_PIEZA"
+            with self._lock:
+                if not self._abortado():
+                    estado_vision = det.get("estado_vision")
+                    self.estado = (estado_vision.upper() if estado_vision in
+                                   ("calibracion_pendiente", "sin_frame") else "ESPERANDO_PIEZA")
             self.registrar_log("WARN", f"Ciclo cancelado: {det.get('motivo_fallo', 'sin pieza detectada')}")
             return False
 
         categoria = det["categoria"]
         if categoria_filtro and categoria != categoria_filtro:
-            self.estado = "ESPERANDO_PIEZA"
+            with self._lock:
+                if not self._abortado():
+                    self.estado = "ESPERANDO_PIEZA"
             self.registrar_log("WARN", f"Pieza detectada es {categoria}, pero se filtró por {categoria_filtro}")
             return False
 
-        self.estado = "ROBOT_ACTUANDO"
+        with self._lock:
+            if self._abortado():
+                return False
+            self.estado = "ROBOT_ACTUANDO"
         x, y = det["x_ur5"], det["y_ur5"]
         # Centro real de agarre = centro detectado + offset de herramienta
         # (pinzas vs TCP). Ver `capturar_pieza_para_offset()` y
@@ -533,6 +594,9 @@ class WebDashboard:
         z_pick = float(self.controller.config.get("z_pick", 0.050))
         z_deposit = self.controller.z_deposito()
         dest = self.controller.destino_para(categoria)
+        if dest is None:
+            self._registrar_fallo_ciclo(f"La categoría {categoria} no tiene un destino válido.")
+            return False
 
         self.registrar_log("INFO", f"Iniciando ciclo: Pieza {categoria} en ({x*1000:.1f}, {y*1000:.1f}) mm")
         if (x_pick, y_pick) != (x, y):
@@ -564,6 +628,9 @@ class WebDashboard:
 
             # 3. Cierre de pinza con validación de confirmación del firmware
             self.registrar_log("INFO", "Cerrando gripper (esperando confirmación DONE de Arduino)...")
+            self._comprobar_parada()
+            if self.disponibilidad_mandos()["gripper"]:
+                raise RuntimeError("Se perdió la conexión con el gripper antes del agarre.")
             if not self.controller.gripper.close():
                 raise RuntimeError("cierre de gripper fallido (sin confirmación DONE)")
             self.registrar_log("INFO", "Gripper cerrado OK")
@@ -584,21 +651,22 @@ class WebDashboard:
             else:
                 x_check, y_check = dest["x"], dest["y"]
 
-            if not self.controller.mover_a(x_check, y_check, z_seguro):
-                raise RuntimeError(
-                    "desplazamiento a verificación fallido: "
-                    f"{self.controller.ultimo_error or 'el robot rechazó el movimiento'}"
-                )
-            if self._abortado():
-                raise RuntimeError("abortado por seguridad")
-
+            self._mover(x_check, y_check, z_seguro, "desplazamiento a verificación fallido")
             with self._lock:
+                self._comprobar_parada()
                 self.estado = "VERIFICANDO"
             self.registrar_log("INFO", "Inspeccionando mesa con cámara cenital (Closed-Loop)...")
             time.sleep(0.15)  # estabilización visual del frame
 
             es_mock = (self.controller.robot.mode == "mock")
             det_verif = self.controller.pipeline.procesar_frame()
+            self._comprobar_parada()
+            if not det_verif.get("ok") and det_verif.get("estado_vision") != "sin_pieza":
+                raise RuntimeError(
+                    "Verificación de agarre inconclusa: "
+                    f"{det_verif.get('motivo_fallo', 'imagen o localización inválida')}. "
+                    "Revisá la pieza y el gripper antes de continuar."
+                )
             if det_verif.get("ok"):
                 # Si se detecta una pieza cerca de la coordenada original de pick, no fue levantada
                 dist_pick = math.hypot(det_verif["x_ur5"] - x, det_verif["y_ur5"] - y)
@@ -608,8 +676,12 @@ class WebDashboard:
                             "ERROR",
                             f"Fallo de agarre: la pieza sigue en mesa en ({det_verif['x_ur5']:.3f}, {det_verif['y_ur5']:.3f})"
                         )
+                        self._comprobar_parada()
                         self.controller.gripper.open()
-                        self.controller.mover_a(*self.controller.punto_base(0.30, 0.0), z_seguro)
+                        self._mover(
+                            *self.controller.punto_base(0.30, 0.0), z_seguro,
+                            "retirada tras el fallo de agarre",
+                        )
                         raise RuntimeError("Fallo de agarre: la pieza no fue recogida (verificado por visión)")
                     else:
                         self.registrar_log(
@@ -623,6 +695,7 @@ class WebDashboard:
                 self.registrar_log("OK", "Confirmación visual OK: mesa despejada en punto de pick.")
 
             with self._lock:
+                self._comprobar_parada()
                 self.estado = "ROBOT_ACTUANDO"
 
             # 6. Transporte a la zona de clasificación
@@ -632,25 +705,22 @@ class WebDashboard:
 
             # 7. Liberación y retirada segura
             self.registrar_log("INFO", "Abriendo gripper...")
-            if not self.controller.gripper.open():
-                logger.warning("Apertura de gripper no reportó confirmación normal.")
+            self._comprobar_parada()
+            apertura = not self.disponibilidad_mandos()["gripper"] and self.controller.gripper.open()
 
-            if not self.controller.mover_a(dest["x"], dest["y"], z_seguro):
-                raise RuntimeError(
-                    "retirada post-depósito fallida: "
-                    f"{self.controller.ultimo_error or 'el robot rechazó el movimiento'}"
-                )
+            self._mover(dest["x"], dest["y"], z_seguro, "retirada post-depósito fallida")
+
+            if not apertura:
+                raise RuntimeError("El gripper no confirmó la liberación. Revisá su conexión.")
 
             # 8. Regreso a Home (pose segura para el próximo ciclo)
-            if not self._abortado():
-                if not self.controller.ir_a_home():
-                    self.registrar_log(
-                        "ERROR",
-                        "No se pudo volver a Home: "
-                        f"{self.controller.ultimo_error or 'movimiento rechazado'}",
-                    )
+            self._comprobar_parada()
+            if not self.controller.ir_a_home():
+                motivo = self.controller.ultimo_error or "movimiento rechazado"
+                raise RuntimeError(f"Depósito realizado. No se pudo volver a Home: {motivo}")
 
             with self._lock:
+                self._comprobar_parada()
                 self.ciclos_ok += 1
                 self.por_categoria[categoria] = self.por_categoria.get(categoria, 0) + 1
                 self.estado = "LISTO"
@@ -659,32 +729,44 @@ class WebDashboard:
             return True
 
         except Exception as e:
-            self.registrar_log("ERROR", f"Ciclo interrumpido: {e}")
-            logger.warning("Ciclo interrumpido: %s", e)
-            with self._lock:
-                self.ciclos_error += 1
-                self.estado = "PARADA_SEGURIDAD" if self.parada_activa else "ERROR_CICLO"
+            self._registrar_fallo_ciclo(str(e))
             return False
+
+    def _registrar_fallo_ciclo(self, motivo: str) -> None:
+        self.registrar_log("ERROR", f"Ciclo interrumpido: {motivo}")
+        logger.warning("Ciclo interrumpido: %s", motivo)
+        with self._lock:
+            self.ciclos_error += 1
+            if not self.parada_activa:
+                self.estado = "ERROR_CICLO"
 
     def _abortado(self) -> bool:
         return self.abortar_ciclo or self.parada_activa
 
+    def _comprobar_parada(self) -> None:
+        if self._abortado():
+            raise RuntimeError("operación interrumpida por parada")
+
     def _mover(self, x, y, z, contexto: str) -> None:
-        """mover_a, pero con el motivo real del rechazo en el mensaje de error."""
-        if self.controller.mover_a(x, y, z):
-            return
-        raise RuntimeError(
-            f"{contexto}: "
-            f"{self.controller.ultimo_error or 'el robot rechazó el movimiento'}"
-        )
+        """Ejecuta un movimiento, respetando la parada antes y después."""
+        self._comprobar_parada()
+        if not self.controller.mover_a(x, y, z):
+            raise RuntimeError(
+                f"{contexto}: "
+                f"{self.controller.ultimo_error or 'el robot rechazó el movimiento'}"
+            )
+        self._comprobar_parada()
 
     # ------------------------------------------------------------- estado
     def estado_json(self) -> dict:
+        mandos = self.disponibilidad_mandos()
         with self._lock:
             det = dict(self.deteccion) if self.deteccion else {}
             return {
                 "estado": self.estado,
                 "parada_activa": self.parada_activa,
+                "operacion_en_curso": self._operacion.locked(),
+                "parada_en_curso": self._parada_lock.locked(),
                 "ultimo_evento": self.ultimo_evento,
                 "ultimo_comando": self.ultimo_comando,
                 "logs": list(self.logs_recientes),
@@ -692,6 +774,9 @@ class WebDashboard:
                 "indice_camara": self.indice_camara_actual(),
                 "gripper_ok": self.gripper_ok,
                 "robot_ok": self.robot_ok,
+                "gripper_simulado": self.controller.robot.mode != "real" and self.controller.gripper.simulado,
+                "bloqueo_mandos": mandos,
+                "robot_modo": self.controller.robot.mode,
                 "deteccion": det,
                 "gripper": self.controller.gripper.get_estado_completo(),
                 "ciclos_ok": self.ciclos_ok,
@@ -711,14 +796,99 @@ class WebDashboard:
             }
 
 
+class CuposControlWeb:
+    """Reserva cupos por navegador y habilita los mandos en una pestaña."""
+
+    def __init__(self, limite: int):
+        self.limite = limite
+        self._lock = threading.Lock()
+        self._cupos: dict[str, tuple[str, float | None]] = {}
+
+    def consultar(self, navegador: str, pestaña: str, accion: str = "", anterior: str = "") -> dict:
+        with self._lock:
+            ahora = time.monotonic()
+            self._cupos = {
+                id_navegador: cupo for id_navegador, cupo in self._cupos.items()
+                if cupo[1] is None or cupo[1] > ahora
+            }
+            cupo = self._cupos.get(navegador)
+            propio = cupo is not None and cupo[0] == pestaña
+            if accion == "tomar" and (cupo is not None or len(self._cupos) < self.limite):
+                self._cupos[navegador] = (pestaña, None)
+                propio = True
+            elif accion == "salir" and propio:
+                # Conserva el cupo unos segundos si la página se está recargando.
+                self._cupos[navegador] = (pestaña, ahora + 5)
+                propio = False
+            elif accion == "renunciar" and propio:
+                del self._cupos[navegador]
+                propio = False
+            elif accion == "reanudar" and cupo is not None and cupo[0] in (pestaña, anterior):
+                self._cupos[navegador] = (pestaña, None)
+                propio = True
+            elif propio and cupo[1] is not None:
+                propio = False
+            return {
+                "controla": propio,
+                "puede_tomar": navegador in self._cupos or len(self._cupos) < self.limite,
+                "ocupados": len(self._cupos),
+                "limite": self.limite,
+            }
+
+
+def _identificador_valido(valor: str) -> bool:
+    return re.fullmatch(r"[0-9a-f]{32}", valor) is not None
+
+
 # --------------------------------------------------------------- Flask app
 dashboard = WebDashboard()
+max_controladores = int(os.getenv("WEB_CONTROLADORES_MAX", "1"))
+if max_controladores < 1:
+    raise ValueError("WEB_CONTROLADORES_MAX debe ser un entero mayor o igual a 1.")
+cupos_control = CuposControlWeb(max_controladores)
 app = Flask(__name__, template_folder=str(BASE_DIR.parent / "templates"))
+
+ENDPOINTS_CONTROL = {
+    "api_command", "api_camaras", "api_camara", "api_roi",
+    "api_hsv", "api_homografia", "api_calibrar_robot",
+}
+
+
+@app.before_request
+def verificar_control_web():
+    if request.endpoint not in ENDPOINTS_CONTROL:
+        return None
+    navegador = request.cookies.get("ur5_navegador", "")
+    pestaña = request.headers.get("X-UR5-Pestana", "")
+    if (_identificador_valido(navegador) and _identificador_valido(pestaña)
+            and cupos_control.consultar(navegador, pestaña, "verificar")["controla"]):
+        return None
+    return jsonify({"ok": False, "mensaje": "Tomá el control web antes de enviar comandos."}), 403
 
 
 @app.route("/")
 def index():
-    return render_template("dashboard.html")
+    respuesta = make_response(render_template("dashboard.html"))
+    if not _identificador_valido(request.cookies.get("ur5_navegador", "")):
+        respuesta.set_cookie(
+            "ur5_navegador", secrets.token_hex(16), httponly=True,
+            samesite="Strict", secure=request.is_secure, max_age=30 * 24 * 60 * 60,
+        )
+    return respuesta
+
+
+@app.route("/api/control", methods=["GET", "POST"])
+def api_control():
+    navegador = request.cookies.get("ur5_navegador", "")
+    pestaña = request.headers.get("X-UR5-Pestana", "") or request.form.get("pestaña", "")
+    accion = request.form.get("accion", "") if request.method == "POST" else ""
+    if not _identificador_valido(navegador) or not _identificador_valido(pestaña):
+        return jsonify({"ok": False, "mensaje": "Abrí el dashboard para obtener una sesión."}), 403
+    if accion not in ("", "tomar", "salir", "renunciar", "reanudar"):
+        return jsonify({"ok": False, "mensaje": "Acción de control inválida."}), 400
+    anterior = request.form.get("anterior", "")
+    estado = cupos_control.consultar(navegador, pestaña, accion, anterior)
+    return jsonify(estado), (409 if accion == "tomar" and not estado["controla"] else 200)
 
 
 @app.route("/logo-upro.jpg")
@@ -797,7 +967,24 @@ def api_command():
     return jsonify({"ok": ok, "mensaje": msg}), (200 if ok else 400)
 
 
+def requiere_celda_disponible(funcion):
+    """Excluye cambios de cámara y calibración durante movimientos web."""
+    @wraps(funcion)
+    def atender(*args, **kwargs):
+        if not dashboard._operacion.acquire(blocking=False):
+            return jsonify({"ok": False, "mensaje": "Esperá a que termine la operación en curso."}), 409
+        try:
+            if dashboard.parada_activa:
+                return jsonify({"ok": False, "mensaje": "Reiniciá la parada antes de ajustar la celda."}), 409
+            return funcion(*args, **kwargs)
+        finally:
+            dashboard._operacion.release()
+
+    return atender
+
+
 @app.route("/api/camaras")
+@requiere_celda_disponible
 def api_camaras():
     """Escanea los índices 0..9 y devuelve las cámaras disponibles.
 
@@ -815,6 +1002,7 @@ def api_camaras():
 
 
 @app.route("/api/camara", methods=["POST"])
+@requiere_celda_disponible
 def api_camara():
     data = request.get_json(silent=True) or {}
     try:
@@ -828,6 +1016,7 @@ def api_camara():
 
 
 @app.route("/api/roi", methods=["POST"])
+@requiere_celda_disponible
 def api_roi():
     """Ajuste visual de la ROI: mover, tamaño, mostrar/ocultar, aplicar y reset.
 
@@ -842,10 +1031,11 @@ def api_roi():
 
 
 @app.route("/api/hsv", methods=["POST"])
+@requiere_celda_disponible
 def api_hsv():
     """Calibración visual de colores HSV.
 
-    Acciones: color (con valor rojo/azul/verde/violeta), matiz_izquierda,
+    Acciones: color (con valor rojo/azul), matiz_izquierda,
     matiz_derecha, mas_amplio, mas_estrecho, mas_sensible, menos_sensible,
     area_mas, area_menos, confianza_mas, confianza_menos, mostrar, aplicar,
     reset.
@@ -859,6 +1049,7 @@ def api_hsv():
 
 
 @app.route("/api/homografia", methods=["POST"])
+@requiere_celda_disponible
 def api_homografia():
     """Asistente de calibración de la homografía.
 
@@ -868,6 +1059,8 @@ def api_homografia():
     data = request.get_json(silent=True) or {}
     accion = (data.get("accion") or "").strip().lower()
     valor = (data.get("valor") or "").strip()
+    if accion in ("iniciar", "punto", "aplicar") and not dashboard.camara_ok:
+        return jsonify({"ok": False, "mensaje": "La calibración requiere imagen en vivo."}), 409
     if accion == "aplicar":
         msg = dashboard.editor_homografia.aplicar(dashboard.config_path)
         ok = not msg.startswith("Error")
@@ -881,6 +1074,7 @@ def api_homografia():
 
 
 @app.route("/api/calibrar_robot", methods=["POST"])
+@requiere_celda_disponible
 def api_calibrar_robot():
     """Calibra parámetros físicos del robot en vivo capturando su TCP actual.
 
@@ -895,6 +1089,10 @@ def api_calibrar_robot():
     """
     data = request.get_json(silent=True) or {}
     accion = (data.get("accion") or "").strip().lower()
+
+    motivo = dashboard.disponibilidad_mandos()["calibrar_robot"]
+    if motivo:
+        return jsonify({"ok": False, "mensaje": motivo}), 409
 
     if accion == "home":
         ok, msg = dashboard.controller.calibrar_home_actual()
@@ -935,7 +1133,7 @@ def api_calibrar_robot():
 
 
 
-if __name__ == "__main__":
+def main() -> None:
     configurar_logging()
     dashboard.iniciar()
     logger.info("Escuchando en todas las interfaces (0.0.0.0:5000).")
@@ -950,3 +1148,7 @@ if __name__ == "__main__":
         app.run(host="0.0.0.0", port=5000, threaded=True, use_reloader=False)
     finally:
         dashboard.detener()
+
+
+if __name__ == "__main__":
+    main()

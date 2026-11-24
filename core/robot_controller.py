@@ -15,6 +15,7 @@ from core.logging_config import get_logger
 
 logger = get_logger("RobotController")
 
+from vision.config import actualizar_config
 from vision.pipeline import PipelineVision
 
 from gripper.tools.gripper_client import GripperClient
@@ -171,18 +172,23 @@ class RobotController:
         z_pick = float(self.config.get("z_pick", 0.050))
         return max(float(self.config.get("z_deposit", z_pick)), z_pick)
 
-    def destino_para(self, categoria: str) -> dict[str, float]:
+    def destino_para(self, categoria: str) -> dict[str, float] | None:
         """Devuelve el destino de depósito de una categoría en base del robot.
 
         Los valores de `destinos` en config.json están en el mismo sistema que
         `puntos_ur5` (relativos a Home si el origen está activo).
         """
-        destinos = self.config.get("destinos", {
-            "A": {"x": 0.40, "y": 0.20},
-            "B": {"x": 0.40, "y": -0.20},
-        })
-        dest = destinos.get(categoria) or {"x": 0.40, "y": 0.00}
-        x, y = self.punto_base(float(dest["x"]), float(dest["y"]))
+        if categoria not in ("A", "B"):
+            return None
+        dest = self.config.get("destinos", {}).get(categoria)
+        if not dest:
+            return None
+        try:
+            x, y = self.punto_base(float(dest["x"]), float(dest["y"]))
+        except (KeyError, ValueError, TypeError, OverflowError):
+            return None
+        if not (math.isfinite(x) and math.isfinite(y)) or math.hypot(x, y) < self.radio_minimo_base:
+            return None
         return {"x": x, "y": y}
 
     def _leer_home_pose(self) -> list[float] | None:
@@ -324,12 +330,12 @@ class RobotController:
         return self.ir_a_home()
 
     # -------------------------------------------------- calibración en vivo
-    def guardar_config(self) -> bool:
-        """Persiste la configuración actualizada en config.json."""
+    def guardar_config(self, cambios: dict) -> bool:
+        """Persiste el ajuste antes de activarlo en el controlador."""
         try:
-            with open(self.config_path, "w", encoding="utf-8") as f:
-                json.dump(self.config, f, indent=2, ensure_ascii=False)
-            logger.info("Configuración guardada en %s", self.config_path)
+            data = actualizar_config(self.config_path, cambios)
+            for clave in cambios:
+                self.config[clave] = data[clave]
             return True
         except Exception:
             logger.exception("Error guardando %s", self.config_path)
@@ -341,9 +347,10 @@ class RobotController:
         if not pose:
             return False, "No se pudo leer la pose del robot."
         anterior = list(self.home_pose) if self.home_pose else None
-        self.home_pose = [float(v) for v in pose]
-        self.config["home_pose"] = self.home_pose
-        self.guardar_config()
+        home = [float(v) for v in pose]
+        if not self.guardar_config({"home_pose": home}):
+            return False, "No se pudo guardar la pose Home."
+        self.home_pose = home
 
         aviso = ""
         if self.config.get("usar_home_como_origen", False):
@@ -393,8 +400,8 @@ class RobotController:
         if not pose:
             return False, "No se pudo leer la pose del robot."
         z = round(float(pose[2]), 4)
-        self.config["z_pick"] = z
-        self.guardar_config()
+        if not self.guardar_config({"z_pick": z}):
+            return False, "No se pudo guardar la cota de agarre."
         msg = f"Z Pick fijado en {z*1000:.1f} mm ({z:.4f} m)"
         logger.info(msg)
         return True, msg
@@ -494,9 +501,8 @@ class RobotController:
                 f"z_pick ({z_pick * 1000:.0f} mm): probablemente no estés midiendo "
                 "sobre la pieza. Volvé a capturar (paso 1)."
             )
-        self.config["pick_offset_x"] = off_x
-        self.config["pick_offset_y"] = off_y
-        self.guardar_config()
+        if not self.guardar_config({"pick_offset_x": off_x, "pick_offset_y": off_y}):
+            return False, "No se pudo guardar el offset de agarre."
         self._offset_pick_pendiente = None
 
         msg = (
@@ -513,8 +519,8 @@ class RobotController:
         if not pose:
             return False, "No se pudo leer la pose del robot."
         z = round(float(pose[2]), 4)
-        self.config["z_seguro"] = z
-        self.guardar_config()
+        if not self.guardar_config({"z_seguro": z}):
+            return False, "No se pudo guardar la cota segura."
         msg = f"Z Seguro fijado en {z*1000:.1f} mm ({z:.4f} m)"
         logger.info(msg)
         return True, msg
@@ -525,6 +531,8 @@ class RobotController:
         if not pose:
             return False, "No se pudo leer la pose del robot."
         cat = categoria.upper()
+        if cat not in ("A", "B"):
+            return False, "Solo se pueden calibrar los destinos A y B."
         x_base, y_base = float(pose[0]), float(pose[1])
         if self.config.get("usar_home_como_origen", False) and self.home_pose:
             x_rel = round(x_base - self.home_pose[0], 4)
@@ -532,8 +540,8 @@ class RobotController:
         else:
             x_rel, y_rel = round(x_base, 4), round(y_base, 4)
 
-        self.config.setdefault("destinos", {})[cat] = {"x": x_rel, "y": y_rel}
-        self.guardar_config()
+        if not self.guardar_config({"destinos": {cat: {"x": x_rel, "y": y_rel}}}):
+            return False, f"No se pudo guardar el destino {cat}."
         msg = f"Destino {cat} fijado en ({x_rel:.3f}, {y_rel:.3f}) m"
         logger.info(msg)
         return True, msg
@@ -617,9 +625,9 @@ class RobotController:
             )
         return ok
 
-    def detener(self):
+    def detener(self, retener: bool = False) -> bool:
         """Parada de seguridad: interrumpe el movimiento del robot en curso."""
-        self.robot.stop()
+        return self.robot.stop(retener=retener)
 
 
     def ejecutar_ciclo(self) -> bool:
@@ -637,6 +645,10 @@ class RobotController:
             return False
 
         categoria = deteccion["categoria"]
+        destino = self.destino_para(categoria)
+        if destino is None:
+            logger.error("La categoría %s no tiene un destino válido.", categoria)
+            return False
         x_ur5 = deteccion["x_ur5"]
         y_ur5 = deteccion["y_ur5"]
         if not self.offset_pick_valido():
@@ -682,9 +694,6 @@ class RobotController:
         if not self.mover_a(x_pick, y_pick, z_seguro):
             logger.error("Elevación post-pick fallida")
             return False
-
-        # Obtener destino según categoría (A -> Zona A, B -> Zona B)
-        destino = self.destino_para(categoria)
 
         # Desplazamiento leve hacia el destino para despejar la vista cenital sobre la mesa
         dx = destino["x"] - x_pick
@@ -753,23 +762,7 @@ if __name__ == "__main__":
     from core.logging_config import configurar_logging
     configurar_logging()
 
-    # Asegurar valores por defecto en config.json si faltan
     config_path = RAIZ_PROYECTO / "vision" / "config.json"
-    with open(config_path, "r") as f:
-        cfg_data = json.load(f)
-    
-    # Agregar parámetros de robot si no están
-    cfg_data.setdefault("gripper_port", "COM3")
-    cfg_data.setdefault("z_seguro", 0.200)
-    cfg_data.setdefault("z_pick", 0.050)
-    cfg_data.setdefault("z_deposit", 0.050)
-    cfg_data.setdefault("destinos", {
-        "A": {"x": 0.40, "y": 0.20},
-        "B": {"x": 0.40, "y": -0.20}
-    })
-    with open(config_path, "w") as f:
-        json.dump(cfg_data, f, indent=2)
-
     controller = RobotController(config_path)
     if controller.conectar():
         try:

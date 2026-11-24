@@ -103,14 +103,17 @@ python core/dashboard_web.py
   <section class="section--tight">
     <h2 class="title">Checklist antes de la demo</h2>
     <p class="lede">Completá cada punto con la mesa iluminada antes de la orden de marcha.</p>
-    <ul class="checklist">
-      <li><label><input type="checkbox" checked> <span><strong>Cámara fija, enfocada y sin moverse desde la calibración.</strong> <span>Sin autoenfoque activo; encuadre idéntico al de la calibración.</span></span></label></li>
-      <li><label><input type="checkbox" checked> <span><strong>ROI, homografía y HSV calibrados con la luz definitiva del aula.</strong> <span>La matriz H proyecta píxeles [u, v] a milímetros reales [X, Y].</span></span></label></li>
-      <li><label><input type="checkbox" checked> <span><strong>Piezas de ambas categorías disponibles.</strong> <span>A (roja) y B (azul), dentro de la zona de trabajo calibrada.</span></span></label></li>
-      <li><label><input type="checkbox" checked> <span><strong>Error de coordenada verificado con una pieza de prueba.</strong> <span>Apoyar una pieza en una posición no calibrada y comparar en el panel Detección.</span></span></label></li>
-      <li><label><input type="checkbox" checked> <span><strong>Dashboard abierto y LEDs verdes.</strong> <span>CÁM · GRP · UR5 en verde en el header del panel.</span></span></label></li>
-      <li><label><input type="checkbox"> <span><strong>Plan B: video de respaldo del funcionamiento completo.</strong> <span>Grabación de la evidencia audiovisual (entregable 7) en memoria local.</span></span></label></li>
-    </ul>
+    <form id="checklist-demo" autocomplete="off">
+      <ul class="checklist">
+        <li><label><input type="checkbox" name="camara"> <span><strong>Cámara fija, enfocada y sin moverse desde la calibración.</strong> <span>Sin autoenfoque activo; encuadre idéntico al de la calibración.</span></span></label></li>
+        <li><label><input type="checkbox" name="calibracion"> <span><strong>ROI, homografía y HSV calibrados con la luz definitiva del aula.</strong> <span>La matriz H proyecta píxeles [u, v] a milímetros reales [X, Y].</span></span></label></li>
+        <li><label><input type="checkbox" name="piezas"> <span><strong>Piezas de ambas categorías disponibles.</strong> <span>A (roja) y B (azul), dentro de la zona de trabajo calibrada.</span></span></label></li>
+        <li><label><input type="checkbox" name="coordenadas"> <span><strong>Error de coordenada verificado con una pieza de prueba.</strong> <span>Apoyar una pieza en una posición no calibrada y comparar en el panel Detección.</span></span></label></li>
+        <li><label><input type="checkbox" name="dashboard"> <span><strong>Dashboard abierto y LEDs verdes.</strong> <span>Cámara, gripper y robot en verde en el encabezado del panel.</span></span></label></li>
+        <li><label><input type="checkbox" name="respaldo"> <span><strong>Plan B: video de respaldo del funcionamiento completo.</strong> <span>Grabación de la evidencia audiovisual (entregable 7) en memoria local.</span></span></label></li>
+      </ul>
+      <button class="checklist-reset" type="reset">Reiniciar checklist</button>
+    </form>
   </section>
 
   <section class="section">
@@ -152,5 +155,28 @@ python core/dashboard_web.py
   </div>
 </footer>
 
+<script>
+  const checklist = document.getElementById("checklist-demo");
+  const clave = "ur5:checklist-demo";
+  try {
+    const marcados = new Set(JSON.parse(sessionStorage.getItem(clave)) || []);
+    for (const casilla of checklist.querySelectorAll('input[type="checkbox"]')) {
+      casilla.checked = marcados.has(casilla.name);
+    }
+  } catch (e) {
+    // Las casillas siguen disponibles si el navegador bloquea el almacenamiento.
+  }
+  checklist.addEventListener("change", () => {
+    try {
+      const marcados = Array.from(checklist.querySelectorAll("input:checked"), casilla => casilla.name);
+      sessionStorage.setItem(clave, JSON.stringify(marcados));
+    } catch (e) { /* La selección permanece visible en la página. */ }
+  });
+  checklist.addEventListener("reset", () => {
+    try {
+      sessionStorage.removeItem(clave);
+    } catch (e) { /* El formulario se reinicia de todos modos. */ }
+  });
+</script>
 </body>
 </html>
