@@ -1,32 +1,32 @@
 {
   "camara": {
-    "indice_camara": 0,
+    "indice_camara": 1,
     "ancho": 1280,
     "alto": 720,
     "fps": 30,
-    "roi_desde_x": 0.02,
-    "roi_hasta_x": 0.98,
-    "roi_desde_y": 0.04,
-    "roi_hasta_y": 1.0
+    "roi_desde_x": 0.06,
+    "roi_hasta_x": 0.94,
+    "roi_desde_y": 0.08,
+    "roi_hasta_y": 0.96
   },
   "segmentacion": {
     "rojo_bajo1": [
-      0,
-      30,
-      0
+      3,
+      15,
+      15
     ],
     "rojo_alto1": [
-      20,
+      35,
       255,
       255
     ],
     "rojo_bajo2": [
-      147,
-      30,
-      0
+      162,
+      15,
+      15
     ],
     "rojo_alto2": [
-      180,
+      177,
       255,
       255
     ],
@@ -40,80 +40,89 @@
       255,
       255
     ],
-    "area_minima": 500,
+    "area_minima": 650,
     "area_maxima": 50000,
     "kernel_tamano": 5,
-    "confianza_minima": 0.65
+    "confianza_minima": 0.6
   },
   "homografia": {
     "puntos_px": [
       [
-        5.0,
-        12.0
+        15.0,
+        22.0
       ],
       [
-        1224.0,
-        5.0
+        1122.0,
+        17.0
       ],
       [
-        1216.0,
-        679.0
+        1124.0,
+        623.0
       ],
       [
-        3.0,
-        679.0
+        6.0,
+        623.0
       ]
     ],
     "puntos_ur5": [
       [
-        -0.023,
-        0.2165
+        -0.0886,
+        0.3203
       ],
       [
-        -0.0378,
-        -0.1587
+        -0.0827,
+        -0.3328
       ],
       [
-        -0.2328,
-        -0.1447
+        -0.4248,
+        -0.3022
       ],
       [
-        -0.2141,
-        0.2123
+        -0.3905,
+        0.3316
       ]
+    ],
+    "contexto": [
+      1,
+      1280,
+      720,
+      0.06,
+      0.94,
+      0.08,
+      0.96
     ]
   },
-  "zona_trabajo_min_x": -0.2528,
-  "zona_trabajo_max_x": -0.003,
-  "zona_trabajo_min_y": -0.1787,
-  "zona_trabajo_max_y": 0.2365,
+  "zona_trabajo_min_x": -0.4448,
+  "zona_trabajo_max_x": -0.0627,
+  "zona_trabajo_min_y": -0.3528,
+  "zona_trabajo_max_y": 0.3516,
   "gripper_port": "COM4",
-  "z_seguro": 0.125,
+  "z_seguro": 0.12,
   "z_pick": 0.0712,
   "z_deposit": 0.075,
-  "pick_offset_x": -0.040,
-  "pick_offset_y": -0.032,
+  "pick_offset_x": -0.04,
+  "pick_offset_y": 0.03,
   "pick_offset_max_m": 0.15,
   "usar_home_como_origen": true,
   "radio_minimo_base": 0.2,
   "home_pose": [
-    -0.5305622529579415,
-    0.004244936117451437,
-    0.27646974774693095,
-    -2.9132952787368054,
-    1.1218662511594248,
-    -0.007159618962593313
+    -0.33351183800555817,
+    0.0015732897644315305,
+    0.2598163454031155,
+    -3.020208201986412,
+    -0.8482105684954261,
+    0.07801105624599805
   ],
   "home_tol_m": 0.005,
   "home_tol_rad": 0.05,
   "home_al_iniciar": true,
   "destinos": {
     "A": {
-      "x": -0.0145,
+      "x": -0.130,
       "y": -0.4379
     },
     "B": {
-      "x": -0.0980,
+      "x": -0.250,
       "y": -0.4379
     }
   }
