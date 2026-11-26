@@ -1,6 +1,6 @@
 # Visión Artificial — Desafío 2: Pick and Place UR5
 
-> README del proyecto: visión (cámara, detección HSV, clasificación de 4
+> README del proyecto: visión (cámara, detección HSV, clasificación de dos
 > categorías, homografía píxel→UR5), control del UR5e, gripper y dashboards
 > de escritorio y web. Código fuente en [`vision/`](vision/),
 > [`core/`](core/) y [`gripper/`](gripper/).
@@ -95,7 +95,7 @@ equivocado. Respetar siempre:
 ```json
 {
   "ok": true,
-  "categoria": "A|B|C|D",
+  "categoria": "A|B",
   "x_px": 502, "y_px": 318,
   "x_ur5": 0.412, "y_ur5": 0.085,
   "conf": 0.91,
@@ -194,7 +194,7 @@ todos los comandos salvo el reinicio (`[r]` / botón **Reset**).
 
 ## Calibración visual de los colores (HSV)
 
-El detector clasifica por color: **A rojo, B azul, C verde, D violeta**.
+El detector clasifica por color: **A rojo y B azul**.
 Cada color se define con ventanas `[H, S, V]` bajo/alto (formato HSV de
 OpenCV: H 0–179). El rojo tiene **dos ventanas** porque su matiz "envuelve"
 el borde 0/180; el editor lo maneja automáticamente (fusiona ventanas que
@@ -278,8 +278,7 @@ Opciones: `--sin-guardar`, `--margen 0.03`, `--brillo 1.8`, `--manual`.
 
 Los `destinos` A y B son valores de fábrica; se miden del mismo modo,
 tocando el centro de cada zona de depósito. El asistente mide esas dos zonas
-(las que trae `vision/config.json`); las categorías C y D usan un destino
-por defecto hasta que se agregue su zona:
+(las que trae `vision/config.json`):
 
 ```
 python tools/calibrar_homografia.py --destinos
@@ -341,7 +340,7 @@ trabajo** con la telemetría del TCP, para no tener que mirar al robot físico:
 | Cruz verde | Destino del último movimiento (`mover_a`) |
 | Línea punteada verde | Camino restante hasta el destino |
 | Rastro naranja | Trayectoria recorrida (se aclara hacia el punto más reciente) |
-| Cuadrado de color + letra | Pieza detectada por visión (A rojo, B azul, C verde, D violeta) |
+| Cuadrado de color + letra | Pieza detectada por visión (A rojo y B azul) |
 | Rectángulo punteado cian | `zona_trabajo_*` (límites autorizados) |
 | Barra "ALTURA Z" | Altura actual con marcas de `z_pick`, `z_deposit` y `z_seguro` |
 | Chip de estado | MOVIENDO / QUIETO / SIN TELEMETRÍA |

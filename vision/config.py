@@ -6,8 +6,12 @@ Todas las constantes que cruce módulos viven aquí: una sola fuente de verdad.
 
 from __future__ import annotations
 
+import hashlib
 import json
-from dataclasses import dataclass, field
+import os
+import tempfile
+from contextlib import contextmanager
+from dataclasses import dataclass, field, fields
 from pathlib import Path
 
 
@@ -25,6 +29,15 @@ class ConfigCamara:
     roi_hasta_y: float = 0.95
 
 
+    def contexto_homografia(self, ancho: int, alto: int) -> list:
+        """Identifica la cámara y el recorte usados para calibrar."""
+        return [
+            self.indice_camara, ancho, alto,
+            self.roi_desde_x, self.roi_hasta_x,
+            self.roi_desde_y, self.roi_hasta_y,
+        ]
+
+
 @dataclass
 class ConfigSegmentacion:
     """Parámetros de segmentación HSV por color."""
@@ -38,14 +51,6 @@ class ConfigSegmentacion:
     # Categoría B — Azul (cubo)
     azul_bajo: tuple[int, int, int] = (100, 50, 50)
     azul_alto: tuple[int, int, int] = (135, 255, 255)
-
-    # Categoría C — Verde
-    verde_bajo: tuple[int, int, int] = (35, 50, 50)
-    verde_alto: tuple[int, int, int] = (85, 255, 255)
-
-    # Categoría D — Violeta
-    violeta_bajo: tuple[int, int, int] = (140, 50, 50)
-    violeta_alto: tuple[int, int, int] = (160, 255, 255)
 
     # Umbrales de area minima/maxima para aceptar un contorno como pieza (pixeles)
     area_minima: int = 500
@@ -88,6 +93,7 @@ class ConfigHomografia:
         [0.50, 0.00],     # bottom-right
         [0.10, 0.00],     # bottom-left
     ])
+    contexto: list | None = None
 
 
 @dataclass
@@ -134,11 +140,15 @@ def load_config(path: str | Path = "vision/config.json") -> ConfigVision:
     p = Path(path)
     if not p.exists():
         return ConfigVision()
-    with open(p, "r") as f:
+    with open(p, "r", encoding="utf-8") as f:
         data = json.load(f)
+    claves_hsv = {campo.name for campo in fields(ConfigSegmentacion)}
     cfg = ConfigVision(
         camara=ConfigCamara(**data.get("camara", {})),
-        segmentacion=ConfigSegmentacion(**data.get("segmentacion", {})),
+        segmentacion=ConfigSegmentacion(**{
+            clave: valor for clave, valor in data.get("segmentacion", {}).items()
+            if clave in claves_hsv
+        }),
         homografia=ConfigHomografia(**data.get("homografia", {})),
     )
     # Los límites de seguridad viven en el nivel raíz del JSON: se copian a
@@ -156,14 +166,71 @@ def load_config(path: str | Path = "vision/config.json") -> ConfigVision:
     return cfg
 
 
+@contextmanager
+def _bloquear_config(path: Path):
+    """Coordina escrituras del dashboard, los editores y las herramientas."""
+    clave = hashlib.sha256(os.fsencode(os.path.normcase(str(path)))).hexdigest()
+    bloqueo = Path(tempfile.gettempdir()) / f"ur5-config-{clave}.lock"
+    with bloqueo.open("a+b") as archivo:
+        if os.name == "nt":
+            import msvcrt
+
+            archivo.seek(0)
+            msvcrt.locking(archivo.fileno(), msvcrt.LK_LOCK, 1)
+            try:
+                yield
+            finally:
+                archivo.seek(0)
+                msvcrt.locking(archivo.fileno(), msvcrt.LK_UNLCK, 1)
+        else:
+            import fcntl
+
+            fcntl.flock(archivo, fcntl.LOCK_EX)
+            yield
+
+
+def _fusionar_config(data: dict, cambios: dict) -> None:
+    for clave, valor in cambios.items():
+        if isinstance(valor, dict) and isinstance(data.get(clave), dict):
+            _fusionar_config(data[clave], valor)
+        else:
+            data[clave] = valor
+
+
+def actualizar_config(path: str | Path, cambios: dict) -> dict:
+    """Fusiona solo las claves editadas y reemplaza el JSON de forma atómica."""
+    ruta = Path(path).resolve()
+    ruta.parent.mkdir(parents=True, exist_ok=True)
+    with _bloquear_config(ruta):
+        data = json.loads(ruta.read_text(encoding="utf-8")) if ruta.exists() else {}
+        if "camara" in cambios and data:
+            vieja = ConfigCamara(**data.get("camara", {}))
+            nueva = ConfigCamara(**{**data.get("camara", {}), **cambios["camara"]})
+            contexto = vieja.contexto_homografia(vieja.ancho, vieja.alto)
+            if contexto != nueva.contexto_homografia(nueva.ancho, nueva.alto):
+                hom = data.setdefault("homografia", {})
+                if hom.get("contexto") is None:
+                    hom["contexto"] = contexto
+        _fusionar_config(data, cambios)
+        temporal = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w", encoding="utf-8", dir=ruta.parent, delete=False,
+            ) as archivo:
+                temporal = Path(archivo.name)
+                json.dump(data, archivo, indent=2, ensure_ascii=False, allow_nan=False)
+                archivo.write("\n")
+            os.replace(temporal, ruta)
+        finally:
+            if temporal is not None:
+                temporal.unlink(missing_ok=True)
+    return data
+
+
 def save_config(cfg: ConfigVision, path: str | Path = "vision/config.json") -> None:
-    """Guarda la configuración en un archivo JSON."""
-    p = Path(path)
-    p.parent.mkdir(parents=True, exist_ok=True)
-    data = {
-        "camara": cfg.camara.__dict__,
-        "segmentacion": cfg.segmentacion.__dict__,
-        "homografia": cfg.homografia.__dict__,
-    }
-    with open(p, "w") as f:
-        json.dump(data, f, indent=2, default=list)
+    """Guarda la sección de visión conservando los parámetros del robot."""
+    actualizar_config(path, {
+        "camara": vars(cfg.camara),
+        "segmentacion": vars(cfg.segmentacion),
+        "homografia": {k: v for k, v in vars(cfg.homografia).items() if v is not None},
+    })

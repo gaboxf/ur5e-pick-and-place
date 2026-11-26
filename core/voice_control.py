@@ -35,8 +35,6 @@ class ComandoVoz(Enum):
     CICLO_AUTO = "ciclo_auto"
     CLASIFICAR_ROJA = "clasificar_roja"
     CLASIFICAR_AZUL = "clasificar_azul"
-    CLASIFICAR_VERDE = "clasificar_verde"
-    CLASIFICAR_VIOLETA = "clasificar_violeta"
     ABRIR_GRIPPER = "abrir_gripper"
     CERRAR_GRIPPER = "cerrar_gripper"
     HOME = "home"
@@ -150,10 +148,8 @@ class VoiceController:
             return ComandoVoz.CLASIFICAR_ROJA, "Clasificando pieza roja hacia Zona A"
         if re.search(r"\b(azul|cubo)\b", t) and re.search(r"\b(clasificar|agarrar|tomar|llevar|pieza|agarra)\b", t):
             return ComandoVoz.CLASIFICAR_AZUL, "Clasificando pieza azul hacia Zona B"
-        if re.search(r"\b(verde)\b", t) and re.search(r"\b(clasificar|agarrar|tomar|llevar|pieza|agarra)\b", t):
-            return ComandoVoz.CLASIFICAR_VERDE, "Clasificando pieza verde hacia Zona C"
-        if re.search(r"\b(violeta|morada)\b", t) and re.search(r"\b(clasificar|agarrar|tomar|llevar|pieza|agarra)\b", t):
-            return ComandoVoz.CLASIFICAR_VIOLETA, "Clasificando pieza violeta hacia Zona D"
+        if re.search(r"\b(verde|violeta|morad[ao])\b", t):
+            return ComandoVoz.DESCONOCIDO, "Las piezas admitidas son roja y azul."
 
         # 6. Ciclo general de Pick and Place
         if re.search(r"\b(clasificar|iniciar|comenzar|arrancar|ejecutar|recoger|tomar pieza|pick and place|agarra)\b", t):

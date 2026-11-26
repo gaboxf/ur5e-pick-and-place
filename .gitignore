@@ -76,3 +76,6 @@ robot/*.urup
 
 # ---------- Hallmark (memoria interna de diseño, no va en git) ----------
 .hallmark/
+
+# ---------- Auditoría UX generada ----------
+/auditoria-ux/

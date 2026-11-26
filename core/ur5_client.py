@@ -16,6 +16,7 @@ except ImportError:
 from core.logging_config import get_logger
 
 logger = get_logger("UR5Controller")
+_INTERVALO_LOG_FALLO_POSE_S = 30.0
 
 # Modos del robot (RTDE getRobotMode). Sirven para explicar por qué el robot
 # rechaza un movimiento en vez de mostrar un "no se pudo mover" sin motivo.
@@ -49,9 +50,12 @@ class UR5Client:
         # Última causa de fallo, legible por los dashboards (para mostrarla en
         # pantalla en vez de un "no se pudo mover" sin explicación).
         self.ultimo_error: str | None = None
+        self._lock_log_pose = threading.Lock()
+        self._ultimo_log_fallo_pose = -math.inf
 
         # Bandera de aborto: la usan stop() y move_l() para cortar un movimiento.
         self._abort = threading.Event()
+        self._parada_retenida = threading.Event()
         # Pose simulada para modo mock
         self._mock_pose = [0.30, 0.0, 0.25, 3.14, 0.0, 0.0]
 
@@ -94,15 +98,24 @@ class UR5Client:
         """
         if self.mode == "real":
             if not (self.connected and self.rtde_r):
-                logger.error("No hay conexión RTDE para leer la pose del TCP.")
+                self._registrar_fallo_pose("No hay conexión RTDE para leer la pose del TCP.")
                 return None
             try:
                 return self.rtde_r.getActualTCPPose()
             except Exception as e:
-                logger.error("Error leyendo pose TCP por RTDE: %s", e)
+                self._registrar_fallo_pose(f"Error leyendo pose TCP por RTDE: {e}")
                 return None
         # Modos mock/sim: pose virtual para el mapa y las pruebas.
         return list(self._mock_pose)
+
+    def _registrar_fallo_pose(self, mensaje: str) -> None:
+        """Limita los avisos de pose que comparten el rastreo y los dashboards."""
+        with self._lock_log_pose:
+            ahora = time.monotonic()
+            if ahora - self._ultimo_log_fallo_pose < _INTERVALO_LOG_FALLO_POSE_S:
+                return
+            self._ultimo_log_fallo_pose = ahora
+        logger.error(mensaje)
 
     def is_steady(self, vel_umbral: float = 0.01) -> bool:
         """Verifica si el robot está completamente quieto mediante RTDE."""
@@ -238,6 +251,9 @@ class UR5Client:
         """
         self._abort.clear()
         self.ultimo_error = None
+        if self._parada_retenida.is_set():
+            self.ultimo_error = "Parada activa. Reiniciá la parada antes de mover."
+            return False
         target_pose = [x, y, z, rx, ry, rz]
         tol = tol_m if tol_m is not None else self.tolerancia_pos
 
@@ -253,7 +269,7 @@ class UR5Client:
             if rx is None or ry is None or rz is None:
                 actual = self.rtde_r.getActualTCPPose()
                 target_pose = [x, y, z, actual[3], actual[4], actual[5]]
-            if self._abort.is_set():
+            if self._abort.is_set() or self._parada_retenida.is_set():
                 self.ultimo_error = "Movimiento abortado antes de iniciar."
                 logger.warning(self.ultimo_error)
                 return False
@@ -265,8 +281,8 @@ class UR5Client:
             try:
                 # moveL es bloqueante en ur_rtde; stop() puede interrumpirlo via stopJ.
                 res = self.rtde_c.moveL(target_pose, self.vel, self.acc)
-                if not res or self._abort.is_set():
-                    if self._abort.is_set():
+                if not res or self._abort.is_set() or self._parada_retenida.is_set():
+                    if self._abort.is_set() or self._parada_retenida.is_set():
                         self.ultimo_error = "moveL cancelado por una parada de seguridad."
                     else:
                         self.ultimo_error = self._explicar_rechazo(target_pose)
@@ -304,7 +320,7 @@ class UR5Client:
             inicio = list(self._mock_pose[:3])
             t0 = time.time()
             while True:
-                if self._abort.is_set():
+                if self._abort.is_set() or self._parada_retenida.is_set():
                     logger.warning("[SIMULACIÓN UR5] movimiento abortado.")
                     return False
                 t = min(1.0, (time.time() - t0) / duracion)
@@ -324,18 +340,40 @@ class UR5Client:
             ]
             return True
 
-    def stop(self):
-        """Parada de seguridad: interrumpe el movimiento en curso."""
+    def conexion_disponible(self) -> bool:
+        if not self.connected:
+            return False
+        if self.mode != "real":
+            return True
+        try:
+            return bool(
+                self.rtde_c and self.rtde_r
+                and self.rtde_c.isConnected() and self.rtde_r.isConnected()
+            )
+        except Exception:
+            return False
+
+    def stop(self, retener: bool = False) -> bool:
+        """Bloquea nuevos movimientos y devuelve si se pudo enviar la parada."""
+        if retener:
+            self._parada_retenida.set()
         self._abort.set()
-        if self.mode == "real" and self.connected and self.rtde_c:
-            try:
-                # stopJ con desaceleración alta para frenar rápido pero seguro.
-                self.rtde_c.stopJ(5.0)
-                logger.warning("UR5: parada de seguridad enviada (stopJ).")
-            except Exception as e:
-                logger.error("No se pudo detener el UR5: %s", e)
-        else:
-            logger.warning("[SIMULACIÓN UR5] parada de seguridad solicitada.")
+        if self.mode != "real":
+            logger.warning("[SIMULACIÓN UR5] parada solicitada.")
+            return True
+        if not (self.connected and self.rtde_c):
+            logger.warning("Parada local activa. Sin conexión RTDE para enviarla al UR5.")
+            return False
+        try:
+            self.rtde_c.stopJ(5.0)
+            logger.warning("UR5: parada enviada (stopJ).")
+            return True
+        except Exception as e:
+            logger.error("No se pudo detener el UR5: %s", e)
+            return False
+
+    def reiniciar_parada(self) -> None:
+        self._parada_retenida.clear()
 
     def disconnect(self):
         if self.rtde_c:

@@ -1,10 +1,10 @@
 """Editor visual de los rangos HSV de segmentación.
 
-Permite calibrar los colores (rojo, azul, verde, violeta) desde los
+Permite calibrar los colores (rojo y azul) desde los
 dashboards (web y de escritorio) con botones / teclas, en lugar de editar
 números a mano en config.json:
 
-  - color: elige el color a editar (rojo / azul / verde / violeta)
+  - color: elige el color a editar (rojo o azul)
   - matiz_izquierda / matiz_derecha: desplaza la ventana de matiz (H)
   - mas_amplio / mas_estrecho: ensancha o angosta la ventana de matiz
   - mas_sensible / menos_sensible: baja o sube los mínimos de S y V
@@ -19,9 +19,10 @@ tocá los botones y mirá qué píxeles se pintan hasta que solo quede la pieza.
 
 from __future__ import annotations
 
-import json
 import logging
 from pathlib import Path
+
+from .config import actualizar_config
 
 import cv2
 import numpy as np
@@ -35,26 +36,20 @@ logger = logging.getLogger("EditorHSV")
 VENTANAS_COLOR: dict[str, tuple[str, ...]] = {
     "rojo": ("rojo_bajo1", "rojo_alto1", "rojo_bajo2", "rojo_alto2"),
     "azul": ("azul_bajo", "azul_alto"),
-    "verde": ("verde_bajo", "verde_alto"),
-    "violeta": ("violeta_bajo", "violeta_alto"),
 }
 
 # Letra de categoría y color BGR para pintar la máscara (igual que detector.py)
-CAT_COLOR: dict[str, str] = {"rojo": "A", "azul": "B", "verde": "C", "violeta": "D"}
+CAT_COLOR: dict[str, str] = {"rojo": "A", "azul": "B"}
 COLOR_BGRA: dict[str, tuple[int, int, int]] = {
     "A": (0, 0, 255),     # rojo
     "B": (255, 0, 0),     # azul
-    "C": (0, 255, 0),     # verde
-    "D": (255, 0, 255),   # violeta
 }
 COLOR_TEXTO: dict[str, tuple[int, int, int]] = {
     "rojo": (80, 80, 255),
     "azul": (255, 120, 60),
-    "verde": (80, 220, 80),
-    "violeta": (230, 130, 220),
 }
 
-ORDEN_COLORES = ("rojo", "azul", "verde", "violeta")
+ORDEN_COLORES = ("rojo", "azul")
 
 HUE_MAX = 180      # matiz en OpenCV: 0..179 (usamos 180 como tope exclusivo)
 PASO_HUE = 3       # desplazamiento del matiz por pulsación
@@ -104,10 +99,12 @@ class EditorHSV:
         if accion == "color":
             if valor in ORDEN_COLORES:
                 self.color_actual = valor
-            else:
+            elif not valor:
                 # Cicla al siguiente color (útil con teclado en el dashboard)
                 i = ORDEN_COLORES.index(self.color_actual)
                 self.color_actual = ORDEN_COLORES[(i + 1) % len(ORDEN_COLORES)]
+            else:
+                return False, "Elegí rojo o azul."
             return True, f"Color seleccionado: {self.color_actual}."
 
         color = self.color_actual
@@ -240,17 +237,14 @@ class EditorHSV:
         """Guarda todos los rangos HSV y las áreas en config.json."""
         try:
             ruta = Path(config_path)
-            data = json.loads(ruta.read_text(encoding="utf-8"))
-            seg = data.setdefault("segmentacion", {})
+            seg = {}
             for claves in VENTANAS_COLOR.values():
                 for clave in claves:
                     seg[clave] = list(getattr(self.cfg, clave))
             seg["area_minima"] = int(self.cfg.area_minima)
             seg["area_maxima"] = int(self.cfg.area_maxima)
             seg["confianza_minima"] = float(self.cfg.confianza_minima)
-            ruta.write_text(
-                json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
-            )
+            actualizar_config(ruta, {"segmentacion": seg})
             logger.info("HSV guardado en %s", ruta)
             return f"HSV guardado en {ruta.name}."
         except Exception:

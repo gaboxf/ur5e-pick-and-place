@@ -35,11 +35,6 @@ el estado del hardware, la detección en vivo y las estadísticas de producción
 |---|---|---|
 | A | Roja | Depósito A |
 | B | Azul | Depósito B |
-| C | Verde | (extra — soportada por el sistema) |
-| D | Violeta | (extra — soportada por el sistema) |
-
-Las categorías A y B son las obligatorias de la consigna; C y D muestran que
-el sistema escala a más de dos clases sin cambiar código.
 
 ---
 

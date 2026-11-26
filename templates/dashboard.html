@@ -30,7 +30,7 @@
       --space-sm:  1rem;    --space-md:  1.5rem;  --space-lg: 2rem;
 
       /* text */
-      --text-xs: 0.6875rem; --text-sm: 0.75rem;  --text-md: 0.875rem;
+      --text-xs: 0.75rem; --text-sm: 0.875rem; --text-md: 0.875rem;
       --text-lg: 1.125rem;  --text-xl: 1.375rem; --text-2xl: 2rem;
 
       /* motion */
@@ -39,8 +39,6 @@
     }
 
     * { box-sizing: border-box; }
-
-    html, body { overflow-x: clip; }
 
     body {
       margin: 0;
@@ -65,27 +63,20 @@
       border-bottom: 1px solid var(--color-rule);
     }
     header h1 {
-      font-family: var(--font-mono);
       font-size: var(--text-lg);
       font-weight: 600;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
       margin: 0;
       min-width: 0;
       overflow-wrap: anywhere;
     }
     header .sub,
     .sub {
-      font-family: var(--font-mono);
       color: var(--color-ink-2);
       font-size: var(--text-sm);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
     }
     .estado-celda {
       display: flex; align-items: center; gap: var(--space-sm);
-      font-family: var(--font-mono); font-size: var(--text-sm);
-      letter-spacing: 0.08em;
+      font-size: var(--text-sm);
     }
     .led-chip {
       display: inline-flex; align-items: center; gap: var(--space-3xs);
@@ -100,26 +91,59 @@
     .led[data-on="1"] { background: var(--color-ok); }
     .led[data-on="0"] { background: var(--color-bad); }
 
+    .barra-operacion {
+      position: sticky; top: 0; z-index: 5;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: var(--space-2xs) var(--space-sm);
+      padding: var(--space-2xs) var(--space-sm);
+      background: var(--color-paper-2);
+      border-bottom: 1px solid var(--color-rule);
+    }
+    .fase-ciclo { font-size: var(--text-lg); font-weight: 600; }
+    .conexion { color: var(--color-ink-2); font-size: var(--text-sm); }
+    .conexion[data-viva="false"], .fase-ciclo[data-alerta="true"] { color: var(--color-warn); }
+    .detalle-conexion, .acciones-operacion, .mandos-operacion {
+      display: flex; align-items: center; flex-wrap: wrap;
+      gap: var(--space-2xs);
+    }
+    .acciones-operacion { column-gap: var(--space-sm); }
+    .mandos-operacion[hidden] { display: none; }
+    .estado-control {
+      padding: var(--space-3xs) var(--space-2xs);
+      border: 1px solid var(--color-rule);
+      border-radius: 0.25rem;
+    }
+    .acciones-operacion .stop { border: 2px solid var(--color-bad); }
+    .estado-parada { flex-basis: 100%; margin: 0; overflow-wrap: anywhere; }
+    .estado-parada[data-error="true"] { color: var(--color-warn); }
+    .estado-celda { flex-wrap: wrap; }
+    .panel .v { overflow-wrap: anywhere; }
+
     /* ------------------------------------------------------------- layout */
     main {
-      display: grid; grid-template-columns: 1fr 340px; gap: var(--space-sm);
+      display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: var(--space-sm);
       padding: var(--space-sm);
       max-width: 1800px; margin: 0 auto; align-items: start;
     }
     @media (min-width: 1600px) {
-      main { grid-template-columns: 1fr 380px; }
+      main { grid-template-columns: minmax(0, 1fr) 380px; }
     }
-    .col-principal { display: grid; gap: var(--space-sm); --ancho-video: 100%; }
-    .col-lateral   { display: grid; gap: var(--space-sm); }
+    .col-principal { display: grid; gap: var(--space-sm); min-width: 0; container-type: inline-size; }
+    .col-lateral { display: grid; gap: var(--space-sm); min-width: 0; }
 
     .info-paneles {
       display: grid; gap: var(--space-sm);
-      grid-template-columns: minmax(160px, 1fr) minmax(150px, 1fr) minmax(130px, 1fr) minmax(280px, 2.3fr);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .info-paneles > * { min-width: 0; }
+    .panel-mapa { grid-column: 1 / -1; }
+    @container (min-width: 800px) {
+      .info-paneles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
     @media (max-width: 900px) {
-      main { grid-template-columns: 1fr; }
+      main { grid-template-columns: minmax(0, 1fr); }
       .col-principal, .col-lateral, .info-paneles { display: contents; }
-      .video-wrap       { order: 1; }
+      .panel-video      { order: 1; }
       .panel-control    { order: 2; }
       .panel-estado     { order: 3; }
       .panel-deteccion  { order: 4; }
@@ -129,7 +153,8 @@
       .panel-roi        { order: 8; }
       .panel-homografia { order: 9; }
       .panel-hsv        { order: 10; }
-      .panel-logo       { order: 11; }
+      .panel-calibracion { order: 11; }
+      .panel-logo        { order: 12; }
     }
 
     /* -------------------------------------------------------------- video */
@@ -139,15 +164,29 @@
       overflow: hidden; position: relative;
       width: 100%;
     }
-    @media (min-width: 901px) {
-      .col-principal {
-        --ancho-video: min(100%, max(360px, calc((100vh - 340px) * var(--ar-video, 1.78))));
-        --ancho-video: min(100%, max(360px, calc((100dvh - 340px) * var(--ar-video, 1.78))));
-      }
-      .video-wrap   { width: var(--ancho-video); margin: 0 auto; }
-      .info-paneles { width: var(--ancho-video); margin: 0 auto; }
+    .video-wrap img {
+      width: 100%; display: block;
+      aspect-ratio: var(--ar-video, 1.7778);
+      max-height: 60dvh; object-fit: contain;
     }
-    .video-wrap img { width: 100%; display: block; }
+
+    .hom-guia { padding: var(--space-xs); background: var(--color-paper-2); border: 1px solid var(--color-rule); }
+    .hom-guia p { margin: 0 0 var(--space-2xs); }
+    .hom-guia button, .hom-guia input { min-height: 44px; }
+    .hom-guia a, #hom-ir-video { color: var(--color-accent); }
+    .hom-coordenadas { display: flex; align-items: end; flex-wrap: wrap; gap: var(--space-2xs); }
+    .hom-coordenadas label { display: grid; gap: var(--space-3xs); }
+    .hom-coordenadas input {
+      width: 7ch; padding: var(--space-2xs); color: var(--color-ink);
+      background: var(--color-paper-3); border: 1px solid var(--color-rule);
+      font: inherit; color-scheme: dark;
+    }
+    .hom-cursor {
+      position: absolute; width: 17px; height: 17px;
+      border: 2px solid var(--color-accent); border-radius: 50%;
+      box-shadow: 0 0 0 1px var(--color-paper);
+      transform: translate(-50%, -50%); pointer-events: none;
+    }
 
     /* retícula de esquina (marco de targeting) — no interfiere con los clics
        de calibración de homografía (pointer-events: none) */
@@ -176,11 +215,8 @@
       min-width: 0;
     }
     .panel h2 {
-      font-family: var(--font-mono);
       font-size: var(--text-sm);
       font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.14em;
       color: var(--color-ink-2);
       margin: 0 0 var(--space-xs);
       padding-bottom: var(--space-2xs);
@@ -202,8 +238,8 @@
     details.panel > summary::-webkit-details-marker { display: none; }
     details.panel > summary h2 {
       margin: 0; padding: 0; border: none;
-      font-family: var(--font-mono); font-size: var(--text-sm);
-      font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em;
+      font-size: var(--text-sm);
+      font-weight: 600;
       color: var(--color-ink-2);
       min-width: 0; overflow-wrap: anywhere;
     }
@@ -257,12 +293,10 @@
     .grid-botones { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-2xs); }
 
     button {
-      font-family: var(--font-mono);
+      font-family: var(--font-sans);
       font-size: var(--text-md);
       font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      padding: var(--space-xs) var(--space-2xs);
+      padding: var(--space-2xs) var(--space-xs);
       border: 1px solid var(--color-rule);
       border-radius: 0;
       cursor: pointer;
@@ -270,6 +304,7 @@
       background: var(--color-paper-3);
       transition: filter var(--dur-short) var(--ease-out);
       min-width: 0;
+      overflow-wrap: anywhere;
     }
     button:hover  { filter: brightness(1.25); }
     button:active { transform: translateY(1px); }
@@ -291,9 +326,17 @@
     .cat-A { background: oklch(42% 0.14 25); border-color: var(--color-bad); }
     .cat-B { background: oklch(42% 0.12 250); border-color: oklch(70% 0.12 250); }
 
-    .cam-ctl { display: flex; gap: var(--space-2xs); margin-top: var(--space-xs); }
+    .panel-control h3 { font-size: var(--text-sm); margin: var(--space-sm) 0 var(--space-2xs); }
+    .panel-control > .ciclo { width: 100%; }
+    .cam-ctl {
+      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-2xs); margin-top: var(--space-xs);
+    }
+    .cam-ctl select, .cam-ctl p { grid-column: 1 / -1; }
+    .cam-ctl p { margin: 0; overflow-wrap: anywhere; }
+    .cam-ctl button, .cam-ctl select { min-height: 44px; }
     .cam-ctl select {
-      flex: 1; min-width: 0;
+      width: 100%; min-width: 0;
       padding: var(--space-2xs);
       border-radius: 0;
       border: 1px solid var(--color-rule);
@@ -322,13 +365,11 @@
       overflow-wrap: anywhere;
     }
     .roi-info b { color: var(--color-warn); font-family: var(--font-mono); }
-    .hsv-verde   { background: oklch(48% 0.12 150); border-color: var(--color-ok); }
-    .hsv-violeta { background: oklch(42% 0.12 300); border-color: oklch(70% 0.12 300); }
     .hsv-sel     { outline: 3px solid var(--color-warn); outline-offset: -1px; }
 
     /* ---------------------------------------------------------- mapa robot */
     .panel-mapa canvas {
-      width: 100%; height: auto; display: block;
+      width: 100%; max-width: 720px; height: auto; display: block; margin-inline: auto;
       background: oklch(13% 0.015 240);
       border: 1px solid var(--color-rule);
     }
@@ -408,7 +449,7 @@
       pointer-events: none;
       max-width: min(90vw, 32rem);
     }
-    #toast.show { opacity: 1; }
+    #toast.show { opacity: 1; z-index: 10; }
 
     /* ------------------------------------------------------------- logo UPrO */
     .panel-logo {
@@ -461,18 +502,56 @@
       <div class="sub">Monitoreo remoto · Desafío 2</div>
     </div>
     <div class="estado-celda" aria-label="Estado de hardware de la celda">
-      <span class="led-chip"><i class="led" id="led-camara" data-on="0" aria-hidden="true"></i>CÁM</span>
-      <span class="led-chip"><i class="led" id="led-gripper" data-on="0" aria-hidden="true"></i>GRP</span>
-      <span class="led-chip"><i class="led" id="led-robot" data-on="0" aria-hidden="true"></i>UR5</span>
-      <span class="sub" id="uptime">uptime —</span>
+      <span class="led-chip" id="chip-camara" role="img" aria-label="Cámara sin datos" title="Cámara sin datos"><i class="led" aria-hidden="true"></i>Cámara</span>
+      <span class="led-chip" id="chip-gripper" role="img" aria-label="Gripper sin datos" title="Gripper sin datos"><i class="led" aria-hidden="true"></i>Gripper</span>
+      <span class="led-chip" id="chip-robot" role="img" aria-label="Robot sin datos" title="Robot sin datos"><i class="led" aria-hidden="true"></i>Robot</span>
     </div>
   </header>
+
+  <div class="barra-operacion" aria-label="Estado y parada del ciclo">
+    <div>
+      <div class="fase-ciclo" id="fase-ciclo" role="status">Esperando estado de la celda</div>
+      <div class="detalle-conexion">
+        <span class="conexion" id="conexion" role="status" data-viva="false">Conectando…</span>
+        <span class="conexion" id="separador-conexion" aria-hidden="true" hidden>·</span>
+        <span class="conexion" id="ultima-actualizacion" hidden></span>
+      </div>
+    </div>
+    <div class="acciones-operacion">
+      <span class="conexion estado-control" id="estado-control" role="status">Consultando control…</span>
+      <div class="mandos-operacion" id="mandos-operacion" hidden>
+        <button id="tomar-control" onclick="cambiarControl('tomar')" hidden disabled>Tomar control</button>
+        <button id="soltar-control" onclick="cambiarControl('renunciar')" hidden>Dejar de controlar</button>
+        <button class="stop" id="detener-ciclo" onclick="cmd('detener')" hidden disabled>Detener ciclo</button>
+        <button class="reset" id="reiniciar-parada" onclick="cmd('reset')" hidden disabled>Reiniciar parada</button>
+      </div>
+      <p class="estado-parada" id="estado-parada" role="status" hidden></p>
+    </div>
+  </div>
 
   <main>
     <!-- Columna principal: video + datos informativos debajo -->
     <section class="col-principal">
-      <div class="video-wrap">
-        <img src="/video" alt="Cámara en vivo">
+      <div class="panel-video">
+        <div class="hom-guia" id="hom-guia" hidden>
+          <p id="hom-progreso" role="status" tabindex="-1"></p>
+          <button id="hom-deshacer-video" onclick="homografia('deshacer')">Deshacer punto</button>
+          <button id="hom-aplicar-video" onclick="homografia('aplicar')" hidden>Aplicar (guardar)</button>
+          <a href="#panel-homografia">Opciones de calibración</a>
+          <details id="hom-teclado">
+            <summary>Registrar punto con teclado</summary>
+            <form class="hom-coordenadas" id="hom-coordenadas">
+              <label>X (px)<input type="number" id="hom-x" min="0" step="1" inputmode="numeric" required></label>
+              <label>Y (px)<input type="number" id="hom-y" min="0" step="1" inputmode="numeric" required></label>
+              <button type="submit">Registrar punto</button>
+            </form>
+          </details>
+          <p id="hom-respuesta" role="status" hidden></p>
+        </div>
+        <div class="video-wrap">
+          <img id="video-camara" src="/video" alt="Cámara en vivo">
+          <span class="hom-cursor" id="hom-cursor" aria-hidden="true" hidden></span>
+        </div>
       </div>
 
       <div class="info-paneles">
@@ -506,6 +585,7 @@
 
         <div class="panel panel-mapa">
           <h2>Mapa de trabajo (X · Y)</h2>
+          <div id="estado-mapa" class="conexion" role="status"></div>
           <canvas id="mapa-robot" width="640" height="430"
                   aria-label="Mapa cenital a escala del área de trabajo del UR5, con la trayectoria y la posición actual"></canvas>
           <div class="mapa-pie">
@@ -534,26 +614,29 @@
     <!-- Columna lateral: solo controles interactivos -->
     <aside class="col-lateral">
       <div class="panel panel-control">
-        <h2>Control</h2>
-        <div class="grid-botones">
-          <button class="ciclo full" onclick="cmd('ciclo')">Ejecutar ciclo</button>
-          <button class="abrir" onclick="cmd('abrir')">Abrir gripper</button>
-          <button class="cerrar" onclick="cmd('cerrar')">Cerrar gripper</button>
-          <button class="home" onclick="cmd('home')" title="Mueve el robot a la pose home_pose de vision/config.json">Home</button>
-          <button class="stop" onclick="cmd('detener')">Parar</button>
-          <button class="abrir" onclick="cmd('soltar')" title="Invierte el movimiento en curso y abre el gripper, soltando la pieza de forma controlada">Soltar pieza</button>
-          <button class="reset full" onclick="cmd('reset')">Reiniciar parada</button>
-        </div>
+        <h2>Operación</h2>
+        <button class="ciclo" data-mando="ciclo" onclick="cmd('ciclo')" disabled>Ejecutar ciclo</button>
         <div class="cat-btns">
-          <button class="cat-A" onclick="cmd('ciclo','A')">Ciclo roja (A)</button>
-          <button class="cat-B" onclick="cmd('ciclo','B')">Ciclo azul (B)</button>
+          <button class="cat-A" data-mando="ciclo" onclick="cmd('ciclo','A')" disabled>Ciclo rojo (A)</button>
+          <button class="cat-B" data-mando="ciclo" onclick="cmd('ciclo','B')" disabled>Ciclo azul (B)</button>
         </div>
+        <h3>Mandos manuales</h3>
+        <div class="grid-botones">
+          <button class="home" data-mando="home" onclick="cmd('home')" disabled>Ir a Home</button>
+          <button class="abrir" data-mando="gripper" onclick="cmd('soltar')" disabled>Soltar pieza</button>
+          <button class="abrir" data-mando="gripper" onclick="cmd('abrir')" disabled>Abrir gripper</button>
+          <button class="cerrar" data-mando="gripper" onclick="cmd('cerrar')" disabled>Cerrar gripper</button>
+        </div>
+        <p id="bloqueo-mandos" class="conexion" role="status" hidden></p>
+        <p id="estado-comando" role="status" class="conexion" hidden></p>
+        <h3>Cámara</h3>
         <div class="cam-ctl">
-          <select id="sel-camara" title="Cámara activa">
+          <select id="sel-camara" aria-label="Cámara activa">
             <option value="">— cámara —</option>
           </select>
           <button class="cam-escanear" onclick="escanearCamaras()">Escanear</button>
           <button class="cam-usar" onclick="cambiarCamara()">Usar</button>
+          <p id="estado-camara" class="conexion" role="status" hidden></p>
         </div>
       </div>
 
@@ -589,6 +672,7 @@
             <button class="roi-reset" onclick="homografia('reset')">Reset fábrica</button>
           </div>
           <div class="roi-info">Estado: <b id="hom-estado">—</b></div>
+          <a id="hom-ir-video" href="#hom-progreso" hidden>Ir al video</a>
           <div class="roi-info">Puntos_px (ROI-relativos): <span id="hom-puntos">—</span></div>
           <div class="roi-info">Puntos_ur5 (m): <span id="hom-ur5">—</span></div>
           <div class="roi-info">Con el modo de calibración activo, <b>hacé clic sobre el video</b> sobre cada marca física: 1 sup-izq → 2 sup-der → 3 inf-der → 4 inf-izq. Los clics se convierten automáticamente a coordenadas de la ROI. Si cambiás la ROI después, recalibrá.</div>
@@ -601,8 +685,6 @@
           <div class="roi-btns">
             <button id="hsv-rojo" class="cat-A" onclick="hsv('color','rojo')">Rojo (A)</button>
             <button id="hsv-azul" class="cat-B" onclick="hsv('color','azul')">Azul (B)</button>
-            <button id="hsv-verde" class="hsv-verde" onclick="hsv('color','verde')">Verde (C)</button>
-            <button id="hsv-violeta" class="hsv-violeta" onclick="hsv('color','violeta')">Violeta (D)</button>
           </div>
           <div class="roi-btns" style="margin-top:8px">
             <button class="roi-mover" onclick="hsv('matiz_izquierda')">Matiz −</button>
@@ -660,7 +742,7 @@
     </aside>
   </main>
 
-  <div id="toast"></div>
+  <div id="toast" role="status"></div>
 
   <script>
     const $ = (id) => document.getElementById(id);
@@ -679,10 +761,11 @@
       window._toastT = setTimeout(() => t.classList.remove("show"), 2600);
     }
 
-    // LEDs del header (estado rápido de hardware, solo visual)
-    function setLed(id, ok) {
-      const el = $(id);
-      if (el) el.dataset.on = ok ? "1" : "0";
+    function setLed(id, ok, descripcion) {
+      const chip = $(id);
+      chip.querySelector(".led").dataset.on = ok ? "1" : "0";
+      chip.title = descripcion;
+      chip.setAttribute("aria-label", descripcion);
     }
 
     // Paneles colapsables de calibración: colapsados por defecto y con el
@@ -696,37 +779,227 @@
         localStorage.setItem("panel:" + id, d.open ? "1" : "0"));
     }
 
-    async function cmd(accion, categoria) {
+    const fases = {
+      INICIANDO: "Iniciando celda",
+      LISTO: "Listo para ejecutar",
+      ESPERANDO_PIEZA: "Esperando pieza",
+      DETECTANDO: "Buscando pieza",
+      ROBOT_ACTUANDO: "Ciclo en curso",
+      VERIFICANDO: "Verificando agarre",
+      PARADA_SEGURIDAD: "Parada activa",
+      APERTURA_WATCHDOG: "Parada por pérdida de comunicación con el gripper",
+      ERROR_CICLO: "Ciclo interrumpido",
+      CALIBRACION_PENDIENTE: "Verificá la calibración de cámara y ROI",
+      SIN_FRAME: "Sin imagen de cámara",
+    };
+    const refEstadoMs = 2000;
+    let ultimaActualizacion = 0;
+    let conexionViva = false;
+    let estadoCelda = null;
+    let comandoPendiente = false;
+    let paradaPendiente = false;
+    let camaraPendiente = false;
+    let tieneControl = false;
+    let cambiandoControl = false;
+    let controlInicializado = false;
+    const idPestana = crearIdPestana();
+    let pestanaAnterior = "";
+    try {
+      if (performance.getEntriesByType("navigation")[0]?.type === "reload") {
+        pestanaAnterior = sessionStorage.getItem("ur5Pestana") || "";
+      }
+      sessionStorage.setItem("ur5Pestana", idPestana);
+    } catch (e) {
+      // Sin almacenamiento se puede volver a tomar el cupo desde el mismo navegador.
+    }
+
+    function crearIdPestana() {
+      return Array.from(crypto.getRandomValues(new Uint8Array(16)),
+        b => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    function solicitarControl(url, opciones = {}) {
+      const headers = new Headers(opciones.headers);
+      headers.set("X-UR5-Pestana", idPestana);
+      return fetch(url, {...opciones, headers});
+    }
+
+    function mostrarControl(s) {
+      tieneControl = !!s.controla;
+      controlInicializado = true;
+      const estado = $("estado-control");
+      const texto = tieneControl ? "Control activo" :
+        (s.puede_tomar ? "Solo lectura" : "Solo lectura · Control ocupado");
+      if (estado.textContent !== texto) estado.textContent = texto;
+      $("mandos-operacion").hidden = !tieneControl && !s.puede_tomar;
+      $("tomar-control").hidden = tieneControl || !s.puede_tomar;
+      $("tomar-control").disabled = !s.puede_tomar;
+      $("soltar-control").hidden = !tieneControl;
+      actualizarMandos();
+    }
+
+    async function cambiarControl(accion = "") {
+      if (cambiandoControl) return;
+      cambiandoControl = true;
       try {
-        const r = await fetch("/api/command", {
+        const opciones = {cache: "no-store", signal: AbortSignal.timeout(refEstadoMs)};
+        if (accion) Object.assign(opciones, {
+          method: "POST", body: new URLSearchParams({accion, anterior: pestanaAnterior}),
+        });
+        const r = await solicitarControl("/api/control", opciones);
+        if (!r.ok && r.status !== 409) throw new Error("Control no disponible");
+        mostrarControl(await r.json());
+        if (accion === "reanudar") pestanaAnterior = "";
+      } catch (e) {
+        if (accion || !controlInicializado) toast("No se pudo consultar el control web.");
+      } finally {
+        cambiandoControl = false;
+      }
+    }
+
+    addEventListener("pagehide", () => {
+      if (tieneControl) {
+        navigator.sendBeacon("/api/control", new URLSearchParams({
+          accion: "salir", pestaña: idPestana,
+        }));
+      }
+    });
+    addEventListener("pageshow", ev => { if (ev.persisted) cambiarControl("reanudar"); });
+
+    function actualizarMandos() {
+      const s = estadoCelda;
+      const ocupado = !tieneControl || !conexionViva || !s || s.operacion_en_curso || comandoPendiente;
+      $("detener-ciclo").hidden = !tieneControl;
+      $("detener-ciclo").disabled = !tieneControl || paradaPendiente;
+      const bloqueado = ocupado || s?.parada_activa;
+      const motivos = s?.bloqueo_mandos || {};
+      for (const boton of document.querySelectorAll("[data-mando]")) {
+        const motivo = motivos[boton.dataset.mando];
+        boton.disabled = bloqueado || !!motivo;
+        boton.title = motivo || "";
+      }
+      const aviso = $("bloqueo-mandos");
+      const motivo = tieneControl && conexionViva ? motivos.ciclo || "" : "";
+      aviso.hidden = !motivo;
+      if (aviso.textContent !== motivo) aviso.textContent = motivo;
+      for (const control of document.querySelectorAll(".cam-ctl button, .cam-ctl select, aside details button")) {
+        const calibracion = control.closest("#panel-calibracion");
+        control.disabled = bloqueado || (calibracion && !!motivos.calibrar_robot) ||
+          (camaraPendiente && !!control.closest(".cam-ctl")) ||
+          (homPendiente && !!control.closest("#panel-homografia"));
+        if (calibracion) control.title = motivos.calibrar_robot || "";
+      }
+      const reset = $("reiniciar-parada");
+      reset.hidden = !tieneControl || !s?.parada_activa;
+      reset.disabled = ocupado || paradaPendiente || !!s?.parada_en_curso;
+      actualizarControlesHomografia(bloqueado);
+    }
+
+    function actualizarConexion(viva, mensaje = "") {
+      conexionViva = viva;
+      const el = $("conexion");
+      el.dataset.viva = String(viva);
+      el.hidden = viva;
+      if (el.textContent !== mensaje) el.textContent = mensaje;
+      $("separador-conexion").hidden = viva || !ultimaActualizacion;
+      actualizarMandos();
+    }
+
+    function recibirEstado(s) {
+      estadoCelda = s;
+      ultimaActualizacion = Date.now();
+      const hora = new Date(ultimaActualizacion).toLocaleTimeString("es-AR");
+      const marca = $("ultima-actualizacion");
+      marca.textContent = "Última actualización " + hora;
+      marca.hidden = false;
+      aplicarEstado(s);
+      actualizarConexion(true);
+    }
+
+    function mostrarEstadoParada(mensaje, error = false) {
+      const salida = $("estado-parada");
+      salida.textContent = mensaje;
+      salida.dataset.error = String(error);
+      salida.hidden = !mensaje;
+    }
+
+    async function cmd(accion, categoria) {
+      const esParada = accion === "detener";
+      if (!tieneControl || (esParada ? paradaPendiente : !conexionViva || comandoPendiente)) return;
+      if (esParada) {
+        paradaPendiente = true;
+        mostrarEstadoParada("Enviando solicitud de parada…");
+      } else {
+        comandoPendiente = true;
+      }
+      actualizarMandos();
+      const salida = $("estado-comando");
+      try {
+        const r = await solicitarControl("/api/command", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ accion, categoria: categoria || null }),
+          ...(esParada && {signal: AbortSignal.timeout(5000)}),
         });
         const data = await r.json();
-        toast(data.mensaje || accion);
+        if (r.status === 403) cambiarControl();
+        const aceptado = r.ok && data.ok === true;
+        const mensaje = data.mensaje || (aceptado ? "Comando recibido." : "Comando rechazado.");
+        if (esParada) {
+          mostrarEstadoParada(mensaje, !aceptado);
+        } else {
+          if (accion === "reset" && aceptado) mostrarEstadoParada("");
+          salida.hidden = false;
+          salida.textContent = mensaje;
+          toast(mensaje);
+        }
+        try {
+          const estado = await fetch("/api/state", {cache: "no-store", signal: AbortSignal.timeout(refEstadoMs)});
+          if (estado.ok) recibirEstado(await estado.json());
+        } catch (e) {
+          // SSE vuelve a sincronizar la vista cuando se recupera la conexión.
+        }
       } catch (e) {
-        toast("Error de red: " + e);
+        if (esParada) {
+          mostrarEstadoParada("No se pudo confirmar la solicitud de parada. Revisá la conexión.", true);
+        } else {
+          salida.hidden = false;
+          salida.textContent = "No se pudo confirmar el comando. Revisá la conexión.";
+          toast(salida.textContent);
+        }
+      } finally {
+        if (esParada) paradaPendiente = false;
+        else comandoPendiente = false;
+        actualizarMandos();
       }
     }
 
     function aplicarEstado(s) {
+      const fase = $("fase-ciclo");
+      const textoFase = fases[s.estado] || "Consultando estado de la celda";
+      if (fase.textContent !== textoFase) fase.textContent = textoFase;
+      fase.dataset.alerta = String(!!s.parada_activa || s.estado === "ERROR_CICLO" ||
+        s.estado === "CALIBRACION_PENDIENTE" || s.estado === "SIN_FRAME");
       // Hardware
       setText("v-camara",
               (s.camara_ok ? "OK" : "SIN CÁMARA") +
               (s.indice_camara != null ? " (índice " + s.indice_camara + ")" : ""),
               s.camara_ok ? "ok" : "bad");
-      setText("v-gripper", s.gripper_ok ? "OK" : "SIMULADO", s.gripper_ok ? "ok" : "warn");
-      setText("v-robot", s.robot_ok ? "OK" : "MOCK", s.robot_ok ? "ok" : "warn");
+      setText("v-gripper", s.gripper_ok ? "Conectado" : s.gripper_simulado ? "Simulado" : "Sin conexión física", s.gripper_ok ? "ok" : "warn");
+      const robotSimulado = s.robot_modo !== "real" && s.robot_ok;
+      setText("v-robot", robotSimulado ? "Simulado" : s.robot_ok ? "Conectado" : "Desconectado", s.robot_ok && !robotSimulado ? "ok" : "warn");
       setText("v-comando", s.ultimo_comando || "—");
 
       // LEDs del header
-      setLed("led-camara", s.camara_ok);
-      setLed("led-gripper", s.gripper_ok);
-      setLed("led-robot", s.robot_ok);
+      setLed("chip-camara", s.camara_ok, s.camara_ok ? "Cámara conectada" : "Cámara sin imagen");
+      setLed("chip-gripper", s.gripper_ok, s.gripper_ok ? "Gripper conectado" : s.gripper_simulado ? "Gripper simulado" : "Gripper sin conexión física");
+      setLed("chip-robot", s.robot_ok && !robotSimulado, robotSimulado ? "Robot simulado" :
+        s.robot_ok ? "Robot conectado" : "Robot desconectado");
 
       const det = s.deteccion || {};
-      setText("v-vision", det.ok ? "PIEZA DETECTADA" : "SIN PIEZA", det.ok ? "ok" : "warn");
+      const vision = det.ok ? "Pieza detectada" :
+        det.estado_vision === "sin_pieza" ? "Sin pieza" : "Visión pendiente";
+      setText("v-vision", vision, det.ok ? "ok" : "warn");
 
       // Detección
       setText("d-cat", det.ok ? (det.categoria || "—") : "—");
@@ -745,16 +1018,11 @@
       const elTotal = $("s-total");
       if (elTotal) elTotal.textContent = ok + err;
 
-      // Uptime
-      const u = s.uptime_s || 0;
-      $("uptime").textContent = `uptime ${Math.floor(u/60)}m ${u%60}s`;
-
       // ROI actual
       if (s.roi) mostrarRoi(s.roi);
       // Estado del editor HSV (rangos y píxeles captados en vivo)
       if (s.hsv) mostrarHsv(s.hsv);
       // Estado del asistente de homografía
-      if (s.homografia) mostrarHomografia(s.homografia);
       if (s.frame && s.frame.ancho && s.frame.alto) {
         frameTamano = s.frame;
         // Aspect real del frame: dimensiona el video para que no queden
@@ -762,6 +1030,7 @@
         document.documentElement.style.setProperty(
           "--ar-video", (s.frame.ancho / s.frame.alto).toFixed(4));
       }
+      if (s.homografia) mostrarHomografia(s.homografia);
 
       // Selector de cámara: al primer estado, mostrar solo la cámara activa
       if (!selInicializada && s.indice_camara != null && s.indice_camara >= 0) {
@@ -828,44 +1097,68 @@
       }
     }
 
+    function mostrarEstadoCamara(mensaje) {
+      const salida = $("estado-camara");
+      salida.textContent = mensaje;
+      salida.hidden = !mensaje;
+    }
+
     async function escanearCamaras() {
-      const sel = $("sel-camara");
-      sel.innerHTML = '<option value="">escaneando...</option>';
-      toast("Buscando cámaras (el video se congela un instante)...");
+      if (camaraPendiente) return;
+      camaraPendiente = true;
+      actualizarMandos();
+      mostrarEstadoCamara("Buscando cámaras. El video puede quedar en pausa unos segundos…");
       try {
-        const r = await fetch("/api/camaras");
+        const r = await solicitarControl("/api/camaras");
         const d = await r.json();
+        if (!r.ok) {
+          mostrarEstadoCamara(d.mensaje || "No se pudo escanear. Volvé a intentar.");
+          return;
+        }
         poblarCamaras(d.disponibles, d.actual);
-        if (!d.disponibles || !d.disponibles.length) toast("No se detectaron cámaras.");
-        else toast("Cámaras: " + d.disponibles.join(", "));
+        mostrarEstadoCamara(d.disponibles?.length ? "Elegí una cámara y tocá Usar." : "No se detectaron cámaras.");
       } catch (e) {
-        toast("Error escaneando: " + e);
-        sel.innerHTML = '<option value="">— cámara —</option>';
+        mostrarEstadoCamara("No se pudo escanear. Revisá la conexión y volvé a intentar.");
+      } finally {
+        camaraPendiente = false;
+        actualizarMandos();
       }
     }
 
     async function cambiarCamara() {
+      if (camaraPendiente) return;
       const sel = $("sel-camara");
-      if (!sel.value) { toast("Escanee y elija una cámara."); return; }
-      toast("Cambiando a cámara " + sel.value + "...");
+      if (!sel.value) { mostrarEstadoCamara("Escaneá y elegí una cámara."); return; }
+      const indice = Number(sel.value);
+      camaraPendiente = true;
+      actualizarMandos();
+      mostrarEstadoCamara("Cambiando a cámara " + indice + "…");
       try {
-        const r = await fetch("/api/camara", {
+        const r = await solicitarControl("/api/camara", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ indice: Number(sel.value) }),
+          body: JSON.stringify({ indice }),
         });
         const d = await r.json();
-        toast(d.mensaje || "Listo.");
-        poblarCamaras([d.indice], d.indice); // provisional hasta nuevo escaneo
+        if (!r.ok || !d.ok || !Number.isInteger(d.indice)) {
+          mostrarEstadoCamara(d.mensaje || "No se pudo cambiar la cámara. Volvé a intentar.");
+          return;
+        }
+        const disponibles = Array.from(sel.options, o => Number(o.value));
+        poblarCamaras(disponibles, d.indice);
+        mostrarEstadoCamara(d.mensaje || "Cámara " + d.indice + " activa.");
       } catch (e) {
-        toast("Error cambiando cámara: " + e);
+        mostrarEstadoCamara("No se pudo confirmar el cambio. Revisá la conexión y el estado de la cámara.");
+      } finally {
+        camaraPendiente = false;
+        actualizarMandos();
       }
     }
 
     // ------------------------------------------------ ajuste visual de ROI
     async function roi(accion) {
       try {
-        const r = await fetch("/api/roi", {
+        const r = await solicitarControl("/api/roi", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ accion }),
@@ -887,7 +1180,7 @@
     // ------------------------------------------------ calibración HSV colores
     async function hsv(accion, valor) {
       try {
-        const r = await fetch("/api/hsv", {
+        const r = await solicitarControl("/api/hsv", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ accion, valor: valor || "" }),
@@ -902,7 +1195,7 @@
 
     function mostrarHsv(h) {
       $("hsv-texto").textContent = h.texto || "—";
-      for (const c of ["rojo", "azul", "verde", "violeta"]) {
+      for (const c of ["rojo", "azul"]) {
         const b = $("hsv-" + c);
         if (b) b.classList.toggle("hsv-sel", h.color_actual === c);
       }
@@ -919,7 +1212,7 @@
     // ------------------------------------------- calibración física del robot
     async function calibrarRobot(accion) {
       try {
-        const r = await fetch("/api/calibrar_robot", {
+        const r = await solicitarControl("/api/calibrar_robot", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ accion }),
@@ -947,32 +1240,78 @@
     // ------------------------------------------- asistente de homografía
     let frameTamano = { ancho: 1280, alto: 720 };
     let calibrandoHom = false;
+    let puntosHom = 0;
+    let homPendiente = false;
+
+    function actualizarControlesHomografia(bloqueado) {
+      const editar = calibrandoHom && !bloqueado && !homPendiente;
+      $("hom-deshacer-video").disabled = !editar || puntosHom === 0;
+      $("hom-aplicar-video").disabled = !editar || !estadoCelda?.camara_ok;
+      const captura = editar && puntosHom < 4 && estadoCelda?.camara_ok;
+      $("hom-coordenadas").querySelector("button").disabled = !captura;
+      for (const eje of ["x", "y"]) {
+        $("hom-" + eje).readOnly = !captura;
+      }
+    }
+
+    function irAlVideoHomografia() {
+      $("hom-progreso").focus({preventScroll: true});
+      $("hom-progreso").scrollIntoView({block: "center"});
+    }
 
     async function homografia(accion, valor) {
+      if (!tieneControl || homPendiente) return;
+      homPendiente = true;
+      actualizarMandos();
+      const salida = $("hom-respuesta");
+      salida.hidden = true;
       try {
-        const r = await fetch("/api/homografia", {
+        const r = await solicitarControl("/api/homografia", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ accion, valor: valor || "" }),
+          signal: AbortSignal.timeout(5000),
         });
         const d = await r.json();
-        toast(d.mensaje || accion);
         if (d.homografia) mostrarHomografia(d.homografia);
+        if (r.ok && d.ok && accion === "iniciar") irAlVideoHomografia();
+        salida.textContent = d.mensaje || (r.ok ? "Cambio recibido." : "No se pudo calibrar.");
+        salida.hidden = false;
+        toast(salida.textContent);
       } catch (e) {
-        toast("Error de red: " + e);
+        salida.textContent = "No se pudo confirmar el cambio. Revisá la conexión antes de reintentar.";
+        salida.hidden = false;
+        toast(salida.textContent);
+      } finally {
+        homPendiente = false;
+        actualizarMandos();
       }
     }
 
     function mostrarHomografia(h) {
       calibrandoHom = !!h.calibrando;
+      puntosHom = h.registrados ?? 0;
       // Si otra sesión inició la calibración, desplegar el panel para verla
       if (calibrandoHom) {
         const d = $("panel-homografia");
         if (d && !d.open) d.open = true;
       }
-      $("hom-estado").textContent = calibrandoHom
-        ? "CALIBRANDO — " + h.registrados + "/4 puntos, falta " + h.proximo
-        : "inactiva";
+      const esquinas = {
+        "sup-izq": "superior izquierda", "sup-der": "superior derecha",
+        "inf-der": "inferior derecha", "inf-izq": "inferior izquierda",
+      };
+      const progreso = puntosHom + "/4 puntos. " + (puntosHom < 4
+        ? "Marcá la esquina " + (esquinas[h.proximo] || h.proximo || "indicada") + " en el video."
+        : "Aplicá para guardar la calibración.");
+      if ($("hom-progreso").textContent !== progreso) $("hom-progreso").textContent = progreso;
+      $("hom-estado").textContent = calibrandoHom ? progreso : "inactiva";
+      $("hom-guia").hidden = !calibrandoHom;
+      $("hom-ir-video").hidden = !calibrandoHom;
+      $("hom-teclado").hidden = puntosHom >= 4;
+      $("hom-aplicar-video").hidden = puntosHom < 4;
+      $("hom-x").max = frameTamano.ancho - 1;
+      $("hom-y").max = frameTamano.alto - 1;
+      actualizarCursorHomografia();
       $("hom-puntos").textContent = (h.puntos_px || [])
         .map(p => "(" + p[0] + ", " + p[1] + ")").join(" ");
       $("hom-ur5").textContent = (h.puntos_ur5 || [])
@@ -983,20 +1322,37 @@
     // Las coordenadas se convierten del tamaño mostrado al frame nativo; el
     // backend las traduce a coordenadas de la ROI.
     function clicVideo(ev) {
-      if (!calibrandoHom) return;
-      const img = ev.target;
-      const r = img.getBoundingClientRect();
-      if (!r.width || !r.height) return;
+      if ($("hom-coordenadas").querySelector("button").disabled) return;
+      const r = ev.target.getBoundingClientRect();
+      const { escala, x: offX, y: offY } = encuadreVideo(r);
+      if (!escala) return;
+      const x = Math.round((ev.clientX - r.left - offX) / escala);
+      const y = Math.round((ev.clientY - r.top - offY) / escala);
+      if (x < 0 || y < 0 || x >= frameTamano.ancho || y >= frameTamano.alto) return;
+      homografia("punto", x + "," + y);
+    }
+
+    function encuadreVideo(r) {
       // Con object-fit: contain el video puede ocupar solo parte del rect del
       // <img> (barras negras): se mapea sobre el área real del contenido.
       const escala = Math.min(r.width / frameTamano.ancho,
                               r.height / frameTamano.alto);
-      const offX = r.left + (r.width - frameTamano.ancho * escala) / 2;
-      const offY = r.top + (r.height - frameTamano.alto * escala) / 2;
-      const x = Math.round((ev.clientX - offX) / escala);
-      const y = Math.round((ev.clientY - offY) / escala);
-      if (x < 0 || y < 0 || x >= frameTamano.ancho || y >= frameTamano.alto) return;
-      homografia("punto", x + "," + y);
+      return {
+        escala,
+        x: (r.width - frameTamano.ancho * escala) / 2,
+        y: (r.height - frameTamano.alto * escala) / 2,
+      };
+    }
+
+    function actualizarCursorHomografia() {
+      const x = $("hom-x"), y = $("hom-y");
+      const cursor = $("hom-cursor");
+      cursor.hidden = !calibrandoHom || puntosHom >= 4 || !$("hom-teclado").open ||
+        !x.value || !y.value || !x.validity.valid || !y.validity.valid;
+      if (cursor.hidden) return;
+      const {escala, x: offX, y: offY} = encuadreVideo($("video-camara").getBoundingClientRect());
+      cursor.style.left = offX + x.valueAsNumber * escala + "px";
+      cursor.style.top = offY + y.valueAsNumber * escala + "px";
     }
 
     // ------------------------------------------------- mapa de trabajo (X-Y)
@@ -1007,10 +1363,20 @@
     function cargarMapa() {
       if (mapaPedido) return;
       mapaPedido = true;
-      fetch("/api/robot", { cache: "no-store" })
-        .then(r => r.json())
-        .then(d => { dibujarMapa(d); actualizarPieMapa(d); })
-        .catch(() => {})
+      fetch("/api/robot", {cache: "no-store", signal: AbortSignal.timeout(refEstadoMs)})
+        .then(r => {
+          if (!r.ok) throw new Error("Telemetría no disponible");
+          return r.json();
+        })
+        .then(d => {
+          if ($("estado-mapa").textContent) $("estado-mapa").textContent = "";
+          dibujarMapa(d);
+          actualizarPieMapa(d);
+        })
+        .catch(() => {
+          const estadoMapa = $("estado-mapa");
+          if (!estadoMapa.textContent) estadoMapa.textContent = "Telemetría sin actualizar";
+        })
         .finally(() => { mapaPedido = false; });
     }
 
@@ -1256,22 +1622,44 @@
     // Poblar el selector con la cámara activa al primer estado recibido
     let selInicializada = false;
 
-    // Server-Sent Events: estado en tiempo real
+    // Estado en tiempo real. Una conexión abierta sin mensajes también vence.
+    actualizarMandos();
+    cambiarControl("reanudar");
+    setInterval(cambiarControl, 2500);
     const es = new EventSource("/stream");
     es.onmessage = (ev) => {
-      try { aplicarEstado(JSON.parse(ev.data)); } catch (e) {}
+      try { recibirEstado(JSON.parse(ev.data)); } catch (e) {
+        actualizarConexion(false, "Estado inválido. Esperando actualización.");
+      }
     };
-    es.onerror = () => {
-      // el navegador reconecta solo; mostramos aviso breve
-      console.warn("SSE desconectado, reintentando...");
-    };
+    es.onerror = () => actualizarConexion(false, "Conexión perdida. Reconectando…");
+    setInterval(() => {
+      if (conexionViva && Date.now() - ultimaActualizacion > refEstadoMs) {
+        actualizarConexion(false, "Estado sin actualizar. Esperando conexión…");
+      }
+    }, 500);
 
-    // Estado inicial inmediato
-    fetch("/api/state").then(r => r.json()).then(aplicarEstado).catch(() => {});
+    fetch("/api/state", {cache: "no-store"})
+      .then(r => r.ok ? r.json() : null)
+      .then(s => { if (s && !ultimaActualizacion) recibirEstado(s); })
+      .catch(() => { if (!ultimaActualizacion) actualizarConexion(false, "Sin conexión con la celda"); });
 
     // Clics sobre el video para el asistente de homografía
-    const videoImg = document.querySelector(".video-wrap img");
-    if (videoImg) videoImg.addEventListener("click", clicVideo);
+    const videoImg = $("video-camara");
+    videoImg.addEventListener("click", clicVideo);
+    $("hom-ir-video").addEventListener("click", ev => {
+      ev.preventDefault();
+      irAlVideoHomografia();
+    });
+    $("hom-teclado").addEventListener("toggle", actualizarCursorHomografia);
+    $("hom-coordenadas").addEventListener("input", actualizarCursorHomografia);
+    $("hom-coordenadas").addEventListener("submit", ev => {
+      ev.preventDefault();
+      const x = $("hom-x"), y = $("hom-y");
+      if (ev.currentTarget.querySelector("button").disabled || !ev.currentTarget.reportValidity()) return;
+      homografia("punto", x.valueAsNumber + "," + y.valueAsNumber);
+    });
+    new ResizeObserver(actualizarCursorHomografia).observe(videoImg);
   </script>
 </body>
 </html>

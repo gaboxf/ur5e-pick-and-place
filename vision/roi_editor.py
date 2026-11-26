@@ -15,9 +15,10 @@ La ROI se expresa en fracciones de la imagen (0.0 = borde izquierdo/superior,
 
 from __future__ import annotations
 
-import json
 import logging
 from pathlib import Path
+
+from .config import actualizar_config
 
 import cv2
 import numpy as np
@@ -107,16 +108,12 @@ class EditorROI:
         """
         try:
             ruta = Path(config_path)
-            data = json.loads(ruta.read_text(encoding="utf-8"))
-            data.setdefault("camara", {}).update({
-                "roi_desde_x": round(self.cfg.roi_desde_x, 4),
-                "roi_hasta_x": round(self.cfg.roi_hasta_x, 4),
-                "roi_desde_y": round(self.cfg.roi_desde_y, 4),
-                "roi_hasta_y": round(self.cfg.roi_hasta_y, 4),
-            })
-            ruta.write_text(
-                json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
-            )
+            actualizar_config(ruta, {"camara": {
+                "roi_desde_x": self.cfg.roi_desde_x,
+                "roi_hasta_x": self.cfg.roi_hasta_x,
+                "roi_desde_y": self.cfg.roi_desde_y,
+                "roi_hasta_y": self.cfg.roi_hasta_y,
+            }})
             logger.info("ROI guardada en %s: %s", ruta, self.texto())
             return f"ROI guardada en {ruta.name}: {self.texto()}"
         except Exception:
@@ -146,10 +143,10 @@ class EditorROI:
     def valores(self) -> dict:
         """Valores de la ROI (y del editor) para enviar al frontend."""
         return {
-            "desde_x": round(self.cfg.roi_desde_x, 4),
-            "hasta_x": round(self.cfg.roi_hasta_x, 4),
-            "desde_y": round(self.cfg.roi_desde_y, 4),
-            "hasta_y": round(self.cfg.roi_hasta_y, 4),
+            "desde_x": self.cfg.roi_desde_x,
+            "hasta_x": self.cfg.roi_hasta_x,
+            "desde_y": self.cfg.roi_desde_y,
+            "hasta_y": self.cfg.roi_hasta_y,
             "mostrar": self.mostrar,
             "texto": self.texto(),
         }

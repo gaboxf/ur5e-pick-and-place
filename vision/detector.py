@@ -14,7 +14,7 @@ Pipeline por frame:
     7. Filtro por área y selección del contorno mayor
     8. Cálculo del centroide (píxeles)
     9. Dibujo: recuadro y contorno con el color de la categoría detectada
-       (A=rojo, B=azul, C=verde, D=violeta)
+       (A=rojo, B=azul)
 """
 
 from __future__ import annotations
@@ -33,8 +33,6 @@ logger = logging.getLogger("DetectorPiezas")
 COLORES_CATEGORIA: dict[str, tuple[int, int, int]] = {
     "A": (0, 0, 255),      # Rojo (cilindro)
     "B": (255, 0, 0),      # Azul (cubo)
-    "C": (0, 255, 0),      # Verde
-    "D": (255, 0, 255),    # Violeta
 }
 COLOR_DESCONOCIDO: tuple[int, int, int] = (255, 255, 255)
 
@@ -76,26 +74,15 @@ class DetectorPiezas:
         return cv2.inRange(hsv, np.array(self.cfg.azul_bajo, np.uint8),
                            np.array(self.cfg.azul_alto, np.uint8))
 
-    def _mascara_verde(self, hsv: np.ndarray) -> np.ndarray:
-        return cv2.inRange(hsv, np.array(self.cfg.verde_bajo, np.uint8),
-                           np.array(self.cfg.verde_alto, np.uint8))
-
-    def _mascara_violeta(self, hsv: np.ndarray) -> np.ndarray:
-        return cv2.inRange(hsv, np.array(self.cfg.violeta_bajo, np.uint8),
-                           np.array(self.cfg.violeta_alto, np.uint8))
-
-    # -- Procesamiento ------------------------------------------------------
     def procesar(self, frame_bgr: np.ndarray) -> DeteccionPieza:
         hsv = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2HSV)
 
         # Evaluar ambos colores y quedarnos con el que dé mejor contorno
-        candidatos: list[tuple[float, str, np.ndarray, np.ndarray]] = []
+        candidatos: list[tuple[float, str, np.ndarray, np.ndarray, float]] = []
 
         for categoria, mascara_bruta in (
             ("A", self._mascara_rojo(hsv)),
             ("B", self._mascara_azul(hsv)),
-            ("C", self._mascara_verde(hsv)),
-            ("D", self._mascara_violeta(hsv)),
         ):
             # Limpiar la máscara
             masc = cv2.morphologyEx(mascara_bruta, cv2.MORPH_OPEN, self._kernel)
@@ -132,7 +119,7 @@ class DetectorPiezas:
                 )
                 continue
 
-            candidatos.append((area, categoria, contorno, masc))
+            candidatos.append((area, categoria, contorno, masc, confianza))
 
         if not candidatos:
             return DeteccionPieza(
@@ -141,7 +128,7 @@ class DetectorPiezas:
             )
 
         # Elegir el candidato con mayor área (si hay conflicto, prioriza rojo)
-        area, categoria, contorno, masc = max(candidatos, key=lambda c: c[0])
+        area, categoria, contorno, masc, confianza = max(candidatos, key=lambda c: c[0])
 
         momentos = cv2.moments(contorno)
         if momentos["m00"] == 0:

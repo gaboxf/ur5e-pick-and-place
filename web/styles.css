@@ -500,6 +500,17 @@ pre.code code { font-family: inherit; }
 
 .checklist strong { display: block; font-weight: 600; }
 .checklist span { color: var(--color-muted); font-size: 0.95rem; }
+.checklist-reset {
+  min-height: 44px;
+  margin-top: var(--space-sm);
+  padding-inline: var(--space-md);
+  color: var(--color-ink);
+  background: var(--color-paper-2);
+  border: 1px solid var(--color-rule);
+  font: inherit;
+  cursor: pointer;
+}
+.checklist-reset:hover { background: var(--color-paper-3); }
 
 /* ── Figuras ────────────────────────────────────────────── */
 .figure { margin: var(--space-xl) 0 0; }
