@@ -152,6 +152,94 @@ class EditorHSV:
         self._escribir_ventanas(color, ventanas)
         return True, res
 
+    def establecer(self, parametro: str, valor, color: str | None = None
+                   ) -> tuple[bool, str]:
+        """Fija un parámetro a un valor absoluto (para sliders).
+
+        ``parametro`` puede ser: matiz, ancho, sensibilidad, area, confianza.
+        ``color`` (rojo/azul) selecciona el color; si no se da, usa el actual.
+        Los parámetros de matiz/ancho/sensibilidad se aplican a todas las
+        ventanas activas del color elegido.
+        """
+        parametro = (parametro or "").strip().lower()
+        if color in ORDEN_COLORES:
+            self.color_actual = color
+        color = self.color_actual
+
+        # --- parámetros globales (no dependen del color) ---
+        if parametro == "area":
+            try:
+                area = int(round(float(valor)))
+            except (TypeError, ValueError):
+                return False, "Área inválida."
+            area = max(AREA_MIN_LIMITE,
+                       min(int(self.cfg.area_maxima) - 100, area))
+            self.cfg.area_minima = area
+            return True, f"Área mínima: {area} px."
+
+        if parametro == "confianza":
+            try:
+                conf = float(valor)
+            except (TypeError, ValueError):
+                return False, "Confianza inválida."
+            conf = round(max(0.0, min(1.0, conf)), 2)
+            self.cfg.confianza_minima = conf
+            return True, f"Umbral de confianza: {conf:.2f}."
+
+        # --- parámetros de ventanas de color ---
+        if parametro not in ("matiz", "ancho", "sensibilidad"):
+            return False, f"Parámetro HSV desconocido: {parametro}"
+
+        ventanas = self._leer_ventanas(color)
+        activas = [(b, a) for b, a in ventanas
+                   if not (b == [0, 0, 0] and a == [0, 0, 0])]
+        if not activas:
+            return False, "No hay ventanas activas para editar."
+
+        if parametro == "matiz":
+            try:
+                objetivo = int(round(float(valor))) % HUE_MAX
+            except (TypeError, ValueError):
+                return False, "Matiz inválido."
+            actual = activas[0][0][0]
+            delta = (objetivo - actual) % HUE_MAX
+            ventanas = self._desplazar_hue(ventanas, delta)
+
+        elif parametro == "ancho":
+            try:
+                ancho = int(round(float(valor)))
+            except (TypeError, ValueError):
+                return False, "Ancho inválido."
+            ancho = max(1, min(HUE_MAX, ancho))
+            salida: list[list[float]] = []
+            for bajo, alto in ventanas:
+                if bajo == [0, 0, 0] and alto == [0, 0, 0]:
+                    salida.append([bajo, alto])
+                    continue
+                centro = (bajo[0] + alto[0]) / 2
+                nb = int(max(0, round(centro - ancho / 2)))
+                na = int(min(HUE_MAX, round(centro + ancho / 2)))
+                if na - nb < 2:
+                    nb, na = max(0, nb), min(HUE_MAX, nb + 2)
+                salida.append([[nb, bajo[1], bajo[2]],
+                               [na, alto[1], alto[2]]])
+            ventanas = salida
+
+        else:  # sensibilidad
+            try:
+                sens = int(round(float(valor)))
+            except (TypeError, ValueError):
+                return False, "Sensibilidad inválida."
+            sens = max(0, min(254, sens))
+            for bajo, _ in ventanas:
+                if bajo == [0, 0, 0]:
+                    continue
+                bajo[1] = sens
+                bajo[2] = sens
+
+        self._escribir_ventanas(color, ventanas)
+        return True, f"{color.capitalize()}: {self._texto_de(ventanas)}"
+
     def _desplazar_hue(self, ventanas: list[list[float]],
                        d: int) -> list[list[float]]:
         """Desplaza el matiz de todas las ventanas d unidades (con wrap-around).
@@ -315,6 +403,10 @@ class EditorHSV:
 
     def estado(self) -> dict:
         """Estado del editor para el frontend / HUD."""
+        ventanas = self._leer_ventanas(self.color_actual)
+        activas = [(b, a) for b, a in ventanas
+                   if not (b == [0, 0, 0] and a == [0, 0, 0])]
+        primera = activas[0] if activas else None
         return {
             "color_actual": self.color_actual,
             "texto": self.texto(),
@@ -322,4 +414,10 @@ class EditorHSV:
             "pixeles": dict(self.pixeles),
             "area_minima": int(self.cfg.area_minima),
             "confianza_minima": float(self.cfg.confianza_minima),
+            # Valores absolutos de la primera ventana activa, para posicionar
+            # los sliders del dashboard web al cargar y al cambiar de color.
+            "matiz": int(primera[0][0]) if primera else 0,
+            "ancho": int(primera[1][0] - primera[0][0]) if primera else 0,
+            "sensibilidad": int(primera[0][1]) if primera else 0,
+            "area_maxima": int(self.cfg.area_maxima),
         }

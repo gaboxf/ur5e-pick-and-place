@@ -1025,7 +1025,13 @@ def api_roi():
     """
     data = request.get_json(silent=True) or {}
     accion = (data.get("accion") or "").strip().lower()
-    ok, msg = dashboard.ajustar_roi(accion)
+    if accion == "establecer":
+        ok, msg = dashboard.editor_roi.establecer(
+            data.get("desde_x"), data.get("hasta_x"),
+            data.get("desde_y"), data.get("hasta_y"),
+        )
+    else:
+        ok, msg = dashboard.ajustar_roi(accion)
     return jsonify({"ok": ok, "mensaje": msg,
                     "roi": dashboard.editor_roi.valores()}), (200 if ok else 400)
 
@@ -1043,7 +1049,16 @@ def api_hsv():
     data = request.get_json(silent=True) or {}
     accion = (data.get("accion") or "").strip().lower()
     valor = (data.get("valor") or "").strip().lower()
-    ok, msg = dashboard.ajustar_hsv(accion, valor)
+    if accion == "establecer":
+        parametro = (data.get("parametro") or "").strip().lower()
+        color = (data.get("color") or "").strip().lower() or None
+        try:
+            valor_num = float(valor)
+        except (TypeError, ValueError):
+            valor_num = None
+        ok, msg = dashboard.editor_hsv.establecer(parametro, valor_num, color)
+    else:
+        ok, msg = dashboard.ajustar_hsv(accion, valor)
     return jsonify({"ok": ok, "mensaje": msg,
                     "hsv": dashboard.editor_hsv.estado()}), (200 if ok else 400)
 

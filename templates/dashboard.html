@@ -123,7 +123,7 @@
     main {
       display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: var(--space-sm);
       padding: var(--space-sm);
-      max-width: 1800px; margin: 0 auto; align-items: start;
+      max-width: 1800px; margin: 0 auto; align-items: stretch;
     }
     @media (min-width: 1600px) {
       main { grid-template-columns: minmax(0, 1fr) 380px; }
@@ -142,6 +142,7 @@
     }
     @media (max-width: 900px) {
       main { grid-template-columns: minmax(0, 1fr); }
+      .panel-video { position: static; } /* el video no se fija en móvil */
       .col-principal, .col-lateral, .info-paneles { display: contents; }
       .panel-video      { order: 1; }
       .panel-control    { order: 2; }
@@ -161,8 +162,14 @@
     .video-wrap {
       background: #000;
       border: 1px solid var(--color-rule);
-      overflow: hidden; position: relative;
+      overflow: hidden;
       width: 100%;
+    }
+    .panel-video {
+      position: sticky;
+      top: var(--sticky-top, 0px);
+      z-index: 3;
+      background: var(--color-paper);
     }
     .video-wrap img {
       width: 100%; display: block;
@@ -367,6 +374,51 @@
     .roi-info b { color: var(--color-warn); font-family: var(--font-mono); }
     .hsv-sel     { outline: 3px solid var(--color-warn); outline-offset: -1px; }
 
+    /* ------------------------------------------------------------ sliders */
+    .slider-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: var(--space-2xs);
+      padding: var(--space-2xs) 0;
+      border-bottom: 1px solid var(--color-rule);
+      min-width: 0;
+    }
+    .slider-row:last-child { border-bottom: none; }
+    .slider-row label {
+      font-size: var(--text-sm);
+      color: var(--color-ink-2);
+      min-width: 0;
+    }
+    .slider-row output {
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--color-accent);
+      min-width: 5ch;
+      text-align: right;
+    }
+    .slider-row input[type="range"] {
+      grid-column: 1 / -1;
+      width: 100%;
+      height: 26px;
+      margin: 0;
+      accent-color: var(--color-accent);
+      background: transparent;
+      cursor: pointer;
+      min-width: 0;
+    }
+    .slider-row input[type="range"]:focus-visible {
+      outline: 2px solid var(--color-focus);
+      outline-offset: 2px;
+    }
+    .slider-hint {
+      font-size: var(--text-xs);
+      color: var(--color-ink-2);
+      margin: var(--space-2xs) 0 0;
+      overflow-wrap: anywhere;
+    }
+
     /* ---------------------------------------------------------- mapa robot */
     .panel-mapa canvas {
       width: 100%; max-width: 720px; height: auto; display: block; margin-inline: auto;
@@ -529,7 +581,7 @@
     </div>
   </div>
 
-  <main>
+  <main style="min-height: 100vh;">
     <!-- Columna principal: video + datos informativos debajo -->
     <section class="col-principal">
       <div class="panel-video">
@@ -643,15 +695,30 @@
       <details class="panel panel-roi" id="panel-roi">
         <summary><h2>Ajustar ROI (zona de trabajo)</h2><span class="chev" aria-hidden="true"></span></summary>
         <div class="panel-body">
-          <div class="roi-btns">
-            <button class="roi-mover" onclick="roi('izquierda')">Izquierda</button>
-            <button class="roi-mover" onclick="roi('arriba')">Arriba</button>
-            <button class="roi-mover" onclick="roi('abajo')">Abajo</button>
-            <button class="roi-mover" onclick="roi('derecha')">Derecha</button>
-            <button class="roi-tamano" onclick="roi('mas_grande')">+ Grande</button>
-            <button class="roi-tamano" onclick="roi('mas_pequena')">− Pequeña</button>
+          <div class="slider-row">
+            <label for="roi-desde-x">Borde izquierdo (X)</label>
+            <output id="out-roi-desde-x">—</output>
+            <input type="range" id="roi-desde-x" min="0" max="1" step="0.01" value="0.15">
+          </div>
+          <div class="slider-row">
+            <label for="roi-hasta-x">Borde derecho (X)</label>
+            <output id="out-roi-hasta-x">—</output>
+            <input type="range" id="roi-hasta-x" min="0" max="1" step="0.01" value="0.85">
+          </div>
+          <div class="slider-row">
+            <label for="roi-desde-y">Borde superior (Y)</label>
+            <output id="out-roi-desde-y">—</output>
+            <input type="range" id="roi-desde-y" min="0" max="1" step="0.01" value="0.35">
+          </div>
+          <div class="slider-row">
+            <label for="roi-hasta-y">Borde inferior (Y)</label>
+            <output id="out-roi-hasta-y">—</output>
+            <input type="range" id="roi-hasta-y" min="0" max="1" step="0.01" value="0.95">
+          </div>
+          <div class="roi-btns" style="margin-top:8px">
             <button class="roi-mostrar full" style="grid-column:1/-1" onclick="roi('mostrar')">Mostrar / ocultar ROI</button>
           </div>
+          <p class="slider-hint">Mové cada deslizador para ajustar el rectángulo sobre el video. Los cambios se aplican en vivo.</p>
           <div class="roi-info">ROI actual: <b id="roi-texto">—</b></div>
           <div class="roi-btns" style="margin-top:10px">
             <button class="roi-aplicar" onclick="roi('aplicar')">Aplicar (guardar)</button>
@@ -683,22 +750,38 @@
         <summary><h2>Colores (calibración HSV)</h2><span class="chev" aria-hidden="true"></span></summary>
         <div class="panel-body">
           <div class="roi-btns">
-            <button id="hsv-rojo" class="cat-A" onclick="hsv('color','rojo')">Rojo (A)</button>
-            <button id="hsv-azul" class="cat-B" onclick="hsv('color','azul')">Azul (B)</button>
+            <button id="hsv-rojo" class="cat-A" onclick="hsvColor('rojo')">Rojo (A)</button>
+            <button id="hsv-azul" class="cat-B" onclick="hsvColor('azul')">Azul (B)</button>
           </div>
-          <div class="roi-btns" style="margin-top:8px">
-            <button class="roi-mover" onclick="hsv('matiz_izquierda')">Matiz −</button>
-            <button class="roi-mover" onclick="hsv('matiz_derecha')">Matiz +</button>
-            <button class="roi-tamano" onclick="hsv('mas_amplio')">+ Ancho</button>
-            <button class="roi-tamano" onclick="hsv('mas_estrecho')">− Ancho</button>
-            <button class="roi-tamano" onclick="hsv('mas_sensible')">+ Sensible</button>
-            <button class="roi-tamano" onclick="hsv('menos_sensible')">− Sensible</button>
-            <button class="roi-tamano" onclick="hsv('area_menos')">− Área mín.</button>
-            <button class="roi-tamano" onclick="hsv('area_mas')">+ Área mín.</button>
-            <button class="roi-tamano" onclick="hsv('confianza_menos')">− Confianza</button>
-            <button class="roi-tamano" onclick="hsv('confianza_mas')">+ Confianza</button>
+          <div style="margin-top:8px">
+            <div class="slider-row">
+              <label for="hsv-matiz">Matiz (H)</label>
+              <output id="out-hsv-matiz">—</output>
+              <input type="range" id="hsv-matiz" min="0" max="179" step="1" value="0">
+            </div>
+            <div class="slider-row">
+              <label for="hsv-ancho">Ancho de ventana</label>
+              <output id="out-hsv-ancho">—</output>
+              <input type="range" id="hsv-ancho" min="2" max="180" step="1" value="15">
+            </div>
+            <div class="slider-row">
+              <label for="hsv-sensibilidad">Sensibilidad (S/V mín)</label>
+              <output id="out-hsv-sensibilidad">—</output>
+              <input type="range" id="hsv-sensibilidad" min="0" max="254" step="1" value="70">
+            </div>
+            <div class="slider-row">
+              <label for="hsv-area">Área mínima (px)</label>
+              <output id="out-hsv-area">—</output>
+              <input type="range" id="hsv-area" min="50" max="20000" step="50" value="500">
+            </div>
+            <div class="slider-row">
+              <label for="hsv-confianza">Confianza mínima</label>
+              <output id="out-hsv-confianza">—</output>
+              <input type="range" id="hsv-confianza" min="0" max="1" step="0.01" value="0.5">
+            </div>
           </div>
           <button class="roi-mostrar" style="grid-column:1/-1;width:100%;margin-top:8px" onclick="hsv('mostrar')">Máscara en vivo sí/no</button>
+          <p class="slider-hint">Mové los deslizadores con una pieza en la mesa hasta que SOLO se pinte la pieza.</p>
           <div class="roi-info">Selección: <b id="hsv-texto">—</b></div>
           <div class="roi-info">Píxeles captados: <span id="hsv-px">—</span></div>
           <div class="roi-info">Umbral de confianza: <b id="hsv-conf">—</b> <span style="opacity:.7">(solo se marcan piezas con confianza ≥ umbral)</span></div>
@@ -746,6 +829,18 @@
 
   <script>
     const $ = (id) => document.getElementById(id);
+
+    // La barra de operación es sticky en top:0; el video se fija justo debajo
+    // de ella. Medimos su altura real (cambia con el ancho) y la exponemos como
+    // variable CSS para que el sticky del video no quede tapado.
+    function actualizarStickyTop() {
+      const barra = document.querySelector(".barra-operacion");
+      if (!barra) return;
+      document.documentElement.style.setProperty(
+        "--sticky-top", barra.getBoundingClientRect().height + "px");
+    }
+    actualizarStickyTop();
+    addEventListener("resize", actualizarStickyTop);
 
     function setText(id, txt, cls) {
       const el = $(id);
@@ -882,7 +977,7 @@
       const motivo = tieneControl && conexionViva ? motivos.ciclo || "" : "";
       aviso.hidden = !motivo;
       if (aviso.textContent !== motivo) aviso.textContent = motivo;
-      for (const control of document.querySelectorAll(".cam-ctl button, .cam-ctl select, aside details button")) {
+      for (const control of document.querySelectorAll(".cam-ctl button, .cam-ctl select, aside details button, aside details input[type=range]")) {
         const calibracion = control.closest("#panel-calibracion");
         control.disabled = bloqueado || (calibracion && !!motivos.calibrar_robot) ||
           (camaraPendiente && !!control.closest(".cam-ctl")) ||
@@ -1175,6 +1270,18 @@
       const el = $("roi-texto");
       el.textContent = roi.texto || "—";
       el.style.opacity = roi.mostrar ? "1" : "0.4";
+      // Sincronizar sliders con el estado real (fuente de verdad = servidor).
+      const vals = {
+        "roi-desde-x": roi.desde_x, "roi-hasta-x": roi.hasta_x,
+        "roi-desde-y": roi.desde_y, "roi-hasta-y": roi.hasta_y,
+      };
+      for (const [id, valor] of Object.entries(vals)) {
+        const s = $(id);
+        if (!s || valor == null || sliderRecienTocado(id)) continue;
+        s.value = valor;
+        const out = $("out-" + id);
+        if (out) out.textContent = Number(valor).toFixed(2);
+      }
     }
 
     // ------------------------------------------------ calibración HSV colores
@@ -1207,6 +1314,109 @@
       if (h.confianza_minima != null) {
         $("hsv-conf").textContent = Number(h.confianza_minima).toFixed(2);
       }
+      // Sincronizar deslizadores con el estado real del editor (omite el que
+      // está siendo arrastrado para no "pelear" con el usuario).
+      const valores = {
+        "hsv-matiz": h.matiz,
+        "hsv-ancho": h.ancho,
+        "hsv-sensibilidad": h.sensibilidad,
+        "hsv-area": h.area_minima,
+        "hsv-confianza": h.confianza_minima,
+      };
+      const areaMax = h.area_maxima || 20000;
+      const areaInput = $("hsv-area");
+      if (areaInput) areaInput.max = String(Math.max(100, areaMax - 100));
+      for (const [id, valor] of Object.entries(valores)) {
+        const s = $(id);
+        if (!s || valor == null || sliderRecienTocado(id)) continue;
+        s.value = valor;
+        const out = $("out-" + id);
+        if (out) {
+          out.textContent = Number(valor).toFixed(
+            id === "hsv-confianza" ? 2 : 0);
+        }
+      }
+    }
+
+    function hsvColor(color) { hsv("color", color); }
+
+    // --------------------------------------------------- sliders calibración
+    // Los deslizadores envían el valor absoluto al servidor con un pequeño
+    // debounce para no saturar la API mientras se arrastra. El timestamp por
+    // slider evita que el SSE (0.5 s) sobreescriba el valor que el usuario está
+    // moviendo, pero permite corregirlo si el servidor rechaza el ajuste.
+    const temporizadoresSlider = {};
+    const sliderTocadoAt = {};
+    function debounceSlider(clave, fn, espera = 120) {
+      clearTimeout(temporizadoresSlider[clave]);
+      temporizadoresSlider[clave] = setTimeout(fn, espera);
+    }
+    function sliderRecienTocado(id) {
+      return Date.now() - (sliderTocadoAt[id] || 0) < 900;
+    }
+
+    async function establecerROI() {
+      if (!tieneControl || !conexionViva) return;
+      const body = {
+        accion: "establecer",
+        desde_x: Number($("roi-desde-x").value),
+        hasta_x: Number($("roi-hasta-x").value),
+        desde_y: Number($("roi-desde-y").value),
+        hasta_y: Number($("roi-hasta-y").value),
+      };
+      try {
+        const r = await solicitarControl("/api/roi", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const d = await r.json();
+        if (d.roi) mostrarRoi(d.roi);
+      } catch (e) {
+        // El SSE vuelve a sincronizar cuando se recupera la conexión.
+      }
+    }
+
+    async function establecerHSV(parametro) {
+      if (!tieneControl || !conexionViva) return;
+      const valor = Number($("hsv-" + parametro).value);
+      try {
+        const r = await solicitarControl("/api/hsv", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ accion: "establecer", parametro, valor }),
+        });
+        const d = await r.json();
+        if (d.hsv) mostrarHsv(d.hsv);
+      } catch (e) {
+        // El SSE vuelve a sincronizar cuando se recupera la conexión.
+      }
+    }
+
+    for (const id of ["roi-desde-x", "roi-hasta-x", "roi-desde-y", "roi-hasta-y"]) {
+      const s = $(id);
+      if (!s) continue;
+      const out = $("out-" + id);
+      s.addEventListener("input", () => {
+        sliderTocadoAt[id] = Date.now();
+        if (out) out.textContent = Number(s.value).toFixed(2);
+        debounceSlider("roi", establecerROI);
+      });
+    }
+
+    for (const parametro of ["matiz", "ancho", "sensibilidad", "area", "confianza"]) {
+      const id = "hsv-" + parametro;
+      const s = $(id);
+      if (!s) continue;
+      const out = $("out-" + id);
+      s.addEventListener("input", () => {
+        sliderTocadoAt[id] = Date.now();
+        if (out) {
+          out.textContent = Number(s.value).toFixed(
+            parametro === "confianza" ? 2 : 0);
+        }
+        debounceSlider(id, () => establecerHSV(parametro));
+      });
     }
 
     // ------------------------------------------- calibración física del robot

@@ -75,6 +75,31 @@ class EditorROI:
 
         return False, f"Acción de ROI desconocida: {accion}"
 
+    def establecer(self, desde_x=None, hasta_x=None, desde_y=None,
+                   hasta_y=None) -> tuple[bool, str]:
+        """Fija bordes de la ROI directamente (para sliders). Valores 0..1.
+
+        Solo se valida que el rectángulo siga dentro de la imagen y no sea
+        más chico que el mínimo de cordura. Los bordes que no se envían se
+        mantienen como están.
+        """
+        try:
+            nx1 = float(desde_x) if desde_x is not None else self.cfg.roi_desde_x
+            nx2 = float(hasta_x) if hasta_x is not None else self.cfg.roi_hasta_x
+            ny1 = float(desde_y) if desde_y is not None else self.cfg.roi_desde_y
+            ny2 = float(hasta_y) if hasta_y is not None else self.cfg.roi_hasta_y
+        except (TypeError, ValueError):
+            return False, "Valores de ROI inválidos."
+
+        if not (0 <= nx1 < nx2 <= 1) or not (0 <= ny1 < ny2 <= 1):
+            return False, "La ROI debe quedar dentro de la imagen (izq < der, arriba < abajo)."
+        if nx2 - nx1 < MIN_TAMANO or ny2 - ny1 < MIN_TAMANO:
+            return False, f"La ROI no puede ser menor al {MIN_TAMANO:.0%} de la imagen."
+
+        self.cfg.roi_desde_x, self.cfg.roi_hasta_x = nx1, nx2
+        self.cfg.roi_desde_y, self.cfg.roi_hasta_y = ny1, ny2
+        return True, self.texto()
+
     def _desplazar(self, dx: float, dy: float) -> tuple[bool, str]:
         """Mueve todo el rectángulo sin cambiar su tamaño."""
         x1, x2 = self.cfg.roi_desde_x + dx, self.cfg.roi_hasta_x + dx
