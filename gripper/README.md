@@ -1,13 +1,9 @@
 # Gripper E1 — 4 servos MG996R con UNA sola señal (gripper_1signal)
 
-Firmware activo: `firmware/gripper_1signal/gripper_1signal.ino` (UNO + 4 servos
-movidos por el mismo pulso). En el repo queda también la variante histórica
-`firmware/gripper_4servos/` (4 pines independientes + E-STOP + HC-SR04 + LEDs);
-**ya no es la que se usa**, pero se conserva como referencia.
-
-Además hay un **sketch de calibración** de laboratorio:
-`firmware/calibracion_1signal/calibracion_1signal.ino` (ver sección 4). No es
-el firmware de producción: sirve solo para medir pulsos y aberturas.
+Firmware activo y único: `firmware/gripper_1signal/gripper_1signal.ino`
+(UNO + 4 servos movidos por el mismo pulso). Las variantes históricas
+(4 señales independientes, E-STOP y sensor ultrasónico) ya no forman parte
+de la entrega.
 
 ## 1. Cómo funciona esta variante
 
@@ -202,7 +198,6 @@ Notas de seguridad del firmware:
 > queda **fuera de rango** en cualquier versión. Los 4 servos empujan contra su
 > tope mecánico, zumban, calientan y consumen corriente de más. Por eso la
 > calibración se hace en **microsegundos**, no en grados.
-> (Los números exactos están verificados en `tools/_test_parser_calib.py`.)
 
 ### 4.0 Antes de calibrar: por qué "solo algunos se mueven"
 
@@ -229,97 +224,49 @@ servos concretos, o en un servo muerto. Revisión en orden:
 - No usar D0/D1 (son RX/TX del USB). D3 elegido a propósito; si se cambia, editar `pinSenal` en el sketch y este README.
 - No forzar a mano los servos con energizado (se pueden quemar).
 
-### 4.1 Sketch de calibración (herramienta de laboratorio)
+### 4.1 Recalibrar el sketch de producción
 
-`firmware/calibracion_1signal/calibracion_1signal.ino` es un sketch **auxiliar**
-para medir. **No es el firmware de producción** (no tiene watchdog ni heartbeat
-y no habla con el UR5). While esté cargado, el gripper está fuera de servicio:
-no corras el dashboard y no mandes `OPEN`/`CLOSE`.
+El firmware de producción no tiene comandos de calibración: los pulsos se
+fijan con las constantes `US_ABIERTO` y `US_CERRADO` y se graban con el IDE de
+Arduino o `arduino-cli`.
 
-```bash
-arduino-cli compile --fqbn arduino:avr:uno gripper/firmware/calibracion_1signal
-arduino-cli upload -p COM3 --fqbn arduino:avr:uno gripper/firmware/calibracion_1signal
-```
-
-Se maneja por serial a 115200 (Serial Monitor con "carro de retorno"):
-
-| Comando | Qué hace |
-|---|---|
-| `H` | Ayuda |
-| `P <us>` | Pulso objetivo en µs (900–2100). Avisa si sale del rango de fábrica |
-| `A <deg>` | Ángulo objetivo, **mapeado a 1000–2000 µs** (no a 544–2400) |
-| `G` | Ir YA al objetivo (golpe seco: cuidado) |
-| `X` | Reanudar la rampa hacia el objetivo |
-| `T` | Parar y sostener la posición |
-| `OFF` / `ON` | Soltar (detach) / reconectar (attach) los servos |
-| `TAP <us> <ms> <pausa>` | Pulsos cortos: para encontrar topes sin calentar |
-| `SW <ini> <fin>` | Barrido automático entre dos pulsos |
-| `M` | Los 4 servos unificados en D3 (como producción) |
-| `N <1..4>` | **Modo diagnóstico**: mueve SOLO ese servo, por su pin propio (D4/D5/D6/D7) |
-| `R` | Informe del estado |
-
-La rampa es de **10 µs cada 20 ms** (500 µs/s): nunca golpea los topes.
-
-**Diagnóstico servo por servo** (tu caso de "solo algunos se mueven"):
-
-1. Desconectá las 4 naranjas del puente de D3.
-2. Conectá **una naranja por vez** a D4, D5, D6, D7 (la alimentación queda
-   como estaba: así solo se aísla la señal).
-3. `N 1` → `P 1500` → el servo 1 ¿se mueve? Después `N 2`, `N 3`, `N 4`.
-4. El que no se mueva con buena alimentación tiene el cable de señal o el
-   servo averiado. Los que se mueven bien pero **a distinta posición** tienen
-   el cuerno desalineado.
-
-### 4.2 Procedimiento de medición
-
-**Fase 0 — Verificación sin mover servos** (apagado): +V 5.0–6.2 V y polaridad;
+**Antes de mover servos** (apagado): verificar +V 5.0–6.2 V y polaridad;
 continuidad UNO↔fuente GND; continuidad D3→cada naranja; continuidad de cada
-rojo→+V y marrón→GND.
+rojo→+V y marrón→GND. Con la fuente encendida y los servos desconectados debe
+quedar en **CV**, con **5.0–6.0 V** y **límite de corriente ≥ 6 A** (§2.2).
+Con un servo en movimiento, la tensión en sus bornes no debe bajar de 4.8 V.
 
-**Fase 0 bis — Configuración de la fuente** (encendida, servos todavía
-desenchufados): la fuente debe quedar en **CV**, con **5.0–6.0 V** y **límite
-de corriente ≥ 6 A** (§2.2). Sin mover servos no debería entrar nunca en "CC".
-Con **un solo servo** enchufado y en movimiento, la fuente puede pisar el
-límite un instante (pico de arranque): es aceptable **si la tensión en los
-bornes del servo no baja de 4.8 V** (referencia medida: 5.88–6.05 V, §2.3).
-Si baja, o si el "CC" dura más que el arranque, hay que corregir el límite de
-corriente o el cableado **antes** de seguir.
+**Procedimiento:**
 
-**Fase 1 — Un servo a la vez.** Con `N <n>` y `P`, recorré el rango de 1000 a
-2100 µs y anotá dónde empieza a zumbar en cada extremo. Después pasá a `M`
-(los 4 juntos) y repetí: si el conjunto zumba antes que los individuales, el
-problema es mecánico (topes), no eléctrico.
+1. Editar `US_ABIERTO` / `US_CERRADO` en `gripper_1signal.ino` (µs, no grados).
+2. Compilar y subir el sketch al UNO.
+3. Abrir `python gripper/tools/probar_gripper.py COM3` y probar `o`, `c`, `z`
+   (ver §5).
+4. Medir con calibre la **apertura entre las puntas TPU** y anotar
+   *pulso µs ↔ abertura mm*.
+5. Repetir hasta lograr la apertura de la pieza y un cierre que la sujete sin
+   hacer zumbar los servos.
 
-**Fase 2 — Mapa de aberturas.** Los 4 en `M`. Para un barrido de pulsos
-(cada 50 µs de 1000 a 2100) medí con calibre la **apertura entre las puntas
-TPU**. Anotá: *pulso µs ↔ abertura mm ↔ cuál mordaza toca primero*. Salen los
-dos candidatos: apertura máxima simétrica y cierre a 50 mm.
+**Criterios de aceptación:**
 
-**Fase 3 — `cerrado` sin aplastar.** Poné la pieza real de 50 mm (o un
-cilindro Ø50). Cerrá hasta el contacto y **retrocedé 20–40 µs**. Criterio de
-aceptación:
-- la pieza se levanta y se desliza con la punta del dedo,
-- **el servo NO zumba** (si zumba, apretás de más: corriente de estancamiento = calor),
-- la fuente no salta su límite de corriente.
+- La pieza se levanta y se desliza con la punta del dedo.
+- **Los servos no zumban** en abierto ni en cerrado (zumbido = tope mecánico o
+  exceso de carga).
+- La fuente no entra en límite de corriente durante el movimiento.
+- Los 4 servos quedan parejos; si no, revisar §4.0 y §4.3.
 
 Prueba de resistencia: **60 s con la pieza apretada**. ¿Zumba? ¿La fuente se
 sobrecarga? ¿La pieza queda marcada?
 
-**Fase 4 — `abierto`.** Abrí al máximo y verificá que **ni las mordazas ni el
-marco toquen un tope mecánico** y que los servos no zumben. Si el tope
-mecánico limita antes que el pulso, el firmware no lo arregla.
+> Calibrar **con las puntas TPU montadas** (comprimen y cambian la abertura
+> efectiva). `ZERO` cierra despacio hasta que las mordazas se tocan: es la
+> referencia mecánica para alinear los cuernos antes de medir.
 
-**Fase 5 — Registro.** Anotá los valores finales acá como historial.
-
-Calibrá **con las puntas TPU montadas** (comprimen y cambian la abertura
-efectiva). Durante la Fase 3, poné la fuente en modo amps para leer la
-corriente real.
-
-### 4.3 Valores actuales en el sketch de producción
+### 4.2 Valores actuales en el sketch de producción
 
 ```cpp
-const int US_ABIERTO = 1900;   // boca abierta
-const int US_CERRADO = 1680;   // cierre para pieza de 50 mm
+const int US_ABIERTO = 1000;   // boca abierta
+const int US_CERRADO = 750;    // cierre para pieza de 50 mm
 ```
 
 El sketch trabaja en **microsegundos** (`writeMicroseconds()`), no en grados: el
@@ -328,29 +275,25 @@ mapeo de `write()` cambia con la versión de la librería Servo (1.3.0: 544–24
 generar pulsos distintos con el mismo número. En µs, el pulso es el mismo acá y
 en cualquier otra máquina.
 
-| Valor | Pulso | Margen al tope de fábrica (2000 µs) | Estado |
-|---|---|---|---|
-| `US_ABIERTO` | 1900 µs | 100 µs (≈10 %) | ok: ningún servo satura antes que otro (Fase 4) |
-| `US_CERRADO` | 1680 µs | 320 µs | ok, **sin calibrar** con la pieza real (Fase 3) |
+| Valor | Pulso | Nota |
+|---|---|---|
+| `US_ABIERTO` | 1000 µs | valor probado en este montaje; si algún servo zumba, subir de a 10 µs |
+| `US_CERRADO` | 750 µs | valor probado sin carga y con carga liviana; recalibrar con la pieza real (§4.1) |
 
-Historia de calibración:
-- `cerrado = 110` → 1678 µs → **`US_CERRADO = 1680`**: equivalente, sigue sin
-  calibrar con la pieza real.
-- `abierto = 170` → **fuera de rango de fábrica** (2296 µs con Servo 1.3.0,
-  2244 µs con 1.1.8): los 4 servos empujaban contra el tope mecánico, zumbaban
-  y consumían corriente de más.
-- `abierto = 140` → 1987 µs: dentro de rango, pero a **13 µs** del tope. Con la
-  tolerancia de potenciómetro de cada unidad (±10 %), algunos servos ya estaban
-  saturados y otros no: la boca abierta quedaba despareja.
-  **Corregido a `US_ABIERTO = 1900`.**
-- Pendiente: medir la abertura real con el sketch de calibración y ajustar
-  `US_CERRADO` con la pieza real.
+> El rango nominal de fábrica del MG996R es **1000–2000 µs**. Los valores de
+> este montaje quedan en el borde inferior (1000 µs) o por debajo (750 µs),
+> pero no fuerzan el tope mecánico. Si un servo zumba o se calienta, volver
+> hacia 1000 µs y recalibrar.
+
+Historial: se probaron `write(140)` (1987 µs) y `write(110)` (1678 µs); el
+montaje actual quedó en 1000/750 µs. Cualquier cambio de valores debe volver a
+medirse con la pieza real.
 
 > Si al abrir al máximo los servos siguen empujando contra el tope mecánico,
 > el problema es el **montaje** (la punta TPU o el marco chocan), no el pulso:
 > bajar `US_ABIERTO` solo oculta el síntoma.
 
-### 4.4 "Los 4 servos van desparejos": qué puede y qué no puede el firmware
+### 4.3 "Los 4 servos van desparejos": qué puede y qué no puede el firmware
 
 Con los 4 naranjas en D3 **sale un solo pulso**: los cuatro reciben el mismo
 ancho en el mismo frame, así que el firmware no puede moverlos a distinta
@@ -362,12 +305,12 @@ lado. En orden de frecuencia:
 | A | **Cuernos desalineados** al montar | Aun quietos y con el mismo pulso, las mordazas no quedan simétricas | Comando `ZERO` (tope mecánico), aflojar los cuernos y volver a ajustarlos con las mordazas tocándose; después `OPEN` |
 | B | **Caída de tensión** (picos de 4 servos) | A mitad del movimiento uno se reinicia, pega un tirón o se queda atrás | Fuente externa 5–6 V ≥ 6 A, 1000 µF, tierra común (§2.2, filas E–H de §4.0) |
 | C | **Señal repartida a 4 entradas** | Arranques desparejos o temblor, peor con cables largos | Cada placa MG996R carga la línea (~13 mA): 4 juntas pueden pasar los 40 mA del pin. Buffear D3 (74HCT245) o acortar el puente (§4.0, fila G) |
-| D | **Pulso contra el tope de fábrica** | Al abrir al máximo, unas mordazas abren más que otras y zumban | Ya corregido: `US_ABIERTO = 1900` µs (§4.3) |
+| D | **Pulso contra el tope de fábrica** | Al abrir al máximo, unas mordazas abren más que otras y zumban | Valor actual: `US_ABIERTO = 1000` µs (§4.2) |
 | E | **Velocidad de respuesta distinta** con carga | Durante la carrera se ve una mordaza atrás de la otra; al final llegan las dos | Es transitorio: el `DONE` ahora espera `ASENTAMIENTO_MS` con el pulso final sostenido, así la PC no sigue con una mordaza en camino |
 
 El firmware cubre D y E; A–C son montaje/eléctricos. Si después de eso siguen
-desparejos, probar servo por servo con el sketch de calibración (`N <1..4>`)
-para ver cuál está fuera de rango.
+desparejos, probar servo por servo con un servo tester externo o con un sketch
+mínimo que mueva un solo pin, para ver cuál está fuera de rango.
 
 ## 5. Probar todo SIN robot y sin piezas
 
@@ -376,7 +319,7 @@ para ver cuál está fuera de rango.
    puerto queda libre).
 3. `python gripper/tools/probar_gripper.py COM3` (Windows: COM3/COM4; Linux:
    `/dev/ttyUSB0` o `/dev/ttyACM0`). Trae heartbeat propio, `ZERO` y ciclo
-   automático; el `test_serial.py` de siempre sigue sirviendo igual.
+   automático.
 4. Pulsar `o` (OPEN) → debe abrir y ver `DONE` (0.25 s si ya estaba abierto:
    es el asentamiento).
 5. Pulsar `c` (CLOSE) → moverse ~0.9 s y `DONE`.
@@ -387,12 +330,10 @@ para ver cuál está fuera de rango.
 8. Dejar 15 s sin escribir nada → debe volver a `OPEN` solo (watchdog), con el
    aviso `WATCHDOG_OPEN` y luego `WATCHDOG_DONE`.
 
-> Ojo con el paso 7 si usás el probador: `test_serial.py` usa
-> `GripperClient`, que ya tiene el heartbeat `PING` corriendo. El watchdog
-> **no** se disparará nunca mientras el cliente esté conectado, porque el
-> latido lo mantiene vivo. Para probar el watchdog de verdad: cerrá el
-> probador (o desconectá el cable de datos) y esperá 15 s con la pieza
-> cerrada — el firmware tiene que abrir solo.
+> Ojo con el paso 7 si usás `probar_gripper.py`: el probador manda `PING`
+> cada 1.5 s, así que el watchdog **no** se dispara mientras esté abierto.
+> Para probar el watchdog de verdad: cerrá el probador (o desconectá el cable
+> de datos) y esperá 15 s con la pieza cerrada — el firmware tiene que abrir solo.
 
 Si un servo no se mueve → revisar el puente de señal a D3 y su conexión. Si
 todos tiemblan → falta tierra común o el condensador.
@@ -447,18 +388,12 @@ mismo proceso que controla el gripper.
 
 ## 7. Entregables de este módulo (para el final)
 
-- `firmware/gripper_1signal/gripper_1signal.ino` (sketch final con ángulos calibrados)
-- `firmware/calibracion_1signal/calibracion_1signal.ino` (sketch de laboratorio)
-- `tools/test_serial.py` (tester interactivo)
+- `firmware/gripper_1signal/gripper_1signal.ino` (sketch final con valores calibrados)
+- `tools/probar_gripper.py` (tester interactivo)
 - `tools/gripper_client.py` (cliente Python para integración con el orquestador)
 - `tools/_test_cliente_fake.py` (pruebas automáticas contra un Arduino simulado)
-- `tools/_test_modos_calib.py` y `tools/_test_parser_calib.py` (pruebas del sketch
-  de calibración: pulsos reales que salen por el pin y parseo de comandos)
 - Este README con: valores de calibración finales, modelo de servos, **configuración
   de la fuente (V y límite de corriente)**, fotos del montaje
-
-> El sketch de calibración **no** se entrega cargado: es herramienta de banco.
-> En la/demo va el de producción (`gripper_1signal`).
 
 ### 7.1 Pruebas automáticas (sin hardware)
 

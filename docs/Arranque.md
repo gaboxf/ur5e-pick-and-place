@@ -74,7 +74,6 @@ También: `arduino-cli board list`.
 
 > El firmware **en uso** es `gripper/firmware/gripper_1signal/gripper_1signal.ino`
 > (4 servos con **una sola señal** en D3, con watchdog y sin LEDs/E-STOP/HC-SR04).
-> El sketch `gripper_4servos/` es la variante histórica: **no la uses**.
 
 Opción A — Arduino IDE: abrir
 `gripper/firmware/gripper_1signal/gripper_1signal.ino`, placa **UNO**, puerto
@@ -236,23 +235,6 @@ efectivas son:
 | **Watchdog del gripper (15 s)** | Si la PC muere, el firmware **abre el gripper** y suelta la pieza | `gripper/firmware/gripper_1signal/` |
 | **Operador** | Nadie entra a la zona con el robot en movimiento | Persona a cargo |
 
-> El sketch histórico `gripper_4servos` emitía `EMERGENCY` y
-> `PROXIMITY_STOP`; **el código de Python ya no los maneja** (se eliminaron:
-> con el firmware en uso nunca llegaban). Si alguna vez se recarga ese sketch
-> viejo, el cliente los treatará como respuestas desconocidas.
-
-### Botón de emergencia (NO montado)
-
-> En el montaje actual **no hay pulsador**: el E-STOP es el del UR5e.
-> El esquema histórico (pulsador NA entre D8 y GND, evento `EMERGENCY`)
-> pertenecía al sketch `gripper_4servos`, que ya no se usa.
-
-### Sensor HC-SR04 (NO montado)
-
-> En el montaje actual **no hay sensor**: nada emite `PROXIMITY_STOP`.
-> El esquema histórico (TRIG D10 / ECHO D11) pertenecía al sketch
-> `gripper_4servos`, que ya no se usa.
-
 > ⚠️ **Esta capa es un complemento de software. No reemplaza el sistema de
 > seguridad certificado del UR** (E-stop hardware, protecciones, límites). La
 > consigna lo exige: una parada solo por software no habilita el acceso humano a
@@ -290,7 +272,6 @@ Detalle completo: `Seguridad_E_Interfaz_Web.md`.
 | `core/voice_control.py` | Reconocimiento y síntesis de voz |
 | `vision/` | Pipeline de visión (cámara, detección, homografía) |
 | `gripper/firmware/gripper_1signal/` | Sketch del Arduino (el que va cargado) |
-| `gripper/firmware/calibracion_1signal/` | Sketch de laboratorio (calibración de pulsos) |
 | `gripper/README.md` | Wiring, fuente, calibración y diagnóstico del gripper |
 | `gripper/tools/gripper_client.py` | Cliente serial (heartbeat + watchdog) |
 | `tools/gestionar_logs.py` | Listar/limpiar logs por corrida |

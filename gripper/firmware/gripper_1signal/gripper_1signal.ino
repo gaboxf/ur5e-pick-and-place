@@ -28,7 +28,8 @@
 //      (write(140), 1987 us con Servo 1.3.0) estaba a 13 us de los 2000 us
 //      del MG996R: con la tolerancia de potenciometro de cada unidad, algunos
 //      servos saturaban antes que otros y la boca abierta quedaba despareja.
-//      Ahora se trabaja en microsegundos con 100 us de margen.
+//      Ahora se trabaja en microsegundos con los valores medidos en este
+//      montaje (README 4.2).
 //   2) rampa + asentamiento. La rampa mantiene a los cuatro con el mismo
 //      pulso mientras se mueven; el asentamiento sostiene el pulso final
 //      antes de avisar DONE, para que la PC (y el UR5) no arranque con una
@@ -43,23 +44,17 @@
 const int pinSenal = 3;
 
 // --------------------------------------------------------------- calibracion
-// pulsos en microsegundos, rango de fabrica del MG996R: 1000-2000 us.
+// pulsos en microsegundos, rango nominal del MG996R: 1000-2000 us.
 // Se usa writeMicroseconds() y no write(grados) porque el mapeo de grados
 // cambia con la version de la libreria Servo (1.3.0: 544..2400 us;
 // 1.1.8: angulo*10+544). Con microsegundos el pulso es el mismo en cualquier
 // maquina que compile este sketch.
 //
-// US_ABIERTO: el valor anterior era write(140) = 1987 us (Servo 1.3.0), a
-// 13 us del tope de fabrica. 1900 us deja 100 us (10%) de margen, que es la
-// tolerancia tipica de potenciometro del MG996R: asi ningun servo arranca
-// saturado y la boca abre pareja. Si con 1900 no alcanza la apertura, subir
-// de a 10 us y frenar apenas alguno de los cuatro empiece a zumbar.
-// US_CERRADO: 1680 us (el valor anterior, write(110) = 1678 us). Calibrar
-// con la pieza real de 50 mm (README 4.2, Fase 3).
-// pulsos en microsegundos. Rango nominal del MG996R: 1000-2000 us.
-// 900 y 750 estan fuera de ese rango nominal, pero son los valores probados
-// en este montaje sin carga y con carga liviana: no forzan el tope mecanico.
-// Si algun servo empieza a zumbar, volver hacia 1000 us (cerrado) / 1000+ us.
+// US_ABIERTO = 1000 us y US_CERRADO = 750 us son los valores probados en este
+// montaje (sin carga y con carga liviana): no fuerzan el tope mecanico.
+// 750 us queda por debajo del rango nominal de fabrica, pero funciona con la
+// geometria actual de las mordazas. Si algun servo empieza a zumbar o se
+// calienta, volver hacia 1000 us y recalibrar (README 4.1).
 const int US_ABIERTO = 1000;
 const int US_CERRADO = 750;
 

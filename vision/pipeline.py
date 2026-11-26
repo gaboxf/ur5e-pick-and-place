@@ -5,7 +5,7 @@ Integra los módulos:
     2. Detección de piezas (detector.py)
     3. Transformación de coordenadas (homografia.py)
 
-Entrega un dict con el contrato definido en plan_trabajo_equipo_ur5.md §4.1:
+Entrega un dict con el contrato de salida documentado en el README:
 {
     "ok": true|false,
     "categoria": "A"|"B",

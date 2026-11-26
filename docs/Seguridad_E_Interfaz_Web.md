@@ -1,19 +1,14 @@
 # Seguridad Física + Interfaz Web de Monitoreo
 
-Extensión del Desafío 2 (Pick & Place UR5) con dos capacidades nuevas:
+Extensión del Desafío 2 (Pick & Place UR5) con dos capacidades:
 
 1. **Interfaz web** para monitorear y operar la celda desde cualquier dispositivo de la red.
-2. **Capa de seguridad física**: botón de parada de emergencia (E-STOP) y sensor
-   ultrasónico de proximidad montados en el gripper, con parada automática del UR5.
+2. **Capas de seguridad del montaje actual**: E-STOP del UR5e, parada por
+   software del dashboard y watchdog de 15 s del firmware del gripper.
 
-> ⚠️ **Estado del hardware en la versión actual:** el gripper que se usa es
-> `gripper_1signal` (**4 servos, una sola señal, sin LEDs, sin E-STOP, sin
-> HC-SR04, sin LCD**). El E-STOP y el sensor ultrasónico **no están montados**:
-> el esquema de §2 describe el firmware histórico `gripper_4servos`, que ya no
-> se graba en el UNO. El código de Python **ya no maneja** `EMERGENCY` ni
-> `PROXIMITY_STOP` (se eliminaron por ser código muerto: nunca llegaban).
-> La seguridad real del montaje actual es: E-STOP del UR5e + parada por
-> software del dashboard + watchdog de 15 s del firmware del gripper + operador.
+> **Hardware actual:** `gripper_1signal` (4 servos, una sola señal, sin LEDs,
+> sin E-STOP en el Arduino, sin HC-SR04, sin LCD). La seguridad de persona
+> depende del E-STOP del UR5e y del operador; el Arduino no tiene parada física.
 > Ver `gripper/README.md` §1–§2 y `docs/Arranque.md` §7.
 
 ---
@@ -49,8 +44,8 @@ Comandos aceptados por `/api/command`:
 ### Cómo ejecutarlo
 
 ```bash
-cd /home/lucio/datos/UPRO/UPrO/Desafio_Final
-.venv/bin/python -m core.dashboard_web
+cd <carpeta-del-proyecto>
+.venv/bin/python main.py
 ```
 
 Abrir en el navegador:
@@ -79,61 +74,23 @@ Abrir en el navegador:
 
 ---
 
-## 2. Seguridad física
+## 2. Seguridad
 
-> Recordatorio: lo de §2.1 y §2.2 describe el **firmware histórico**
-> `gripper_4servos`. En el hardware actual **no se montan** ni el pulsador ni
-> el sensor. Se conserva la documentación como referencia histórica: el código
-> de Python **ya no** soporta esos dos eventos.
+### 2.1 Capas activas en el montaje actual
 
-### 2.1 Botón de parada de emergencia (E-STOP) — no montado
+| Capa | Qué hace | Dónde |
+|---|---|---|
+| **E-STOP del UR5e** | Parada física certificada del robot | Teach pendant / botón del robot |
+| **Parada por software** | Detiene el ciclo y bloquea comandos hasta el reset | Dashboard web (`detener`) / escritorio (`[e]`) |
+| **Watchdog del gripper (15 s)** | Si la PC deja de mandar comandos, el firmware abre el gripper y suelta la pieza | `gripper_1signal` |
+| **Zona de trabajo y radio mínimo** | Rechaza coordenadas fuera de los límites calibrados | `core/robot_controller.py` |
+| **Verificación visual de agarre** | Confirma que la pieza salió de la mesa antes de transportar | `core/robot_controller.py` |
 
-**Conexión (histórica):** pulsador normalmente abierto entre **D8** y `GND`.
-El firmware usaba `INPUT_PULLUP`, así que no hacía falta resistencia externa.
+> El Arduino **no** tiene botón de E-STOP ni sensor de proximidad. La parada de
+> emergencia válida es la del **UR5e**; el dashboard solo detiene el ciclo del
+> proyecto y no habilita el acceso humano a la zona de movimiento.
 
-```
-UNO D8 ──────[ pulsador NA ]────── GND
-```
-
-**Comportamiento que tenía (firmware histórico `gripper_4servos`):**
-
-1. Al pulsar, el Arduino detenía los servos inmediatamente y enviaba `EMERGENCY\n`.
-2. `GripperClient` (hilo lector) lo encolaba como evento `emergencia_fisica`.
-3. El dashboard (escritorio o web) ponía la parada activa, llamaba a
-   `UR5Client.stop()` (RTDE `stopJ`) y bloqueaba nuevos ciclos.
-4. Al soltar el botón, el Arduino enviaba `READY\n`; la parada se reiniciaba desde
-   la interfaz (botón "Reiniciar parada" en la web o tecla `[r]` en el escritorio).
-
-> **Hoy ese camino ya no existe en el código**: `GripperClient` no reconoce
-> `EMERGENCY` ni `PROXIMITY_STOP`, y el dashboard solo tiene la **parada por
-> software** (`parada_activa`), que se activa con la tecla `[e]`, el botón
-> "detener" de la web o el comando de voz "Parar".
-
-### 2.2 Sensor ultrasónico HC-SR04 — no montado
-
-**Conexión (histórica):**
-
-| HC-SR04 | Arduino UNO |
-|---|---|
-| VCC | 5 V |
-| GND | GND |
-| TRIG | D10 |
-| ECHO | D11 |
-
-> El UNO trabaja a 5 V, así que el ECHO se conecta directo. Si se usara una placa
-> de 3.3 V (ESP32, Raspberry), habría que poner un divisor de tensión en ECHO.
-
-**Comportamiento que tenía (firmware histórico `gripper_4servos`):**
-
-- Medía cada 100 ms. Si detectaba un objeto a **menos de 15 cm**, enviaba
-  `PROXIMITY_STOP\n` **una sola vez** (anti-spam) y se rearmaba cuando el objeto
-  se alejaba más de 20 cm.
-- El Python lo trataba como parada de seguridad igual que el E-stop: frenaba el UR5
-  y bloqueaba ciclos hasta reiniciar.
-- Estaba pensado para montarse mirando hacia adelante en el gripper: si una mano
-  se acercaba al efector durante el movimiento, la celda se detenía.
-
-### 2.3 Protocolo serial ampliado
+### 2.2 Protocolo serial
 
 | Dirección | Línea | Significado |
 |---|---|---|
@@ -143,14 +100,12 @@ UNO D8 ──────[ pulsador NA ]────── GND
 | Arduino → PC | `ERROR` | comando inválido |
 | Arduino → PC | `WATCHDOG_OPEN` | el firmware se abrió solo (la PC dejó de mandar comandos) |
 | Arduino → PC | `WATCHDOG_DONE` | terminó esa apertura por watchdog |
-| ~~Arduino → PC~~ | ~~`EMERGENCY`~~ | **eliminado**: era del firmware histórico; `GripperClient` ya no lo reconoce |
-| ~~Arduino → PC~~ | ~~`PROXIMITY_STOP`~~ | **eliminado**: era del firmware histórico; `GripperClient` ya no lo reconoce |
 
 El hilo lector de `GripperClient` separa respuestas de comandos (cola de líneas)
 y eventos de seguridad (cola de eventos), de modo que estos últimos nunca se
 pierden aunque no haya un comando en curso.
 
-### 2.4 Handshake determinista UR5 (RTDE) y Confirmación de agarre en lazo cerrado
+### 2.3 Handshake determinista UR5 (RTDE) y Confirmación de agarre en lazo cerrado
 
 Como el gripper no dispone de sensores táctiles físicos de fuerza en los dedos TPU, la celda implementa dos mecanismos avanzados de sincronización y validación por software:
 
@@ -182,8 +137,8 @@ Como el gripper no dispone de sensores táctiles físicos de fuerza en los dedos
 
 | Archivo | Cambio |
 |---|---|
-| `gripper/firmware/gripper_4servos/gripper_4servos.ino` | **Histórico, ya no se graba.** Tenía E-STOP (D8), HC-SR04 (D10/D11), eventos `EMERGENCY` / `PROXIMITY_STOP`, anti-spam. El firmware en uso es `gripper/firmware/gripper_1signal/` (sin LEDs, sin E-STOP, sin sensor) |
-| `gripper/tools/gripper_client.py` | Hilo lector serial, colas de respuestas/eventos, `get_evento()`, `get_estado_completo()`. **Ya no reconoce `EMERGENCY` ni `PROXIMITY_STOP`** (eventos del firmware histórico) |
+| `gripper/firmware/gripper_1signal/gripper_1signal.ino` | Firmware en uso: 4 servos con una sola señal, watchdog de 15 s, sin LEDs/E-STOP/HC-SR04 |
+| `gripper/tools/gripper_client.py` | Hilo lector serial, colas de respuestas/eventos, `get_evento()`, `get_estado_completo()` |
 | `core/ur5_client.py` | `stop()` con `stopJ` en real, handshake determinista de tolerancia milimétrica (`ROBOT_TOL_M`), verificación de quietud (`is_steady`) y bandera de aborto |
 | `core/robot_controller.py` | `detener()` delega en `UR5Client.stop()`; ciclo con validación de agarre por visión en lazo cerrado y confirmación del firmware |
 | `core/dashboard.py` | Atiende eventos de seguridad, bloquea ciclos, teclas `[e]` (paro) y `[r]` (reset) |
@@ -212,11 +167,6 @@ Como el gripper no dispone de sensores táctiles físicos de fuerza en los dedos
 4. Cortar el cable de datos (o matar la PC) y esperar 15 s con la pieza cerrada:
    debe aparecer `WATCHDOG_OPEN` y luego `WATCHDOG_DONE` en el log.
 
-> Los pasos de E-STOP y HC-SR04 que había antes en esta sección (pulsar el
-> botón, acercar la mano al sensor) **no aplican** al hardware actual: no hay
-> botón ni sensor montados. Solo servirían con el sketch histórico
-> `gripper_4servos`.
-
 ### Con URSim
 
 1. `./scripts/run_ursim.sh`
@@ -227,4 +177,4 @@ Como el gripper no dispone de sensores táctiles físicos de fuerza en los dedos
 4. Pulsar "Reiniciar parada" y verificar que se puede volver a operar.
 
 > El E-STOP físico del gripper no existe en el montaje actual: la parada
-> certificata es la del **UR5e** (teach pendant).
+> certificada es la del **UR5e** (teach pendant).

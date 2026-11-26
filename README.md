@@ -120,7 +120,7 @@ det = p.procesar_frame()
 
 ### Modo imagen estática (depuración)
 ```python
-p.conectar_imagen("fotos/prueba_rojo.jpg")
+p.conectar_imagen("ruta/a/tu_foto.jpg")
 det = p.procesar_frame()
 ```
 
@@ -402,5 +402,6 @@ trabajo** con la telemetría del TCP, para no tener que mirar al robot físico:
 - `tools/calibrar_homografia.py` — calibración de la homografía midiendo con el robot
 - `tools/verificar_homografia.py` — verificación previa (no mueve el robot)
 - `tools/diagnostico_hardware.py` — diagnóstico de cámara, gripper y UR5
+- `web/` — sitio de presentación (HTML/CSS; abrir `web/index.html` en el navegador)
 - `README.md` — este archivo
 - Evidencia: capturas de pantalla de detecciones correctas/incorrectas y error de homografía

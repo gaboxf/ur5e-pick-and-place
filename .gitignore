@@ -38,6 +38,13 @@ logs/
 *.log
 logs/*.log
 
+# ---------- Backups de configuración ----------
+vision/config.json.bak-*
+
+# ---------- Skills de agentes (no forman parte del proyecto) ----------
+.agents/
+skills-lock.json
+
 # ---------- IDEs y editores ----------
 .vscode/
 .idea/

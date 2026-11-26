@@ -83,8 +83,7 @@ ROBOT_MODE=real
 ## 6. Cargar el firmware del Arduino
 
 > El firmware en uso es `gripper_1signal` (4 servos con **una sola señal** en
-> D3, con watchdog y **sin LEDs / E-STOP / HC-SR04**). La carpeta
-> `gripper_4servos/` es la variante histórica: **no la uses**.
+> D3, con watchdog y **sin LEDs / E-STOP / HC-SR04**).
 
 ### Opción A — Arduino IDE (más simple en Windows)
 
@@ -113,6 +112,9 @@ arduino-cli upload -p COM4 --fqbn arduino:avr:uno gripper/firmware/gripper_1sign
    ```powershell
    ping 192.168.1.100
    ```
+
+> Guía visual de la pantalla de inicio de PolyScope:
+> [`docs/img/Guía visual de PolyScope Universal Robots.png`](<img/Guía visual de PolyScope Universal Robots.png>).
 
 ## 8. Ejecutar
 

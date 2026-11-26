@@ -308,4 +308,4 @@ motivo y el ciclo no arranca. Este es un requisito de la consigna.
 | `docs/Arranque.md` | Arranque completo del sistema paso a paso |
 | `docs/Seguridad_E_Interfaz_Web.md` | Interfaz web y capa de seguridad |
 | `docs/Guia_Ajustes_Laboratorio.md` | Ajustes finos de parámetros |
-| `docs/plan_desafio2_ur5.md` | Plan de trabajo del equipo |
+| `docs/desafio_upro.md` | Consigna completa del Megadesafío |
